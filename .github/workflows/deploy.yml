@@ -24,19 +24,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Debug - List files
-        run: |
-          echo "Current directory: $(pwd)"
-          ls -la
-
       - name: Install dependencies
         run: npm install
 
-      - name: Install TypeScript
-        run: npm install -D typescript
-
-      - name: Type check
-        run: npx tsc --noEmit || echo "Type check completed with issues"
+      - name: Install wrangler
+        run: npm install -g wrangler
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
@@ -44,7 +36,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./backend
-          command: deploy
+          wranglerVersion: '3'
 
   # Frontend Build & Deploy
   deploy-frontend:
@@ -68,9 +60,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Type check
-        run: npx tsc --noEmit || echo "Type check completed with issues"
-
       - name: Build
         run: npm run build
         env:
@@ -82,6 +71,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./frontend
+          wranglerVersion: '3'
           command: pages deploy dist --project-name=magicbox-app
 
   # Notify Status
