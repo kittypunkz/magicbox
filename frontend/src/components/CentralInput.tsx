@@ -11,6 +11,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
   const [input, setInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState<number>(1);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -20,6 +21,11 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
   const filteredFolders = searchTerm
     ? folders.filter((f) => f.name.toLowerCase().includes(searchTerm))
     : folders;
+
+  // Reset highlighted index when filtered folders change
+  useEffect(() => {
+    setHighlightedIndex(0);
+  }, [searchTerm]);
 
   useEffect(() => {
     const inputEl = inputRef.current;
@@ -55,12 +61,45 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     setInput(newInput);
     setSelectedFolderId(folder.id);
     setShowSuggestions(false);
+    setHighlightedIndex(0);
     
     setTimeout(() => {
       inputRef.current?.focus();
       const newPos = before.length + folder.name.length + 2;
       inputRef.current?.setSelectionRange(newPos, newPos);
     }, 0);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || filteredFolders.length === 0) return;
+
+    switch (e.key) {
+      case 'Tab':
+        e.preventDefault();
+        // Select the highlighted folder
+        const selectedFolder = filteredFolders[highlightedIndex];
+        if (selectedFolder) {
+          handleFolderSelect(selectedFolder);
+        }
+        break;
+      
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex((prev) => 
+          prev < filteredFolders.length - 1 ? prev + 1 : prev
+        );
+        break;
+      
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        break;
+      
+      case 'Escape':
+        setShowSuggestions(false);
+        setHighlightedIndex(0);
+        break;
+    }
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -71,6 +110,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     onCreateNote(cleanTitle, selectedFolderId);
     setInput('');
     setSelectedFolderId(1);
+    setHighlightedIndex(0);
   };
 
   const beforeCursor = input.slice(0, cursorPosition);
@@ -86,6 +126,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
             type="text"
             value={input}
             onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             placeholder="Type a note... Use #folder to organize"
             className="w-full pl-12 pr-12 py-4 text-lg bg-white dark:bg-notion-dark-input border border-notion-border dark:border-notion-dark-border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-notion-text dark:text-notion-dark-text"
           />
@@ -110,21 +151,27 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
         {afterHash && showSuggestions && filteredFolders.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-notion-dark-input border border-notion-border dark:border-notion-dark-border rounded-xl shadow-lg z-50 overflow-hidden">
             <div className="px-3 py-2 text-xs font-medium text-notion-gray dark:text-notion-dark-gray bg-gray-50 dark:bg-notion-dark-sidebar border-b border-notion-border dark:border-notion-dark-border">
-              Select folder
+              Select folder (Tab to select, ↑↓ to navigate)
             </div>
-            {filteredFolders.map((folder) => (
+            {filteredFolders.map((folder, index) => (
               <button
                 key={folder.id}
                 type="button"
                 onClick={() => handleFolderSelect(folder)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-notion-hover dark:hover:bg-notion-dark-hover transition-colors ${
-                  folder.id === selectedFolderId ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                onMouseEnter={() => setHighlightedIndex(index)}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                  index === highlightedIndex
+                    ? 'bg-blue-50 dark:bg-blue-900/20'
+                    : 'hover:bg-notion-hover dark:hover:bg-notion-dark-hover'
                 }`}
               >
                 <Hash size={16} className="text-blue-500" />
                 <span className="text-sm font-medium text-notion-text dark:text-notion-dark-text">{folder.name}</span>
                 {folder.id === 1 && (
                   <span className="ml-auto text-xs text-notion-gray dark:text-notion-dark-gray">default</span>
+                )}
+                {index === highlightedIndex && (
+                  <span className="ml-auto text-xs text-blue-500 font-medium">Tab</span>
                 )}
               </button>
             ))}
@@ -138,7 +185,9 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
           Type # to mention folder
         </span>
         <span>•</span>
-        <span>Press Enter to create</span>
+        <span>Press Tab to select</span>
+        <span>•</span>
+        <span>Enter to create</span>
       </div>
     </div>
   );
