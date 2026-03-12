@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github } from 'lucide-react';
 import { RecentNotes } from './RecentNotes';
-import type { Note } from '../types';
 import { useFolders } from '../hooks/useFolders';
+import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
 const c = {
@@ -15,14 +15,15 @@ const c = {
 };
 
 interface SidebarProps {
+  folders: FolderType[];
   selectedFolderId: number | null;
   onSelectFolder: (id: number | null) => void;
   onShowAllNotes: () => void;
   onSelectNote?: (note: Note) => void;
 }
 
-export function Sidebar({ selectedFolderId, onSelectFolder, onShowAllNotes, onSelectNote }: SidebarProps) {
-  const { folders, loading, createFolder, updateFolder, deleteFolder } = useFolders();
+export function Sidebar({ folders, selectedFolderId, onSelectFolder, onShowAllNotes, onSelectNote }: SidebarProps) {
+  const { loading, createFolder, updateFolder, deleteFolder } = useFolders();
   const [isCreating, setIsCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);

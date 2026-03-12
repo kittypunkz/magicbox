@@ -4,6 +4,7 @@ import { SearchBar } from './components/SearchBar';
 import { NoteEditor } from './components/NoteEditor';
 import { HomePage } from './pages/HomePage';
 import { FolderPage } from './pages/FolderPage';
+import { useFolders } from './hooks/useFolders';
 import type { Note } from './types';
 
 type ViewType = 'home' | 'folder' | 'note';
@@ -22,6 +23,9 @@ function App() {
   const [view, setView] = useState<ViewType>('home');
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
+  
+  // Shared folders state for both Sidebar and HomePage
+  const { folders, addFolderLocally } = useFolders();
 
   const handleShowAllNotes = () => {
     setView('home');
@@ -64,6 +68,7 @@ function App() {
   return (
     <div className={`flex h-screen ${colors.bg}`}>
       <Sidebar
+        folders={folders}
         selectedFolderId={selectedFolderId}
         onSelectFolder={handleSelectFolder}
         onShowAllNotes={handleShowAllNotes}
@@ -90,7 +95,13 @@ function App() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-hidden">
-          {view === 'home' && <HomePage onSelectNote={handleSelectNote} />}
+          {view === 'home' && (
+            <HomePage 
+              folders={folders}
+              addFolderLocally={addFolderLocally}
+              onSelectNote={handleSelectNote} 
+            />
+          )}
           {view === 'folder' && selectedFolderId && (
             <FolderPage folderId={selectedFolderId} onSelectNote={handleSelectNote} />
           )}

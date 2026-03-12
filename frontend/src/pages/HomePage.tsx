@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Sparkles, FileText, Folder } from 'lucide-react';
 import { CentralInput } from '../components/CentralInput';
-import { useFolders } from '../hooks/useFolders';
 import { useNotes } from '../hooks/useNotes';
 import { notesAPI } from '../api/client';
-import type { Note } from '../types';
+import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
 const c = {
@@ -18,11 +17,12 @@ const c = {
 };
 
 interface HomePageProps {
+  folders: FolderType[];
+  addFolderLocally: (folder: FolderType) => void;
   onSelectNote: (note: Note) => void;
 }
 
-export function HomePage({ onSelectNote }: HomePageProps) {
-  const { folders, addFolderLocally } = useFolders();
+export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePageProps) {
   const { notes, refetch: refetchNotes } = useNotes();
   const [creating, setCreating] = useState(false);
 
