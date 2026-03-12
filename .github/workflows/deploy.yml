@@ -27,16 +27,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install wrangler
-        run: npm install -g wrangler
-
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./backend
-          wranglerVersion: '3'
+          command: deploy
 
   # Frontend Build & Deploy
   deploy-frontend:
@@ -71,7 +68,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: ./frontend
-          wranglerVersion: '3'
           command: pages deploy dist --project-name=magicbox-app
 
   # Notify Status
