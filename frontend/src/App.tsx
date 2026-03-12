@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { SearchBar } from './components/SearchBar';
 import { NoteEditor } from './components/NoteEditor';
-import { ThemeToggle } from './components/ThemeToggle';
+
 import { HomePage } from './pages/HomePage';
 import { FolderPage } from './pages/FolderPage';
 import type { Note } from './types';
@@ -76,7 +76,6 @@ function App() {
               onSelectNote={handleSelectNoteById}
               onSelectFolder={handleSelectFolder}
             />
-            <ThemeToggle />
           </div>
         </header>
 
