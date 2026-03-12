@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github } from 'lucide-react';
+import { RecentNotes } from './RecentNotes';
+import type { Note } from '../types';
 import { useFolders } from '../hooks/useFolders';
 
 interface SidebarProps {
   selectedFolderId: number | null;
   onSelectFolder: (id: number | null) => void;
   onShowAllNotes: () => void;
+  onSelectNote?: (note: Note) => void;
 }
 
-export function Sidebar({ selectedFolderId, onSelectFolder, onShowAllNotes }: SidebarProps) {
+export function Sidebar({ selectedFolderId, onSelectFolder, onShowAllNotes, onSelectNote }: SidebarProps) {
   const { folders, loading, createFolder, updateFolder, deleteFolder } = useFolders();
   const [isCreating, setIsCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -160,6 +163,9 @@ export function Sidebar({ selectedFolderId, onSelectFolder, onShowAllNotes }: Si
           ))
         )}
       </div>
+
+      {/* Recent Notes */}
+      {onSelectNote && <RecentNotes onSelectNote={onSelectNote} />}
 
       {/* Version Footer */}
       <div className="p-4 border-t border-notion-border dark:border-notion-dark-border bg-notion-sidebar dark:bg-notion-dark-sidebar">

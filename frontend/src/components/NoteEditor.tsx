@@ -3,6 +3,7 @@ import { ArrowLeft, Save, Clock, Folder, Check } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
+import { useRecentNotes } from '../hooks/useRecentNotes';
 import type { Note } from '../types';
 
 interface NoteEditorProps {
@@ -14,6 +15,7 @@ interface NoteEditorProps {
 export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
   const { note, loading, error, updateNote } = useNote(noteId);
   const { folders } = useFolders();
+  const { addRecentNote } = useRecentNotes();
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -27,8 +29,10 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
       setTitle(note.title);
       setContent(note.content || '');
       setFolderId(note.folder_id);
+      // Track this note as recently viewed
+      addRecentNote(note);
     }
-  }, [note]);
+  }, [note, addRecentNote]);
 
   const save = useCallback(async () => {
     if (!note) return;

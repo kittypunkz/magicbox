@@ -58,6 +58,7 @@ function App() {
         selectedFolderId={selectedFolderId}
         onSelectFolder={handleSelectFolder}
         onShowAllNotes={handleShowAllNotes}
+        onSelectNote={handleSelectNote}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

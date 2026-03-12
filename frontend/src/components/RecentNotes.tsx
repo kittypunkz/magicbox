@@ -1,0 +1,89 @@
+import { Clock, FileText, X } from 'lucide-react';
+import { useRecentNotes } from '../hooks/useRecentNotes';
+import type { Note } from '../types';
+
+interface RecentNotesProps {
+  onSelectNote: (note: Note) => void;
+}
+
+function formatTimeAgo(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  
+  return date.toLocaleDateString();
+}
+
+export function RecentNotes({ onSelectNote }: RecentNotesProps) {
+  const { recentNotes, clearRecentNotes } = useRecentNotes();
+
+  if (recentNotes.length === 0) {
+    return null;
+  }
+
+  const handleNoteClick = (recentNote: RecentNote) => {
+    // Convert RecentNote to Note format
+    const note: Note = {
+      id: recentNote.id,
+      title: recentNote.title,
+      folder_id: recentNote.folder_id,
+      folder_name: recentNote.folder_name,
+      content: '', // Will be fetched when opened
+      created_at: recentNote.viewedAt,
+      updated_at: recentNote.viewedAt,
+    };
+    onSelectNote(note);
+  };
+
+  return (
+    <div className="px-4 py-3 border-t border-notion-border dark:border-notion-dark-border">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Clock size={14} className="text-notion-gray dark:text-notion-dark-gray" />
+          <span className="text-xs font-semibold text-notion-gray dark:text-notion-dark-gray uppercase tracking-wider">
+            Recent
+          </span>
+        </div>
+        <button
+          onClick={clearRecentNotes}
+          className="p-1 text-notion-gray dark:text-notion-dark-gray hover:text-red-500 transition-colors"
+          title="Clear recent notes"
+        >
+          <X size={12} />
+        </button>
+      </div>
+      
+      <div className="space-y-1">
+        {recentNotes.map((note) => (
+          <button
+            key={note.id}
+            onClick={() => handleNoteClick(note)}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-notion-hover dark:hover:bg-notion-dark-hover transition-colors text-left group"
+          >
+            <FileText size={14} className="text-notion-gray dark:text-notion-dark-gray shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-notion-text dark:text-notion-dark-text truncate">
+                {note.title}
+              </p>
+              <p className="text-[10px] text-notion-gray dark:text-notion-dark-gray">
+                {formatTimeAgo(note.viewedAt)}
+              </p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Re-export the type for convenience
+export type { RecentNote };
