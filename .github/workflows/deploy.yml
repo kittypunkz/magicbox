@@ -22,9 +22,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
-          cache-dependency-path: ./backend/package-lock.json
+          cache-dependency-path: './backend/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
@@ -56,12 +56,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
-          cache-dependency-path: ./frontend/package-lock.json
+          cache-dependency-path: './frontend/package-lock.json'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
 
       - name: Build
         run: npm run build
@@ -76,33 +79,18 @@ jobs:
           workingDirectory: ./frontend
           command: pages deploy dist --project-name=magicbox-app
 
-  # Database Migrations (Manual trigger only for safety)
-  migrate-database:
-    name: Apply Database Migrations
+  # Notify Success
+  notify:
+    name: Notify Deployment
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'  # Only manual trigger
-    defaults:
-      run:
-        working-directory: ./backend
+    needs: [deploy-backend, deploy-frontend]
+    if: always()
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: ./backend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Apply migrations
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: ./backend
-          command: d1 migrations apply magicbox-db --remote
+      - name: Deployment Status
+        run: |
+          echo "🚀 Deployment completed!"
+          echo ""
+          echo "🔗 URLs:"
+          echo "  Web App: https://magicbox.bankapirak.com"
+          echo "  API: https://api.magicbox.bankapirak.com"
