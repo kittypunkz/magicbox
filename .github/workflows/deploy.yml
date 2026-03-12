@@ -3,6 +3,7 @@ name: Deploy MagicBox to Cloudflare
 on:
   push:
     branches: [main, master]
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '20'
