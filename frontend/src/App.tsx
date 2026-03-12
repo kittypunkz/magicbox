@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { SearchBar } from './components/SearchBar';
 import { NoteEditor } from './components/NoteEditor';
@@ -25,7 +25,28 @@ function App() {
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   
   // Shared folders state for both Sidebar and HomePage
-  const { folders, addFolderLocally } = useFolders();
+  const { 
+    folders, 
+    loading, 
+    createFolder, 
+    updateFolder, 
+    deleteFolder, 
+    addFolderLocally 
+  } = useFolders();
+
+  // Wrapper functions that also handle UI updates
+  const handleCreateFolder = useCallback(async (name: string) => {
+    const newFolder = await createFolder(name);
+    return newFolder;
+  }, [createFolder]);
+
+  const handleUpdateFolder = useCallback(async (id: number, name: string) => {
+    await updateFolder(id, name);
+  }, [updateFolder]);
+
+  const handleDeleteFolder = useCallback(async (id: number) => {
+    await deleteFolder(id);
+  }, [deleteFolder]);
 
   const handleShowAllNotes = () => {
     setView('home');
@@ -69,10 +90,14 @@ function App() {
     <div className={`flex h-screen ${colors.bg}`}>
       <Sidebar
         folders={folders}
+        loading={loading}
         selectedFolderId={selectedFolderId}
         onSelectFolder={handleSelectFolder}
         onShowAllNotes={handleShowAllNotes}
         onSelectNote={handleSelectNote}
+        onCreateFolder={handleCreateFolder}
+        onUpdateFolder={handleUpdateFolder}
+        onDeleteFolder={handleDeleteFolder}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

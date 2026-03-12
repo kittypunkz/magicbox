@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github } from 'lucide-react';
 import { RecentNotes } from './RecentNotes';
-import { useFolders } from '../hooks/useFolders';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -16,14 +15,27 @@ const c = {
 
 interface SidebarProps {
   folders: FolderType[];
+  loading: boolean;
   selectedFolderId: number | null;
   onSelectFolder: (id: number | null) => void;
   onShowAllNotes: () => void;
   onSelectNote?: (note: Note) => void;
+  onCreateFolder: (name: string) => Promise<FolderType>;
+  onUpdateFolder: (id: number, name: string) => Promise<void>;
+  onDeleteFolder: (id: number) => Promise<void>;
 }
 
-export function Sidebar({ folders, selectedFolderId, onSelectFolder, onShowAllNotes, onSelectNote }: SidebarProps) {
-  const { loading, createFolder, updateFolder, deleteFolder } = useFolders();
+export function Sidebar({ 
+  folders, 
+  loading, 
+  selectedFolderId, 
+  onSelectFolder, 
+  onShowAllNotes, 
+  onSelectNote,
+  onCreateFolder,
+  onUpdateFolder,
+  onDeleteFolder
+}: SidebarProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -31,21 +43,21 @@ export function Sidebar({ folders, selectedFolderId, onSelectFolder, onShowAllNo
 
   const handleCreate = async () => {
     if (!newFolderName.trim()) return;
-    await createFolder(newFolderName.trim());
+    await onCreateFolder(newFolderName.trim());
     setNewFolderName('');
     setIsCreating(false);
   };
 
   const handleUpdate = async (id: number) => {
     if (!editingName.trim()) return;
-    await updateFolder(id, editingName.trim());
+    await onUpdateFolder(id, editingName.trim());
     setEditingId(null);
     setEditingName('');
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this folder? Notes will be deleted too.')) return;
-    await deleteFolder(id);
+    await onDeleteFolder(id);
     if (selectedFolderId === id) {
       onShowAllNotes();
     }
