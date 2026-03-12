@@ -123,9 +123,9 @@ export function Sidebar({ selectedFolderId, onSelectFolder, onShowAllNotes, onSe
                   </button>
                 </div>
               ) : (
-                <button
+                <div
                   onClick={() => onSelectFolder(folder.id)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors ${
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
                     selectedFolderId === folder.id
                       ? 'bg-notion-hover dark:bg-notion-dark-hover'
                       : 'hover:bg-notion-hover dark:hover:bg-notion-dark-hover'
@@ -157,7 +157,7 @@ export function Sidebar({ selectedFolderId, onSelectFolder, onShowAllNotes, onSe
                       </button>
                     )}
                   </div>
-                </button>
+                </div>
               )}
             </div>
           ))
