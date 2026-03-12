@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Folder, Plus, Trash2, Edit2, Check, X, Inbox } from 'lucide-react';
+import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github, GitCommit } from 'lucide-react';
 import { useFolders } from '../hooks/useFolders';
 
 interface SidebarProps {
@@ -161,8 +161,26 @@ export function Sidebar({ selectedFolderId, onSelectFolder, onShowAllNotes }: Si
         )}
       </div>
 
-      <div className="p-4 border-t border-notion-border dark:border-notion-dark-border">
-        <p className="text-xs text-notion-gray dark:text-notion-dark-gray">
+      {/* Version Footer */}
+      <div className="p-4 border-t border-notion-border dark:border-notion-dark-border bg-notion-sidebar dark:bg-notion-dark-sidebar">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-notion-text dark:text-notion-dark-text">MagicBox</span>
+            <span className="px-1.5 py-0.5 text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+              v1.0.0
+            </span>
+          </div>
+          <a 
+            href="https://github.com/kittypunkz/magicbox" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-notion-gray dark:text-notion-dark-gray hover:text-blue-500 transition-colors"
+          >
+            <Github size={12} />
+            <span>GitHub</span>
+          </a>
+        </div>
+        <p className="text-[10px] text-notion-gray dark:text-notion-dark-gray mt-1 opacity-70">
           {folders.length} folder{folders.length !== 1 ? 's' : ''}
         </p>
       </div>
