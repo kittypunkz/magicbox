@@ -46,10 +46,6 @@ function formatTimeAgo(dateStr: string): string {
 export function RecentNotes({ onSelectNote }: RecentNotesProps) {
   const { recentNotes, clearRecentNotes } = useRecentNotes();
 
-  if (recentNotes.length === 0) {
-    return null;
-  }
-
   const handleNoteClick = (recentNote: RecentNote) => {
     const note: Note = {
       id: recentNote.id,
@@ -72,34 +68,42 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
             Recent
           </span>
         </div>
-        <button
-          onClick={clearRecentNotes}
-          className={`p-1 ${c.gray} hover:text-red-500 transition-colors`}
-          title="Clear recent notes"
-        >
-          <X size={12} />
-        </button>
+        {recentNotes.length > 0 && (
+          <button
+            onClick={clearRecentNotes}
+            className={`p-1 ${c.gray} hover:text-red-500 transition-colors`}
+            title="Clear recent notes"
+          >
+            <X size={12} />
+          </button>
+        )}
       </div>
       
-      <div className="space-y-1">
-        {recentNotes.map((note) => (
-          <button
-            key={note.id}
-            onClick={() => handleNoteClick(note)}
-            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md ${c.hover} transition-colors text-left group`}
-          >
-            <FileText size={14} className={`${c.gray} shrink-0`} />
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm ${c.text} truncate`}>
-                {note.title}
-              </p>
-              <p className={`text-[10px] ${c.gray}`}>
-                {formatTimeAgo(note.viewedAt)}
-              </p>
-            </div>
-          </button>
-        ))}
-      </div>
+      {recentNotes.length === 0 ? (
+        <p className={`text-xs ${c.gray} italic px-2`}>
+          No recent notes. Click a note to see it here.
+        </p>
+      ) : (
+        <div className="space-y-1">
+          {recentNotes.map((note) => (
+            <button
+              key={note.id}
+              onClick={() => handleNoteClick(note)}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md ${c.hover} transition-colors text-left group`}
+            >
+              <FileText size={14} className={`${c.gray} shrink-0`} />
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm ${c.text} truncate`}>
+                  {note.title}
+                </p>
+                <p className={`text-[10px] ${c.gray}`}>
+                  {formatTimeAgo(note.viewedAt)}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
