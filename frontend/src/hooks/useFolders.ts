@@ -7,6 +7,11 @@ export function useFolders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Function to add a new folder locally (for instant UI update)
+  const addFolderLocally = useCallback((newFolder: Folder) => {
+    setFolders((prev) => [...prev, newFolder].sort((a, b) => a.name.localeCompare(b.name)));
+  }, []);
+
   const fetchFolders = useCallback(async () => {
     try {
       setLoading(true);
@@ -49,6 +54,7 @@ export function useFolders() {
     createFolder,
     updateFolder,
     deleteFolder,
+    addFolderLocally,
   };
 }
 

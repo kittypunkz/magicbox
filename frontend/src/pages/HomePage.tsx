@@ -22,7 +22,7 @@ interface HomePageProps {
 }
 
 export function HomePage({ onSelectNote }: HomePageProps) {
-  const { folders, refetch: refetchFolders } = useFolders();
+  const { folders, addFolderLocally } = useFolders();
   const { notes, refetch: refetchNotes } = useNotes();
   const [creating, setCreating] = useState(false);
 
@@ -48,7 +48,8 @@ export function HomePage({ onSelectNote }: HomePageProps) {
           });
           const newFolder = await response.json();
           targetFolderId = newFolder.id;
-          refetchFolders();
+          // Instantly add to folders list without waiting for refetch
+          addFolderLocally(newFolder);
         } else {
           targetFolderId = existingFolder.id;
         }
