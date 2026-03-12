@@ -1,0 +1,15 @@
+name = "magicbox-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+account_id = "49b16ed3ff0d8209f2a3da300341283b"
+
+# Custom domain for API
+routes = [
+  { pattern = "api.magicbox.bankapirak.com", custom_domain = true }
+]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "magicbox-db"
+database_id = "846b28b9-2aac-49a5-a3fa-8ad7cf925d9f"
