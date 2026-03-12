@@ -2,6 +2,16 @@ import { useState, useRef, useEffect } from 'react';
 import { Hash, FileText, CornerDownLeft, X } from 'lucide-react';
 import type { Folder } from '../types';
 
+// Dark mode colors
+const c = {
+  bg: 'bg-[#191919]',
+  input: 'bg-[#2a2a2a]',
+  text: 'text-[#e6e6e6]',
+  gray: 'text-[#6b6b6b]',
+  border: 'border-[#2f2f2f]',
+  hover: 'hover:bg-[#3a3a3a]',
+};
+
 interface CentralInputProps {
   folders: Folder[];
   onCreateNote: (title: string, folderId: number) => void;
@@ -22,7 +32,6 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     ? folders.filter((f) => f.name.toLowerCase().includes(searchTerm))
     : folders;
 
-  // Reset highlighted index when filtered folders change
   useEffect(() => {
     setHighlightedIndex(0);
   }, [searchTerm]);
@@ -76,7 +85,6 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     switch (e.key) {
       case 'Tab':
         e.preventDefault();
-        // Select the highlighted folder
         const selectedFolder = filteredFolders[highlightedIndex];
         if (selectedFolder) {
           handleFolderSelect(selectedFolder);
@@ -120,7 +128,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     <div className="w-full max-w-2xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative flex items-center">
-          <FileText size={20} className="absolute left-4 text-notion-gray dark:text-notion-dark-gray" />
+          <FileText size={20} className={`absolute left-4 ${c.gray}`} />
           <input
             ref={inputRef}
             type="text"
@@ -128,13 +136,13 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a note... Use #folder to organize"
-            className="w-full pl-12 pr-12 py-4 text-lg bg-white dark:bg-notion-dark-input border border-notion-border dark:border-notion-dark-border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-notion-text dark:text-notion-dark-text"
+            className={`w-full pl-12 pr-12 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
           />
           {input && (
             <button
               type="button"
               onClick={() => setInput('')}
-              className="absolute right-14 p-1 text-notion-gray dark:text-notion-dark-gray hover:text-gray-600"
+              className={`absolute right-14 p-1 ${c.gray} hover:text-gray-400`}
             >
               <X size={18} />
             </button>
@@ -142,15 +150,15 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
           <button
             type="submit"
             disabled={!input.trim()}
-            className="absolute right-4 p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-notion-gray disabled:cursor-not-allowed transition-colors"
+            className="absolute right-4 p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-[#4b5563] disabled:cursor-not-allowed transition-colors"
           >
             <CornerDownLeft size={18} />
           </button>
         </div>
 
         {afterHash && showSuggestions && filteredFolders.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-notion-dark-input border border-notion-border dark:border-notion-dark-border rounded-xl shadow-lg z-50 overflow-hidden">
-            <div className="px-3 py-2 text-xs font-medium text-notion-gray dark:text-notion-dark-gray bg-gray-50 dark:bg-notion-dark-sidebar border-b border-notion-border dark:border-notion-dark-border">
+          <div className={`absolute top-full left-0 right-0 mt-2 ${c.input} border ${c.border} rounded-xl shadow-lg z-50 overflow-hidden`}>
+            <div className={`px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
               Select folder (Tab to select, ↑↓ to navigate)
             </div>
             {filteredFolders.map((folder, index) => (
@@ -160,18 +168,16 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
                 onClick={() => handleFolderSelect(folder)}
                 onMouseEnter={() => setHighlightedIndex(index)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
-                  index === highlightedIndex
-                    ? 'bg-blue-50 dark:bg-blue-900/20'
-                    : 'hover:bg-notion-hover dark:hover:bg-notion-dark-hover'
+                  index === highlightedIndex ? 'bg-blue-900/20' : c.hover
                 }`}
               >
                 <Hash size={16} className="text-blue-500" />
-                <span className="text-sm font-medium text-notion-text dark:text-notion-dark-text">{folder.name}</span>
+                <span className={`text-sm font-medium ${c.text}`}>{folder.name}</span>
                 {folder.id === 1 && (
-                  <span className="ml-auto text-xs text-notion-gray dark:text-notion-dark-gray">default</span>
+                  <span className={`ml-auto text-xs ${c.gray}`}>default</span>
                 )}
                 {index === highlightedIndex && (
-                  <span className="ml-auto text-xs text-blue-500 font-medium">Tab</span>
+                  <span className="ml-auto text-xs text-blue-400 font-medium">Tab</span>
                 )}
               </button>
             ))}
@@ -179,7 +185,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
         )}
       </form>
 
-      <div className="flex items-center justify-center gap-4 mt-3 text-xs text-notion-gray dark:text-notion-dark-gray">
+      <div className={`flex items-center justify-center gap-4 mt-3 text-xs ${c.gray}`}>
         <span className="flex items-center gap-1">
           <Hash size={12} />
           Type # to mention folder
