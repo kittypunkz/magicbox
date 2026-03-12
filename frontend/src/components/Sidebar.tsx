@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github, GitCommit } from 'lucide-react';
+import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github } from 'lucide-react';
 import { useFolders } from '../hooks/useFolders';
 
 interface SidebarProps {
