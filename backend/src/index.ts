@@ -13,6 +13,7 @@ app.use('*', cors({
     'https://magicbox.bankapirak.com',
     'https://api.magicbox.bankapirak.com',
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:8787'
   ],
   allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
