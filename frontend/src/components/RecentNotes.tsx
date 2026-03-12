@@ -2,6 +2,15 @@ import { Clock, FileText, X } from 'lucide-react';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import type { Note } from '../types';
 
+// Type for recent note entries
+interface RecentNote {
+  id: number;
+  title: string;
+  folder_id: number;
+  folder_name: string;
+  viewedAt: string;
+}
+
 interface RecentNotesProps {
   onSelectNote: (note: Note) => void;
 }
@@ -85,5 +94,4 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
   );
 }
 
-// Re-export the type for convenience
-export type { RecentNote };
+// Note: RecentNote type is available from useRecentNotes hook
