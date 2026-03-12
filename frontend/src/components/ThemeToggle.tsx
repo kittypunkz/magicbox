@@ -3,6 +3,8 @@ import { useTheme } from '../hooks/useTheme';
 
 export function ThemeToggle() {
   const { isDark, toggleTheme } = useTheme();
+  
+  // CI/CD Test - Deployment verification
 
   return (
     <button
