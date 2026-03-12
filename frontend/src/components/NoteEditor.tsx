@@ -6,6 +6,17 @@ import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import type { Note } from '../types';
 
+// Dark mode colors
+const c = {
+  bg: 'bg-[#191919]',
+  sidebar: 'bg-[#202020]',
+  hover: 'hover:bg-[#2a2a2a]',
+  text: 'text-[#e6e6e6]',
+  gray: 'text-[#6b6b6b]',
+  border: 'border-[#2f2f2f]',
+  input: 'bg-[#2a2a2a]',
+};
+
 interface NoteEditorProps {
   noteId: number;
   onBack: () => void;
@@ -29,7 +40,6 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
       setTitle(note.title);
       setContent(note.content || '');
       setFolderId(note.folder_id);
-      // Track this note as recently viewed
       addRecentNote(note);
     }
   }, [note, addRecentNote]);
@@ -71,7 +81,7 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
 
   if (error || !note) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-notion-gray dark:text-notion-dark-gray">
+      <div className={`flex flex-col items-center justify-center h-full ${c.gray}`}>
         <p>Error loading note</p>
         <button onClick={onBack} className="mt-4 text-blue-500 hover:underline">
           Go back
@@ -83,17 +93,17 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
   const currentFolder = folders.find((f) => f.id === folderId);
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-notion-dark-bg transition-theme">
+    <div className={`h-full flex flex-col bg-[#202020]`}>
       {/* Header */}
-      <div className="flex items-center gap-4 px-6 py-4 border-b border-notion-border dark:border-notion-dark-border">
+      <div className={`flex items-center gap-4 px-6 py-4 border-b ${c.border}`}>
         <button
           onClick={() => {
             save();
             onBack();
           }}
-          className="p-2 hover:bg-notion-hover dark:hover:bg-notion-dark-hover rounded-lg transition-colors"
+          className={`p-2 ${c.hover} rounded-lg transition-colors`}
         >
-          <ArrowLeft size={20} className="text-notion-text dark:text-notion-dark-text" />
+          <ArrowLeft size={20} className={c.text} />
         </button>
         
         <div className="flex-1">
@@ -102,7 +112,7 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Note title"
-            className="w-full text-xl font-semibold bg-transparent outline-none placeholder:text-gray-300 dark:placeholder:text-gray-600 text-notion-text dark:text-notion-dark-text"
+            className={`w-full text-xl font-semibold bg-transparent outline-none placeholder-[#4b5563] ${c.text}`}
           />
         </div>
 
@@ -111,14 +121,14 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
           <div className="relative">
             <button
               onClick={() => setShowFolderSelect(!showFolderSelect)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-notion-gray dark:text-notion-dark-gray hover:bg-notion-hover dark:hover:bg-notion-dark-hover rounded-lg transition-colors"
+              className={`flex items-center gap-2 px-3 py-1.5 text-sm ${c.gray} ${c.hover} rounded-lg transition-colors`}
             >
               <Folder size={16} className="text-blue-500" />
               {currentFolder?.name || 'Inbox'}
             </button>
             
             {showFolderSelect && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-notion-dark-input border border-notion-border dark:border-notion-dark-border rounded-lg shadow-lg z-10">
+              <div className={`absolute top-full right-0 mt-2 w-48 ${c.input} border ${c.border} rounded-lg shadow-lg z-10`}>
                 {folders.map((folder) => (
                   <button
                     key={folder.id}
@@ -126,8 +136,8 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
                       setFolderId(folder.id);
                       setShowFolderSelect(false);
                     }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-notion-hover dark:hover:bg-notion-dark-hover first:rounded-t-lg last:rounded-b-lg ${
-                      folder.id === folderId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-notion-text dark:text-notion-dark-text'
+                    className={`w-full flex items-center justify-between px-4 py-2 text-sm ${c.hover} first:rounded-t-lg last:rounded-b-lg ${
+                      folder.id === folderId ? 'bg-blue-900/20 text-blue-400' : c.text
                     }`}
                   >
                     {folder.name}
@@ -139,7 +149,7 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
           </div>
 
           {/* Save status */}
-          <div className="flex items-center gap-2 text-xs text-notion-gray dark:text-notion-dark-gray">
+          <div className={`flex items-center gap-2 text-xs ${c.gray}`}>
             {saving ? (
               <>
                 <div className="animate-spin rounded-full h-3 w-3 border-b border-current" />
@@ -165,7 +175,7 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
       </div>
 
       {/* Editor */}
-      <div className="flex-1 overflow-hidden" data-color-mode="light">
+      <div className="flex-1 overflow-hidden" data-color-mode="dark">
         <MDEditor
           value={content}
           onChange={(val) => setContent(val || '')}
