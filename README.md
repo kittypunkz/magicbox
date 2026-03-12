@@ -121,6 +121,10 @@ On the home page, use the central input:
 | Markdown | @uiw/react-md-editor |
 | Icons | Lucide React |
 
+## Developer Guide
+
+📖 **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Development workflow, common errors & fixes, deployment checklist, and best practices.
+
 ## License
 
 MIT - Free for personal and commercial use.
