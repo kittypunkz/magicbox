@@ -86,78 +86,147 @@ html {
   overflow: hidden;
 }
 
-/* BlockNote Dark Mode Overrides */
-.bn-container {
-  --bn-colors-editor-text: #e6e6e6;
-  --bn-colors-editor-background: #191919;
-  --bn-colors-menu-text: #e6e6e6;
-  --bn-colors-menu-background: #202020;
-  --bn-colors-tooltip-text: #e6e6e6;
-  --bn-colors-tooltip-background: #202020;
-  --bn-colors-slash-menu-text: #e6e6e6;
-  --bn-colors-slash-menu-background: #202020;
-  --bn-colors-side-menu: #6b6b6b;
-  --bn-colors-side-menu-hover: #2a2a2a;
-  --bn-colors-hovered-text: #e6e6e6;
-  --bn-colors-hovered-background: #2a2a2a;
-  --bn-colors-selected-text: #e6e6e6;
-  --bn-colors-selected-background: #2a2a2a;
-  --bn-colors-disabled-text: #4b5563;
-  --bn-colors-border: #2f2f2f;
-  --bn-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+/* EditorJS Dark Mode Styles */
+.editorjs-container {
+  color: #e6e6e6;
 }
 
-.bn-editor {
-  background-color: #191919 !important;
+.editorjs-container .codex-editor {
+  background: transparent;
 }
 
-.bn-editor [data-content-type] {
-  color: #e6e6e6 !important;
+.editorjs-container .ce-block__content {
+  max-width: 100%;
+  margin: 0;
 }
 
-.bn-block-outer {
-  border-color: transparent !important;
+.editorjs-container .ce-paragraph {
+  color: #e6e6e6;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
-.bn-block-outer:hover {
-  background-color: rgba(42, 42, 42, 0.5) !important;
-}
-
-.bn-side-menu {
-  color: #6b6b6b !important;
-}
-
-.bn-side-menu:hover {
-  color: #e6e6e6 !important;
-}
-
-.bn-slash-menu {
-  background-color: #202020 !important;
-  border: 1px solid #2f2f2f !important;
-}
-
-.bn-menu-item {
-  color: #e6e6e6 !important;
-}
-
-.bn-menu-item:hover {
-  background-color: #2a2a2a !important;
-}
-
-.bn-formatting-toolbar {
-  background-color: #202020 !important;
-  border: 1px solid #2f2f2f !important;
-}
-
-.bn-formatting-toolbar button {
-  color: #e6e6e6 !important;
-}
-
-.bn-formatting-toolbar button:hover {
-  background-color: #2a2a2a !important;
-}
-
-/* Placeholder color */
-.bn-editor .bn-inline-content:empty:before {
+.editorjs-container .ce-paragraph::before {
   color: #4b5563 !important;
+}
+
+/* Header styles */
+.editorjs-container h1.ce-header,
+.editorjs-container h2.ce-header,
+.editorjs-container h3.ce-header {
+  color: #e6e6e6;
+  font-weight: 600;
+  margin: 1em 0 0.5em;
+}
+
+.editorjs-container h1.ce-header {
+  font-size: 2em;
+}
+
+.editorjs-container h2.ce-header {
+  font-size: 1.5em;
+}
+
+.editorjs-container h3.ce-header {
+  font-size: 1.25em;
+}
+
+/* List styles */
+.editorjs-container .cdx-list {
+  color: #e6e6e6;
+  padding-left: 1.5em;
+}
+
+.editorjs-container .cdx-list__item {
+  margin: 0.3em 0;
+}
+
+/* Quote styles */
+.editorjs-container .cdx-quote {
+  background: rgba(42, 42, 42, 0.5);
+  border-left: 3px solid #3b82f6;
+  padding: 1em;
+  margin: 1em 0;
+}
+
+.editorjs-container .cdx-quote__text {
+  color: #e6e6e6;
+}
+
+/* Code styles */
+.editorjs-container .cdx-code {
+  background: #202020;
+  border: 1px solid #2f2f2f;
+  border-radius: 8px;
+  padding: 1em;
+  color: #e6e6e6;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* Toolbar */
+.editorjs-container .ce-toolbar {
+  background: #202020;
+  border: 1px solid #2f2f2f;
+  border-radius: 8px;
+}
+
+.editorjs-container .ce-toolbar__content {
+  max-width: 100%;
+}
+
+.editorjs-container .ce-toolbox {
+  background: #202020;
+}
+
+.editorjs-container .ce-toolbox__button {
+  color: #6b6b6b;
+}
+
+.editorjs-container .ce-toolbox__button:hover {
+  color: #e6e6e6;
+  background: #2a2a2a;
+}
+
+/* Inline toolbar */
+.editorjs-container .ce-inline-toolbar {
+  background: #202020;
+  border: 1px solid #2f2f2f;
+  border-radius: 8px;
+}
+
+.editorjs-container .ce-inline-tool {
+  color: #e6e6e6;
+}
+
+.editorjs-container .ce-inline-tool:hover {
+  background: #2a2a2a;
+}
+
+/* Block hover */
+.editorjs-container .ce-block:hover {
+  background: rgba(42, 42, 42, 0.3);
+}
+
+/* Plus button */
+.editorjs-container .ce-toolbar__plus {
+  color: #6b6b6b;
+}
+
+.editorjs-container .ce-toolbar__plus:hover {
+  color: #e6e6e6;
+  background: #2a2a2a;
+}
+
+/* Settings */
+.editorjs-container .ce-settings {
+  background: #202020;
+  border: 1px solid #2f2f2f;
+}
+
+.editorjs-container .ce-settings__button {
+  color: #e6e6e6;
+}
+
+.editorjs-container .ce-settings__button:hover {
+  background: #2a2a2a;
 }
