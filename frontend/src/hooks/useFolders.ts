@@ -63,27 +63,27 @@ export function useFolder(id: number | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchFolder = useCallback(async () => {
     if (!id) {
       setFolder(null);
       return;
     }
 
-    const fetchFolder = async () => {
-      try {
-        setLoading(true);
-        const data = await foldersAPI.getById(id);
-        setFolder(data);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load folder');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFolder();
+    try {
+      setLoading(true);
+      const data = await foldersAPI.getById(id);
+      setFolder(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load folder');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  return { folder, loading, error };
+  useEffect(() => {
+    fetchFolder();
+  }, [fetchFolder]);
+
+  return { folder, loading, error, refetch: fetchFolder };
 }

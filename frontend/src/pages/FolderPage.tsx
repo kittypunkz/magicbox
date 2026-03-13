@@ -1,5 +1,8 @@
+import { useState } from 'react';
+import { Folder, FileText, Clock, Trash2 } from 'lucide-react';
 import { useFolder } from '../hooks/useFolders';
-import { Folder, FileText, Clock } from 'lucide-react';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { notesAPI } from '../api/client';
 import type { Note } from '../types';
 
 // Dark mode colors
@@ -27,7 +30,32 @@ function formatDate(dateStr: string) {
 }
 
 export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
-  const { folder, loading, error } = useFolder(folderId);
+  const { folder, loading, error, refetch } = useFolder(folderId);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteClick = (e: React.MouseEvent, note: Note) => {
+    e.stopPropagation();
+    setNoteToDelete(note);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!noteToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      await notesAPI.delete(noteToDelete.id);
+      await refetch(); // Refresh the folder notes
+    } finally {
+      setIsDeleting(false);
+      setNoteToDelete(null);
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (isDeleting) return;
+    setNoteToDelete(null);
+  };
 
   if (loading) {
     return (
@@ -78,9 +106,21 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
               <button
                 key={note.id}
                 onClick={() => onSelectNote(note as Note)}
-                className={`group flex flex-col p-5 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
+                className={`group relative flex flex-col p-5 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
               >
-                <h3 className={`font-semibold ${c.text} truncate mb-2`}>
+                {/* Delete button - appears on hover */}
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => handleDeleteClick(e, note as Note)}
+                    disabled={isDeleting}
+                    className={`p-2 ${c.gray} hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors`}
+                    title="Delete note"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                <h3 className={`font-semibold ${c.text} truncate mb-2 pr-8`}>
                   {note.title}
                 </h3>
                 <p className={`text-sm ${c.gray} line-clamp-3 flex-1`}>
@@ -95,6 +135,19 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={noteToDelete !== null}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmDelete}
+        title="Delete Note"
+        message={`Are you sure you want to delete "${noteToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+        variant="danger"
+      />
     </div>
   );
 }
