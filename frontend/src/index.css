@@ -85,3 +85,79 @@ html {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* BlockNote Dark Mode Overrides */
+.bn-container {
+  --bn-colors-editor-text: #e6e6e6;
+  --bn-colors-editor-background: #191919;
+  --bn-colors-menu-text: #e6e6e6;
+  --bn-colors-menu-background: #202020;
+  --bn-colors-tooltip-text: #e6e6e6;
+  --bn-colors-tooltip-background: #202020;
+  --bn-colors-slash-menu-text: #e6e6e6;
+  --bn-colors-slash-menu-background: #202020;
+  --bn-colors-side-menu: #6b6b6b;
+  --bn-colors-side-menu-hover: #2a2a2a;
+  --bn-colors-hovered-text: #e6e6e6;
+  --bn-colors-hovered-background: #2a2a2a;
+  --bn-colors-selected-text: #e6e6e6;
+  --bn-colors-selected-background: #2a2a2a;
+  --bn-colors-disabled-text: #4b5563;
+  --bn-colors-border: #2f2f2f;
+  --bn-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.bn-editor {
+  background-color: #191919 !important;
+}
+
+.bn-editor [data-content-type] {
+  color: #e6e6e6 !important;
+}
+
+.bn-block-outer {
+  border-color: transparent !important;
+}
+
+.bn-block-outer:hover {
+  background-color: rgba(42, 42, 42, 0.5) !important;
+}
+
+.bn-side-menu {
+  color: #6b6b6b !important;
+}
+
+.bn-side-menu:hover {
+  color: #e6e6e6 !important;
+}
+
+.bn-slash-menu {
+  background-color: #202020 !important;
+  border: 1px solid #2f2f2f !important;
+}
+
+.bn-menu-item {
+  color: #e6e6e6 !important;
+}
+
+.bn-menu-item:hover {
+  background-color: #2a2a2a !important;
+}
+
+.bn-formatting-toolbar {
+  background-color: #202020 !important;
+  border: 1px solid #2f2f2f !important;
+}
+
+.bn-formatting-toolbar button {
+  color: #e6e6e6 !important;
+}
+
+.bn-formatting-toolbar button:hover {
+  background-color: #2a2a2a !important;
+}
+
+/* Placeholder color */
+.bn-editor .bn-inline-content:empty:before {
+  color: #4b5563 !important;
+}

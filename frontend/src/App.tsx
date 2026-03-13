@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { SearchBar } from './components/SearchBar';
-import { NoteEditor } from './components/NoteEditor';
+import { BlockNoteEditor } from './components/BlockNoteEditor';
 import { HomePage } from './pages/HomePage';
 import { FolderPage } from './pages/FolderPage';
 import { useFolders } from './hooks/useFolders';
@@ -147,7 +147,7 @@ function App() {
             <FolderPage folderId={selectedFolderId} onSelectNote={handleSelectNote} />
           )}
           {view === 'note' && selectedNoteId && (
-            <NoteEditor
+            <BlockNoteEditor
               noteId={selectedNoteId}
               onBack={handleBackFromEditor}
               onUpdate={() => {
