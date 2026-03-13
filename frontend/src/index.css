@@ -86,9 +86,15 @@ html {
   overflow: hidden;
 }
 
-/* EditorJS Dark Mode Styles */
+/* EditorJS Dark Mode Styles - NO BORDERS ALLOWED */
 .editorjs-container {
   color: #e6e6e6;
+}
+
+.editorjs-container * {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .editorjs-container .codex-editor {
@@ -98,37 +104,55 @@ html {
 .editorjs-container .ce-block__content {
   max-width: 100%;
   margin: 0;
-}
-
-/* Remove blue border on focused blocks */
-.editorjs-container .ce-block--focused .ce-block__content {
-  background: transparent !important;
+  border: none !important;
   box-shadow: none !important;
   outline: none !important;
 }
 
-.editorjs-container .ce-block--selected .ce-block__content {
-  background: rgba(42, 42, 42, 0.5) !important;
+/* AGGRESSIVELY Remove ALL borders on ALL states */
+.editorjs-container .ce-block,
+.editorjs-container .ce-block *,
+.editorjs-container .ce-block--focused,
+.editorjs-container .ce-block--focused *,
+.editorjs-container .ce-block--selected,
+.editorjs-container .ce-block--selected *,
+.editorjs-container .ce-block__content,
+.editorjs-container .ce-block__content *,
+.editorjs-container .ce-block--focused .ce-block__content,
+.editorjs-container .ce-block--selected .ce-block__content,
+.editorjs-container .ce-block--hovered .ce-block__content {
+  border: none !important;
   box-shadow: none !important;
+  outline: none !important;
+  background-image: none !important;
+}
+
+/* Keep only text selection highlight */
+.editorjs-container .ce-block--selected .ce-block__content {
+  background: rgba(59, 130, 246, 0.1) !important;
 }
 
 .editorjs-container .ce-paragraph {
   color: #e6e6e6;
   font-size: 16px;
   line-height: 1.6;
+  border: none !important;
 }
 
 .editorjs-container .ce-paragraph::before {
   color: #4b5563 !important;
 }
 
-/* Header styles */
+/* Header styles - NO BORDERS */
 .editorjs-container h1.ce-header,
 .editorjs-container h2.ce-header,
 .editorjs-container h3.ce-header {
   color: #e6e6e6;
   font-weight: 600;
   margin: 1em 0 0.5em;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .editorjs-container h1.ce-header {
@@ -143,20 +167,25 @@ html {
   font-size: 1.25em;
 }
 
-/* List styles */
+/* List styles - NO BORDERS */
 .editorjs-container .cdx-list {
   color: #e6e6e6;
   padding-left: 1.5em;
+  border: none !important;
 }
 
 .editorjs-container .cdx-list__item {
   margin: 0.3em 0;
+  border: none !important;
 }
 
-/* Quote styles */
+/* Quote styles - ONLY left border */
 .editorjs-container .cdx-quote {
-  background: rgba(42, 42, 42, 0.5);
-  border-left: 3px solid #3b82f6;
+  background: rgba(42, 42, 42, 0.3);
+  border-left: 3px solid #3b82f6 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
   padding: 1em;
   margin: 1em 0;
 }
@@ -168,17 +197,15 @@ html {
 /* Code styles */
 .editorjs-container .cdx-code {
   background: #202020;
-  border: 1px solid #2f2f2f;
   border-radius: 8px;
   padding: 1em;
   color: #e6e6e6;
   font-family: 'Monaco', 'Menlo', monospace;
 }
 
-/* Toolbar */
+/* Toolbar - NO BORDERS */
 .editorjs-container .ce-toolbar {
   background: #202020;
-  border: 1px solid #2f2f2f;
   border-radius: 8px;
 }
 
@@ -188,10 +215,12 @@ html {
 
 .editorjs-container .ce-toolbox {
   background: #202020;
+  border: none !important;
 }
 
 .editorjs-container .ce-toolbox__button {
   color: #e6e6e6;
+  border: none !important;
 }
 
 .editorjs-container .ce-toolbox__button:hover {
@@ -199,27 +228,27 @@ html {
   background: #3a3a3a;
 }
 
-/* Inline toolbar */
+/* Inline toolbar - NO BORDERS */
 .editorjs-container .ce-inline-toolbar {
   background: #202020;
-  border: 1px solid #2f2f2f;
   border-radius: 8px;
 }
 
 .editorjs-container .ce-inline-tool {
   color: #e6e6e6;
+  border: none !important;
 }
 
 .editorjs-container .ce-inline-tool:hover {
   background: #2a2a2a;
 }
 
-/* Block hover */
+/* Block hover - subtle background only */
 .editorjs-container .ce-block:hover {
-  background: rgba(42, 42, 42, 0.3);
+  background: rgba(42, 42, 42, 0.2);
 }
 
-/* Plus button - make it more visible */
+/* Plus button - NO BORDERS */
 .editorjs-container .ce-toolbar__plus {
   color: #9b9b9b;
   background: #2a2a2a;
@@ -229,6 +258,8 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .editorjs-container .ce-toolbar__plus:hover {
@@ -236,29 +267,30 @@ html {
   background: #3a3a3a;
 }
 
-/* Settings */
+/* Settings - NO BORDERS */
 .editorjs-container .ce-settings {
   background: #202020;
-  border: 1px solid #2f2f2f;
+  border-radius: 8px;
 }
 
 .editorjs-container .ce-settings__button {
   color: #e6e6e6;
+  border: none !important;
 }
 
 .editorjs-container .ce-settings__button:hover {
   background: #2a2a2a;
 }
 
-/* Conversion toolbar */
+/* Conversion toolbar - NO BORDERS */
 .editorjs-container .ce-conversion-toolbar {
   background: #202020;
-  border: 1px solid #2f2f2f;
   border-radius: 8px;
 }
 
 .editorjs-container .ce-conversion-tool {
   color: #e6e6e6;
+  border: none !important;
 }
 
 .editorjs-container .ce-conversion-tool:hover {
@@ -272,4 +304,12 @@ html {
 
 .editorjs-container .ce-settings-btn:hover {
   color: #ffffff;
+}
+
+/* Remove any pseudo-element borders */
+.editorjs-container .ce-block::before,
+.editorjs-container .ce-block::after,
+.editorjs-container .ce-block__content::before,
+.editorjs-container .ce-block__content::after {
+  display: none !important;
 }
