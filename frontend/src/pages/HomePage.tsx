@@ -179,14 +179,19 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
           </h2>
           <div className="homepage-recent-grid grid grid-cols-1 md:grid-cols-2 gap-3">
             {recentNotes.map((note) => (
-              <button
+              <div
                 key={note.id}
                 data-area-id={`homepage-recent-${note.id}`}
-                onClick={() => onSelectNote(note)}
-                className={`homepage-recent-card group relative flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
+                className={`homepage-recent-card group relative flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all cursor-pointer`}
               >
+                {/* Card click area */}
+                <div 
+                  className="absolute inset-0 z-0"
+                  onClick={() => onSelectNote(note)}
+                />
+                
                 {/* Delete button - appears on hover */}
-                <div className="homepage-recent-card-delete-wrapper absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="homepage-recent-card-delete-wrapper absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <button
                     data-area-id={`homepage-recent-delete-${note.id}`}
                     onClick={(e) => handleDeleteClick(e, note)}
@@ -198,8 +203,8 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
                   </button>
                 </div>
 
-                <FileText size={20} className={c.gray} />
-                <div className="homepage-recent-card-content flex-1 min-w-0 pr-8">
+                <FileText size={20} className={`${c.gray} relative z-0`} />
+                <div className="homepage-recent-card-content flex-1 min-w-0 pr-8 relative z-0">
                   <h3 className={`homepage-recent-card-title font-medium ${c.text} truncate`}>{note.title}</h3>
                   <p className={`homepage-recent-card-preview text-sm ${c.gray} line-clamp-2 mt-1`}>
                     {note.content?.replace(/[#*_`]/g, '').slice(0, 100) || 'No content'}
@@ -208,7 +213,7 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
                     {new Date(note.updated_at).toLocaleDateString()}
                   </p>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </div>
