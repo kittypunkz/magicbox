@@ -86,16 +86,14 @@ html {
   overflow: hidden;
 }
 
-/* EditorJS Dark Mode Styles - NO BORDERS ALLOWED */
+/* ============================================================
+   EDITORJS COMPLETE DARK MODE
+   ============================================================ */
+
+/* Main container */
 .editorjs-container {
   color: #e6e6e6;
   padding: 0 !important;
-}
-
-.editorjs-container * {
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
 }
 
 .editorjs-container .codex-editor {
@@ -107,24 +105,107 @@ html {
   padding: 0 !important;
 }
 
-.editorjs-container .ce-block__content {
-  max-width: 100%;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* Align blocks properly - remove left offset */
+/* ============================================================
+   BLOCKS - No borders, clean look
+   ============================================================ */
 .editorjs-container .ce-block {
   margin: 0 !important;
   padding: 0 !important;
 }
 
-/* Position toolbar closer to content and vertically centered */
+.editorjs-container .ce-block__content {
+  max-width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove ALL borders and backgrounds on blocks */
+.editorjs-container .ce-block,
+.editorjs-container .ce-block *,
+.editorjs-container .ce-block--focused,
+.editorjs-container .ce-block--focused *,
+.editorjs-container .ce-block--selected,
+.editorjs-container .ce-block--selected *,
+.editorjs-container .ce-block__content,
+.editorjs-container .ce-block__content * {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
+/* Remove pseudo-element borders */
+.editorjs-container .ce-block::before,
+.editorjs-container .ce-block::after,
+.editorjs-container .ce-block__content::before,
+.editorjs-container .ce-block__content::after {
+  display: none !important;
+}
+
+/* Text content */
+.editorjs-container .ce-paragraph {
+  color: #e6e6e6;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.editorjs-container .ce-paragraph::before {
+  color: #6b6b6b !important;
+}
+
+/* Headers */
+.editorjs-container h1.ce-header,
+.editorjs-container h2.ce-header,
+.editorjs-container h3.ce-header {
+  color: #e6e6e6;
+  font-weight: 600;
+  margin: 0.8em 0 0.4em;
+}
+
+.editorjs-container h1.ce-header { font-size: 2em; }
+.editorjs-container h2.ce-header { font-size: 1.5em; }
+.editorjs-container h3.ce-header { font-size: 1.25em; }
+
+/* Lists */
+.editorjs-container .cdx-list {
+  color: #e6e6e6;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.editorjs-container .cdx-list__item {
+  margin: 0.2em 0;
+}
+
+/* Quote */
+.editorjs-container .cdx-quote {
+  background: rgba(42, 42, 42, 0.3) !important;
+  border-left: 3px solid #3b82f6 !important;
+  padding: 0.8em 1em;
+  margin: 0.8em 0;
+}
+
+.editorjs-container .cdx-quote__text {
+  color: #e6e6e6;
+}
+
+/* Code */
+.editorjs-container .cdx-code {
+  background: #1a1a1a !important;
+  padding: 1em;
+  margin: 0.8em 0;
+  border-radius: 6px;
+  color: #e6e6e6;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 14px;
+}
+
+/* ============================================================
+   TOOLBAR - Plus and Settings buttons
+   ============================================================ */
 .editorjs-container .ce-toolbar {
-  left: -45px !important;
+  left: -50px !important;
 }
 
 .editorjs-container .ce-toolbar__content {
@@ -133,7 +214,6 @@ html {
   height: 100% !important;
 }
 
-/* Center the plus button and tune button vertically */
 .editorjs-container .ce-toolbar__actions {
   display: flex !important;
   align-items: center !important;
@@ -141,17 +221,7 @@ html {
   height: 100% !important;
 }
 
-.editorjs-container .ce-toolbar__plus,
-.editorjs-container .ce-settings-btn,
-.editorjs-container .ce-toolbar__settings-btn {
-  margin: 0 !important;
-  position: relative !important;
-  top: auto !important;
-  transform: none !important;
-  align-self: center !important;
-}
-
-/* Dark mode styling for toolbar buttons */
+/* Plus button */
 .editorjs-container .ce-toolbar__plus {
   color: #9b9b9b !important;
   background: #2a2a2a !important;
@@ -161,6 +231,9 @@ html {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  position: relative !important;
+  margin: 0 !important;
+  align-self: center !important;
 }
 
 .editorjs-container .ce-toolbar__plus:hover {
@@ -168,7 +241,7 @@ html {
   background: #3a3a3a !important;
 }
 
-/* Settings button (6 dots) - dark mode */
+/* Settings button (6 dots) */
 .editorjs-container .ce-settings-btn,
 .editorjs-container .ce-toolbar__settings-btn {
   color: #9b9b9b !important;
@@ -179,6 +252,9 @@ html {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  position: relative !important;
+  margin: 0 !important;
+  align-self: center !important;
 }
 
 .editorjs-container .ce-settings-btn:hover,
@@ -187,208 +263,188 @@ html {
   background: #3a3a3a !important;
 }
 
-/* Remove extra padding from toolbar wrapper */
-.editorjs-container .ce-toolbar__container {
-  padding: 0 !important;
-}
-
-/* AGGRESSIVELY Remove ALL borders AND backgrounds on ALL states */
-.editorjs-container .ce-block,
-.editorjs-container .ce-block *,
-.editorjs-container .ce-block--focused,
-.editorjs-container .ce-block--focused *,
-.editorjs-container .ce-block--selected,
-.editorjs-container .ce-block--selected *,
-.editorjs-container .ce-block__content,
-.editorjs-container .ce-block__content *,
-.editorjs-container .ce-block--focused .ce-block__content,
-.editorjs-container .ce-block--selected .ce-block__content,
-.editorjs-container .ce-block--hovered .ce-block__content {
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-  background-image: none !important;
-  background-color: transparent !important;
-}
-
-.editorjs-container .ce-paragraph {
-  color: #e6e6e6;
-  font-size: 16px;
-  line-height: 1.6;
-  border: none !important;
-}
-
-.editorjs-container .ce-paragraph::before {
-  color: #4b5563 !important;
-}
-
-/* Header styles - NO BORDERS */
-.editorjs-container h1.ce-header,
-.editorjs-container h2.ce-header,
-.editorjs-container h3.ce-header {
-  color: #e6e6e6;
-  font-weight: 600;
-  margin: 1em 0 0.5em;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-.editorjs-container h1.ce-header {
-  font-size: 2em;
-}
-
-.editorjs-container h2.ce-header {
-  font-size: 1.5em;
-}
-
-.editorjs-container h3.ce-header {
-  font-size: 1.25em;
-}
-
-/* List styles - NO BORDERS */
-.editorjs-container .cdx-list {
-  color: #e6e6e6;
-  padding-left: 1.5em;
-  border: none !important;
-}
-
-.editorjs-container .cdx-list__item {
-  margin: 0.3em 0;
-  border: none !important;
-}
-
-/* Quote styles - ONLY left border */
-.editorjs-container .cdx-quote {
-  background: rgba(42, 42, 42, 0.3);
-  border-left: 3px solid #3b82f6 !important;
-  border-top: none !important;
-  border-right: none !important;
-  border-bottom: none !important;
-  padding: 1em;
-  margin: 1em 0;
-}
-
-.editorjs-container .cdx-quote__text {
-  color: #e6e6e6;
-}
-
-/* Code styles */
-.editorjs-container .cdx-code {
-  background: #202020;
-  border-radius: 8px;
-  padding: 1em;
-  color: #e6e6e6;
-  font-family: 'Monaco', 'Menlo', monospace;
-}
-
-/* Toolbar - NO BORDERS */
-.editorjs-container .ce-toolbar {
-  background: #202020;
-  border-radius: 8px;
-}
-
-.editorjs-container .ce-toolbar__content {
-  max-width: 100%;
-}
-
+/* ============================================================
+   TOOLBOX - Slash command menu (/)
+   ============================================================ */
 .editorjs-container .ce-toolbox {
-  background: #202020;
-  border: none !important;
+  background: #252525 !important;
+  border: 1px solid #333 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .editorjs-container .ce-toolbox__button {
-  color: #e6e6e6;
+  color: #e6e6e6 !important;
+  background: transparent !important;
   border: none !important;
+  padding: 8px 12px !important;
 }
 
-.editorjs-container .ce-toolbox__button:hover {
-  color: #ffffff;
-  background: #3a3a3a;
+.editorjs-container .ce-toolbox__button:hover,
+.editorjs-container .ce-toolbox__button--active {
+  background: #3a3a3a !important;
+  color: #ffffff !important;
 }
 
-/* Inline toolbar - NO BORDERS */
+.editorjs-container .ce-toolbox__button-icon {
+  color: #9b9b9b !important;
+}
+
+.editorjs-container .ce-toolbox__button:hover .ce-toolbox__button-icon,
+.editorjs-container .ce-toolbox__button--active .ce-toolbox__button-icon {
+  color: #ffffff !important;
+}
+
+/* ============================================================
+   INLINE TOOLBAR - Text formatting (bold, italic, etc.)
+   ============================================================ */
 .editorjs-container .ce-inline-toolbar {
-  background: #202020;
-  border-radius: 8px;
+  background: #252525 !important;
+  border: 1px solid #333 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .editorjs-container .ce-inline-tool {
-  color: #e6e6e6;
+  color: #e6e6e6 !important;
+  background: transparent !important;
   border: none !important;
+  width: 34px !important;
+  height: 34px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .editorjs-container .ce-inline-tool:hover {
-  background: #2a2a2a;
+  background: #3a3a3a !important;
 }
 
-/* Block hover - subtle background only */
-.editorjs-container .ce-block:hover {
-  background: rgba(42, 42, 42, 0.2);
+.editorjs-container .ce-inline-tool--active {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
 }
 
-/* Plus button - NO BORDERS */
-.editorjs-container .ce-toolbar__plus {
-  color: #9b9b9b;
-  background: #2a2a2a;
-  border-radius: 4px;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none !important;
-  box-shadow: none !important;
+.editorjs-container .ce-inline-tool svg {
+  fill: currentColor !important;
 }
 
-.editorjs-container .ce-toolbar__plus:hover {
-  color: #ffffff;
-  background: #3a3a3a;
-}
-
-/* Settings - NO BORDERS */
+/* ============================================================
+   SETTINGS MENU - Tune menu (6 dots menu)
+   ============================================================ */
 .editorjs-container .ce-settings {
-  background: #202020;
-  border-radius: 8px;
+  background: #252525 !important;
+  border: 1px solid #333 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .editorjs-container .ce-settings__button {
-  color: #e6e6e6;
+  color: #e6e6e6 !important;
+  background: transparent !important;
   border: none !important;
+  padding: 8px 12px !important;
 }
 
 .editorjs-container .ce-settings__button:hover {
-  background: #2a2a2a;
+  background: #3a3a3a !important;
 }
 
-/* Conversion toolbar - NO BORDERS */
+/* ============================================================
+   CONVERSION TOOLBAR - Change block type
+   ============================================================ */
 .editorjs-container .ce-conversion-toolbar {
-  background: #202020;
-  border-radius: 8px;
+  background: #252525 !important;
+  border: 1px solid #333 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 .editorjs-container .ce-conversion-tool {
-  color: #e6e6e6;
+  color: #e6e6e6 !important;
+  background: transparent !important;
   border: none !important;
+  padding: 8px 12px !important;
 }
 
-.editorjs-container .ce-conversion-tool:hover {
-  background: #2a2a2a;
+.editorjs-container .ce-conversion-tool:hover,
+.editorjs-container .ce-conversion-tool--active {
+  background: #3a3a3a !important;
+  color: #ffffff !important;
 }
 
-/* Tune button */
-.editorjs-container .ce-settings-btn {
-  color: #9b9b9b;
+.editorjs-container .ce-conversion-tool__icon {
+  color: #9b9b9b !important;
 }
 
-.editorjs-container .ce-settings-btn:hover {
-  color: #ffffff;
+.editorjs-container .ce-conversion-tool:hover .ce-conversion-tool__icon,
+.editorjs-container .ce-conversion-tool--active .ce-conversion-tool__icon {
+  color: #ffffff !important;
 }
 
-/* Remove any pseudo-element borders */
-.editorjs-container .ce-block::before,
-.editorjs-container .ce-block::after,
-.editorjs-container .ce-block__content::before,
-.editorjs-container .ce-block__content::after {
-  display: none !important;
+/* ============================================================
+   POPOVER / TOOLTIPS
+   ============================================================ */
+.editorjs-container .ce-popover {
+  background: #252525 !important;
+  border: 1px solid #333 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  color: #e6e6e6 !important;
+}
+
+.editorjs-container .ce-popover__item {
+  color: #e6e6e6 !important;
+  background: transparent !important;
+}
+
+.editorjs-container .ce-popover__item:hover {
+  background: #3a3a3a !important;
+}
+
+.editorjs-container .ce-popover__item-icon {
+  color: #9b9b9b !important;
+}
+
+.editorjs-container .ce-popover__item:hover .ce-popover__item-icon {
+  color: #ffffff !important;
+}
+
+/* ============================================================
+   TOOLTIPS (hover hints)
+   ============================================================ */
+.editorjs-container .ct {
+  background: #333 !important;
+  color: #e6e6e6 !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+}
+
+.editorjs-container .ct::before {
+  border-color: #333 transparent transparent transparent !important;
+}
+
+/* ============================================================
+   PLACEHOLDERS
+   ============================================================ */
+.editorjs-container [contenteditable]:empty::before {
+  color: #6b6b6b !important;
+}
+
+/* ============================================================
+   INPUTS IN POPUPS (if any)
+   ============================================================ */
+.editorjs-container input,
+.editorjs-container textarea {
+  background: #1a1a1a !important;
+  color: #e6e6e6 !important;
+  border: 1px solid #333 !important;
+  border-radius: 4px !important;
+}
+
+.editorjs-container input:focus,
+.editorjs-container textarea:focus {
+  border-color: #3b82f6 !important;
+  outline: none !important;
 }
