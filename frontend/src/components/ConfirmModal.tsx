@@ -57,55 +57,76 @@ export function ConfirmModal({
   const styles = variantStyles[variant];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div 
+      data-area-id="confirm-modal"
+      className="confirm-modal fixed inset-0 z-50 flex items-center justify-center p-4"
+    >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        data-area-id="confirm-modal-backdrop"
+        className="confirm-modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Modal */}
-      <div className={`relative w-full max-w-md ${c.sidebar} border ${c.border} rounded-xl shadow-2xl`}>
+      <div 
+        data-area-id="confirm-modal-container"
+        className={`confirm-modal-container relative w-full max-w-md ${c.sidebar} border ${c.border} rounded-xl shadow-2xl`}
+      >
         {/* Close button */}
         <button
+          data-area-id="confirm-modal-close"
           onClick={onClose}
-          className={`absolute top-4 right-4 p-1 ${c.gray} ${c.hover} rounded-lg transition-colors`}
+          className={`confirm-modal-close-btn absolute top-4 right-4 p-1 ${c.gray} ${c.hover} rounded-lg transition-colors`}
         >
           <X size={18} />
         </button>
 
-        <div className="p-6">
+        <div className="confirm-modal-content p-6">
           {/* Icon */}
-          <div className={`inline-flex items-center justify-center w-12 h-12 ${styles.iconBg} rounded-xl mb-4`}>
+          <div 
+            data-area-id="confirm-modal-icon"
+            className={`confirm-modal-icon inline-flex items-center justify-center w-12 h-12 ${styles.iconBg} rounded-xl mb-4`}
+          >
             <AlertTriangle size={24} className={styles.icon} />
           </div>
 
           {/* Title */}
-          <h3 className={`text-xl font-semibold ${c.text} mb-2`}>
+          <h3 
+            data-area-id="confirm-modal-title"
+            className={`confirm-modal-title text-xl font-semibold ${c.text} mb-2`}
+          >
             {title}
           </h3>
 
           {/* Message */}
-          <p className={`${c.gray} mb-6`}>
+          <p 
+            data-area-id="confirm-modal-message"
+            className={`confirm-modal-message ${c.gray} mb-6`}
+          >
             {message}
           </p>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="confirm-modal-actions flex items-center justify-end gap-3">
+            {cancelText && (
+              <button
+                data-area-id="confirm-modal-cancel"
+                onClick={onClose}
+                disabled={isLoading}
+                className={`confirm-modal-cancel-btn px-4 py-2 text-sm ${c.text} ${c.hover} rounded-lg transition-colors disabled:opacity-50`}
+              >
+                {cancelText}
+              </button>
+            )}
             <button
-              onClick={onClose}
-              disabled={isLoading}
-              className={`px-4 py-2 text-sm ${c.text} ${c.hover} rounded-lg transition-colors disabled:opacity-50`}
-            >
-              {cancelText}
-            </button>
-            <button
+              data-area-id="confirm-modal-confirm"
               onClick={onConfirm}
               disabled={isLoading}
-              className={`flex items-center gap-2 px-4 py-2 text-sm text-white ${styles.button} rounded-lg transition-colors disabled:opacity-50`}
+              className={`confirm-modal-confirm-btn flex items-center gap-2 px-4 py-2 text-sm text-white ${styles.button} rounded-lg transition-colors disabled:opacity-50`}
             >
               {isLoading && (
-                <div className="animate-spin rounded-full h-3 w-3 border-b border-white" />
+                <div className="confirm-modal-loading animate-spin rounded-full h-3 w-3 border-b border-white" />
               )}
               {confirmText}
             </button>

@@ -125,40 +125,50 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
   const afterHash = beforeCursor.match(/#([\w]*)$/);
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="relative">
-        <div className="relative flex items-center">
+    <div 
+      data-area-id="central-input"
+      className="central-input w-full max-w-2xl mx-auto"
+    >
+      <form onSubmit={handleSubmit} className="central-input-form relative">
+        <div className="central-input-wrapper relative flex items-center">
           <FileText size={20} className={`absolute left-4 ${c.gray}`} />
           <input
             ref={inputRef}
+            data-area-id="central-input-field"
             type="text"
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a note... Use #folder to organize"
-            className={`w-full pl-12 pr-12 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
+            className={`central-input-field w-full pl-12 pr-12 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
           />
           {input && (
             <button
+              data-area-id="central-input-clear"
               type="button"
               onClick={() => setInput('')}
-              className={`absolute right-14 p-1 ${c.gray} hover:text-gray-400`}
+              className={`central-input-clear-btn absolute right-14 p-1 ${c.gray} hover:text-gray-400`}
             >
               <X size={18} />
             </button>
           )}
           <button
+            data-area-id="central-input-submit"
             type="submit"
             disabled={!input.trim()}
-            className="absolute right-4 p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-[#4b5563] disabled:cursor-not-allowed transition-colors"
+            className="central-input-submit-btn absolute right-4 p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-[#4b5563] disabled:cursor-not-allowed transition-colors"
           >
             <CornerDownLeft size={18} />
           </button>
         </div>
 
+        {/* Folder Suggestions */}
         {afterHash && showSuggestions && filteredFolders.length > 0 && (
-          <div className={`absolute top-full left-0 right-0 mt-2 ${c.input} border ${c.border} rounded-xl shadow-lg z-50 overflow-hidden`}>
-            <div className={`px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
+          <div 
+            data-area-id="central-input-suggestions"
+            className={`central-input-suggestions absolute top-full left-0 right-0 mt-2 ${c.input} border ${c.border} rounded-xl shadow-lg z-50 overflow-hidden`}
+          >
+            <div className={`central-input-suggestions-header px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
               Select folder (Tab to select, ↑↓ to navigate)
             </div>
             {filteredFolders.map((folder, index) => (
@@ -167,7 +177,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
                 type="button"
                 onClick={() => handleFolderSelect(folder)}
                 onMouseEnter={() => setHighlightedIndex(index)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                className={`central-input-suggestion-item w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
                   index === highlightedIndex ? 'bg-blue-900/20' : c.hover
                 }`}
               >
@@ -185,7 +195,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
         )}
       </form>
 
-      <div className={`flex items-center justify-center gap-4 mt-3 text-xs ${c.gray}`}>
+      <div className={`central-input-hints flex items-center justify-center gap-4 mt-3 text-xs ${c.gray}`}>
         <span className="flex items-center gap-1">
           <Hash size={12} />
           Type # to mention folder

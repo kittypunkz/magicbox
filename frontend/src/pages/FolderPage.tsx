@@ -59,15 +59,21 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      <div 
+        data-area-id="folderpage"
+        className="folderpage flex items-center justify-center h-full"
+      >
+        <div className="folderpage-loading animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
       </div>
     );
   }
 
   if (error || !folder) {
     return (
-      <div className={`flex flex-col items-center justify-center h-full ${c.gray}`}>
+      <div 
+        data-area-id="folderpage"
+        className={`folderpage-error flex flex-col items-center justify-center h-full ${c.gray}`}
+      >
         <Folder size={48} className="mb-4 opacity-30" />
         <p>Folder not found</p>
       </div>
@@ -75,16 +81,33 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
   }
 
   return (
-    <div className={`h-full overflow-y-auto ${c.bg}`}>
+    <div 
+      data-area-id="folderpage"
+      className={`folderpage h-full overflow-y-auto ${c.bg}`}
+    >
       {/* Header */}
-      <div className={`sticky top-0 bg-[#202020] border-b ${c.border} px-8 py-6 z-10`}>
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-900/30 rounded-xl flex items-center justify-center">
+      <div 
+        data-area-id="folderpage-header"
+        className={`folderpage-header sticky top-0 bg-[#202020] border-b ${c.border} px-8 py-6 z-10`}
+      >
+        <div className="folderpage-header-content flex items-center gap-4">
+          <div 
+            data-area-id="folderpage-icon"
+            className="folderpage-icon w-12 h-12 bg-blue-900/30 rounded-xl flex items-center justify-center"
+          >
             <Folder size={24} className="text-blue-500" />
           </div>
-          <div>
-            <h1 className={`text-2xl font-bold ${c.text}`}>{folder.name}</h1>
-            <p className={`text-sm ${c.gray} flex items-center gap-2`}>
+          <div className="folderpage-header-info">
+            <h1 
+              data-area-id="folderpage-name"
+              className={`folderpage-name text-2xl font-bold ${c.text}`}
+            >
+              {folder.name}
+            </h1>
+            <p 
+              data-area-id="folderpage-count"
+              className={`folderpage-count text-sm ${c.gray} flex items-center gap-2`}
+            >
               <FileText size={14} />
               {folder.notes?.length || 0} note{folder.notes?.length !== 1 ? 's' : ''}
             </p>
@@ -93,40 +116,51 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
       </div>
 
       {/* Notes List */}
-      <div className="px-8 py-6">
+      <div className="folderpage-content px-8 py-6">
         {!folder.notes || folder.notes.length === 0 ? (
-          <div className={`flex flex-col items-center justify-center py-16 ${c.gray}`}>
+          <div 
+            data-area-id="folderpage-empty"
+            className={`folderpage-empty flex flex-col items-center justify-center py-16 ${c.gray}`}
+          >
             <FileText size={48} className="mb-4 opacity-30" />
             <p className="text-lg font-medium">No notes in this folder</p>
             <p className="text-sm mt-1">Create a note from the home page</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div 
+            data-area-id="folderpage-notes-grid"
+            className="folderpage-notes-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
             {folder.notes.map((note) => (
               <button
                 key={note.id}
+                data-area-id={`folderpage-note-${note.id}`}
                 onClick={() => onSelectNote(note as Note)}
-                className={`group relative flex flex-col p-5 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
+                className={`folderpage-note-card group relative flex flex-col p-5 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
               >
                 {/* Delete button - appears on hover */}
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="folderpage-note-delete-wrapper absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
+                    data-area-id={`folderpage-note-delete-${note.id}`}
                     onClick={(e) => handleDeleteClick(e, note as Note)}
                     disabled={isDeleting}
-                    className={`p-2 ${c.gray} hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors`}
+                    className={`folderpage-note-delete-btn p-2 ${c.gray} hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors`}
                     title="Delete note"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
 
-                <h3 className={`font-semibold ${c.text} truncate mb-2 pr-8`}>
+                <h3 
+                  data-area-id={`folderpage-note-title-${note.id}`}
+                  className={`folderpage-note-title font-semibold ${c.text} truncate mb-2 pr-8`}
+                >
                   {note.title}
                 </h3>
-                <p className={`text-sm ${c.gray} line-clamp-3 flex-1`}>
+                <p className={`folderpage-note-preview text-sm ${c.gray} line-clamp-3 flex-1`}>
                   Click to open this note
                 </p>
-                <div className={`flex items-center gap-2 mt-4 pt-4 border-t ${c.border} text-xs ${c.gray}`}>
+                <div className={`folderpage-note-meta flex items-center gap-2 mt-4 pt-4 border-t ${c.border} text-xs ${c.gray}`}>
                   <Clock size={12} />
                   {formatDate(note.updated_at)}
                 </div>

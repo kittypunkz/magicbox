@@ -60,9 +60,12 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
   };
 
   return (
-    <div className={`px-4 py-3 border-t ${c.border}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+    <div 
+      data-area-id="sidebar-recent-section"
+      className={`sidebar-recent-section px-4 py-3 border-t ${c.border}`}
+    >
+      <div className="sidebar-recent-header flex items-center justify-between mb-2">
+        <div className="sidebar-recent-title flex items-center gap-2">
           <Clock size={14} className={c.gray} />
           <span className={`text-xs font-semibold ${c.gray} uppercase tracking-wider`}>
             Recent
@@ -70,8 +73,9 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
         </div>
         {recentNotes.length > 0 && (
           <button
+            data-area-id="sidebar-recent-clear"
             onClick={clearRecentNotes}
-            className={`p-1 ${c.gray} hover:text-red-500 transition-colors`}
+            className={`sidebar-recent-clear-btn p-1 ${c.gray} hover:text-red-500 transition-colors`}
             title="Clear recent notes"
           >
             <X size={12} />
@@ -80,23 +84,24 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
       </div>
       
       {recentNotes.length === 0 ? (
-        <p className={`text-xs ${c.gray} italic px-2`}>
+        <p className={`sidebar-recent-empty text-xs ${c.gray} italic px-2`}>
           No recent notes. Click a note to see it here.
         </p>
       ) : (
-        <div className="space-y-1">
+        <div className="sidebar-recent-list space-y-1">
           {recentNotes.map((note) => (
             <button
               key={note.id}
+              data-area-id={`sidebar-recent-${note.id}`}
               onClick={() => handleNoteClick(note)}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md ${c.hover} transition-colors text-left group`}
+              className={`sidebar-recent-item w-full flex items-center gap-2 px-2 py-1.5 rounded-md ${c.hover} transition-colors text-left group`}
             >
               <FileText size={14} className={`${c.gray} shrink-0`} />
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm ${c.text} truncate`}>
+              <div className="sidebar-recent-item-content flex-1 min-w-0">
+                <p className={`sidebar-recent-item-title text-sm ${c.text} truncate`}>
                   {note.title}
                 </p>
-                <p className={`text-[10px] ${c.gray}`}>
+                <p className={`sidebar-recent-item-time text-[10px] ${c.gray}`}>
                   {formatTimeAgo(note.viewedAt)}
                 </p>
               </div>

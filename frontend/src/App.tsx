@@ -87,7 +87,10 @@ function App() {
   };
 
   return (
-    <div className={`flex h-screen ${colors.bg}`}>
+    <div 
+      data-area-id="app-root"
+      className={`app-container flex h-screen ${colors.bg}`}
+    >
       <Sidebar
         folders={folders}
         loading={loading}
@@ -100,9 +103,15 @@ function App() {
         onDeleteFolder={handleDeleteFolder}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div 
+        data-area-id="main-layout"
+        className="main-layout flex-1 flex flex-col min-w-0"
+      >
         {/* Top Bar */}
-        <header className={`flex items-center justify-between px-6 py-3 border-b ${colors.border} bg-[#202020]`}>
+        <header 
+          data-area-id="top-bar"
+          className={`top-bar flex items-center justify-between px-6 py-3 border-b ${colors.border} bg-[#202020]`}
+        >
           <div className="flex items-center gap-2">
             <h2 className={`text-lg font-semibold ${colors.text}`}>
               {view === 'home' && 'Home'}
@@ -119,7 +128,10 @@ function App() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-hidden">
+        <main 
+          data-area-id="main-content"
+          className="main-content flex-1 overflow-hidden"
+        >
           {view === 'home' && (
             <HomePage 
               folders={folders}

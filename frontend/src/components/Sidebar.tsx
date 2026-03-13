@@ -64,11 +64,16 @@ export function Sidebar({
   };
 
   return (
-    <aside className={`w-64 ${c.sidebar} h-screen flex flex-col border-r ${c.border}`}>
+    <aside 
+      data-area-id="sidebar"
+      className={`sidebar w-64 ${c.sidebar} h-screen flex flex-col border-r ${c.border}`}
+    >
+      {/* All Notes Button */}
       <div className="p-4">
         <button
+          data-area-id="sidebar-all-notes"
           onClick={onShowAllNotes}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+          className={`sidebar-all-notes-btn w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
             selectedFolderId === null ? 'bg-[#2a2a2a]' : c.hover
           }`}
         >
@@ -77,23 +82,35 @@ export function Sidebar({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2">
-        <div className="flex items-center justify-between px-3 py-2">
+      {/* Folders Section */}
+      <div 
+        data-area-id="sidebar-folders-section"
+        className="sidebar-folders-section flex-1 overflow-y-auto px-2"
+      >
+        <div 
+          data-area-id="sidebar-folders-header"
+          className="sidebar-folders-header flex items-center justify-between px-3 py-2"
+        >
           <span className={`text-xs font-semibold ${c.gray} uppercase tracking-wider`}>
             Folders
           </span>
           <button
+            data-area-id="sidebar-new-folder-btn"
             onClick={() => setIsCreating(true)}
-            className={`p-1 ${c.hover} rounded transition-colors`}
+            className={`sidebar-new-folder-btn p-1 ${c.hover} rounded transition-colors`}
             title="New folder"
           >
             <Plus size={16} className={c.gray} />
           </button>
         </div>
 
+        {/* New Folder Input */}
         {isCreating && (
           <div className="px-2 py-1">
-            <div className={`flex items-center gap-2 px-2 py-1.5 ${c.input} rounded-md border ${c.border}`}>
+            <div 
+              data-area-id="sidebar-new-folder-input"
+              className={`sidebar-new-folder-input flex items-center gap-2 px-2 py-1.5 ${c.input} rounded-md border ${c.border}`}
+            >
               <Folder size={16} className={c.gray} />
               <input
                 autoFocus
@@ -117,77 +134,93 @@ export function Sidebar({
           </div>
         )}
 
+        {/* Folder List */}
         {loading ? (
-          <div className={`px-4 py-2 text-sm ${c.gray}`}>Loading...</div>
+          <div className={`sidebar-folder-list-loading px-4 py-2 text-sm ${c.gray}`}>Loading...</div>
         ) : (
-          folders.map((folder) => (
-            <div key={folder.id} className="px-2 py-0.5 group">
-              {editingId === folder.id ? (
-                <div className={`flex items-center gap-2 px-2 py-1.5 ${c.input} rounded-md border ${c.border}`}>
-                  <Folder size={16} className={c.gray} />
-                  <input
-                    autoFocus
-                    type="text"
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleUpdate(folder.id);
-                      if (e.key === 'Escape') setEditingId(null);
-                    }}
-                    className={`flex-1 text-sm bg-transparent outline-none ${c.text}`}
-                  />
-                  <button onClick={() => handleUpdate(folder.id)} className="text-green-600">
-                    <Check size={14} />
-                  </button>
-                  <button onClick={() => setEditingId(null)} className="text-[#6b6b6b] hover:text-red-500">
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <div
-                  onClick={() => onSelectFolder(folder.id)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
-                    selectedFolderId === folder.id ? 'bg-[#2a2a2a]' : c.hover
-                  }`}
-                >
-                  <Folder size={16} className={selectedFolderId === folder.id ? 'text-blue-500' : c.gray} />
-                  <span className={`flex-1 text-sm text-left truncate ${c.text}`}>{folder.name}</span>
-                  
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingId(folder.id);
-                        setEditingName(folder.name);
+          <div className="sidebar-folder-list">
+            {folders.map((folder) => (
+              <div 
+                key={folder.id} 
+                data-area-id={`sidebar-folder-${folder.id}`}
+                className="sidebar-folder-item px-2 py-0.5 group"
+              >
+                {editingId === folder.id ? (
+                  <div className={`flex items-center gap-2 px-2 py-1.5 ${c.input} rounded-md border ${c.border}`}>
+                    <Folder size={16} className={c.gray} />
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleUpdate(folder.id);
+                        if (e.key === 'Escape') setEditingId(null);
                       }}
-                      className="p-1 hover:bg-[#3a3a3a] rounded"
-                    >
-                      <Edit2 size={12} className={c.gray} />
+                      className={`flex-1 text-sm bg-transparent outline-none ${c.text}`}
+                    />
+                    <button onClick={() => handleUpdate(folder.id)} className="text-green-600">
+                      <Check size={14} />
                     </button>
-                    {folder.id !== 1 && (
+                    <button onClick={() => setEditingId(null)} className="text-[#6b6b6b] hover:text-red-500">
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => onSelectFolder(folder.id)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
+                      selectedFolderId === folder.id ? 'bg-[#2a2a2a]' : c.hover
+                    }`}
+                  >
+                    <Folder size={16} className={selectedFolderId === folder.id ? 'text-blue-500' : c.gray} />
+                    <span className={`flex-1 text-sm text-left truncate ${c.text}`}>{folder.name}</span>
+                    
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
+                        data-area-id={`sidebar-folder-edit-${folder.id}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDelete(folder.id);
+                          setEditingId(folder.id);
+                          setEditingName(folder.name);
                         }}
-                        className="p-1 hover:bg-[#3a3a3a] rounded"
+                        className="sidebar-folder-edit-btn p-1 hover:bg-[#3a3a3a] rounded"
                       >
-                        <Trash2 size={12} className="text-red-400 hover:text-red-500" />
+                        <Edit2 size={12} className={c.gray} />
                       </button>
-                    )}
+                      {folder.id !== 1 && (
+                        <button
+                          data-area-id={`sidebar-folder-delete-${folder.id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(folder.id);
+                          }}
+                          className="sidebar-folder-delete-btn p-1 hover:bg-[#3a3a3a] rounded"
+                        >
+                          <Trash2 size={12} className="text-red-400 hover:text-red-500" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
       {/* Recent Notes */}
-      {onSelectNote && <RecentNotes onSelectNote={onSelectNote} />}
+      {onSelectNote && (
+        <div data-area-id="sidebar-recent-section" className="sidebar-recent-section">
+          <RecentNotes onSelectNote={onSelectNote} />
+        </div>
+      )}
 
       {/* Version Footer */}
-      <div className={`p-4 border-t ${c.border} ${c.sidebar}`}>
+      <footer 
+        data-area-id="sidebar-footer"
+        className={`sidebar-footer p-4 border-t ${c.border} ${c.sidebar}`}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className={`text-xs font-medium ${c.text}`}>MagicBox</span>
@@ -208,7 +241,7 @@ export function Sidebar({
         <p className={`text-[10px] ${c.gray} mt-1 opacity-70`}>
           {folders.length} folder{folders.length !== 1 ? 's' : ''}
         </p>
-      </div>
+      </footer>
     </aside>
   );
 }

@@ -73,17 +73,27 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      <div 
+        data-area-id="noteeditor"
+        className="noteeditor flex items-center justify-center h-full"
+      >
+        <div className="noteeditor-loading animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
       </div>
     );
   }
 
   if (error || !note) {
     return (
-      <div className={`flex flex-col items-center justify-center h-full ${c.gray}`}>
+      <div 
+        data-area-id="noteeditor"
+        className={`noteeditor-error flex flex-col items-center justify-center h-full ${c.gray}`}
+      >
         <p>Error loading note</p>
-        <button onClick={onBack} className="mt-4 text-blue-500 hover:underline">
+        <button 
+          data-area-id="noteeditor-back-btn"
+          onClick={onBack} 
+          className="noteeditor-back-btn mt-4 text-blue-500 hover:underline"
+        >
           Go back
         </button>
       </div>
@@ -93,42 +103,54 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
   const currentFolder = folders.find((f) => f.id === folderId);
 
   return (
-    <div className={`h-full flex flex-col bg-[#202020]`}>
+    <div 
+      data-area-id="noteeditor"
+      className={`noteeditor h-full flex flex-col bg-[#202020]`}
+    >
       {/* Header */}
-      <div className={`flex items-center gap-4 px-6 py-4 border-b ${c.border}`}>
+      <div 
+        data-area-id="noteeditor-header"
+        className={`noteeditor-header flex items-center gap-4 px-6 py-4 border-b ${c.border}`}
+      >
         <button
+          data-area-id="noteeditor-back-btn"
           onClick={() => {
             save();
             onBack();
           }}
-          className={`p-2 ${c.hover} rounded-lg transition-colors`}
+          className={`noteeditor-back-btn p-2 ${c.hover} rounded-lg transition-colors`}
         >
           <ArrowLeft size={20} className={c.text} />
         </button>
         
-        <div className="flex-1">
+        <div className="noteeditor-title-wrapper flex-1">
           <input
+            data-area-id="noteeditor-title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Note title"
-            className={`w-full text-xl font-semibold bg-transparent outline-none placeholder-[#4b5563] ${c.text}`}
+            className={`noteeditor-title w-full text-xl font-semibold bg-transparent outline-none placeholder-[#4b5563] ${c.text}`}
           />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="noteeditor-actions flex items-center gap-3">
           {/* Folder selector */}
-          <div className="relative">
+          <div className="noteeditor-folder-selector relative">
             <button
+              data-area-id="noteeditor-folder-select"
               onClick={() => setShowFolderSelect(!showFolderSelect)}
-              className={`flex items-center gap-2 px-3 py-1.5 text-sm ${c.gray} ${c.hover} rounded-lg transition-colors`}
+              className={`noteeditor-folder-select-btn flex items-center gap-2 px-3 py-1.5 text-sm ${c.gray} ${c.hover} rounded-lg transition-colors`}
             >
               <Folder size={16} className="text-blue-500" />
               {currentFolder?.name || 'Inbox'}
             </button>
             
             {showFolderSelect && (
-              <div className={`absolute top-full right-0 mt-2 w-48 ${c.input} border ${c.border} rounded-lg shadow-lg z-10`}>
+              <div 
+                data-area-id="noteeditor-folder-dropdown"
+                className={`noteeditor-folder-dropdown absolute top-full right-0 mt-2 w-48 ${c.input} border ${c.border} rounded-lg shadow-lg z-10`}
+              >
                 {folders.map((folder) => (
                   <button
                     key={folder.id}
@@ -136,7 +158,7 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
                       setFolderId(folder.id);
                       setShowFolderSelect(false);
                     }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-sm ${c.hover} first:rounded-t-lg last:rounded-b-lg ${
+                    className={`noteeditor-folder-option w-full flex items-center justify-between px-4 py-2 text-sm ${c.hover} first:rounded-t-lg last:rounded-b-lg ${
                       folder.id === folderId ? 'bg-blue-900/20 text-blue-400' : c.text
                     }`}
                   >
@@ -149,10 +171,13 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
           </div>
 
           {/* Save status */}
-          <div className={`flex items-center gap-2 text-xs ${c.gray}`}>
+          <div 
+            data-area-id="noteeditor-save-status"
+            className={`noteeditor-save-status flex items-center gap-2 text-xs ${c.gray}`}
+          >
             {saving ? (
               <>
-                <div className="animate-spin rounded-full h-3 w-3 border-b border-current" />
+                <div className="noteeditor-saving-spinner animate-spin rounded-full h-3 w-3 border-b border-current" />
                 Saving...
               </>
             ) : lastSaved ? (
@@ -164,9 +189,10 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
           </div>
 
           <button
+            data-area-id="noteeditor-save-btn"
             onClick={save}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
+            className="noteeditor-save-btn flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
           >
             <Save size={16} />
             Save
@@ -175,7 +201,11 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
       </div>
 
       {/* Editor */}
-      <div className="flex-1 overflow-hidden" data-color-mode="dark">
+      <div 
+        data-area-id="noteeditor-content"
+        className="noteeditor-content flex-1 overflow-hidden" 
+        data-color-mode="dark"
+      >
         <MDEditor
           value={content}
           onChange={(val) => setContent(val || '')}
@@ -185,6 +215,7 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
           hideToolbar={false}
           textareaProps={{
             placeholder: 'Start writing...',
+            className: 'noteeditor-textarea',
           }}
         />
       </div>

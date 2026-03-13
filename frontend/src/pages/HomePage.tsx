@@ -116,17 +116,23 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
   const recentNotes = notes.slice(0, 5);
 
   return (
-    <div className={`flex flex-col h-full overflow-y-auto ${c.bg}`}>
+    <div 
+      data-area-id="homepage"
+      className={`homepage flex flex-col h-full overflow-y-auto ${c.bg}`}
+    >
       {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 min-h-[50vh]">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-6 shadow-lg">
+      <div 
+        data-area-id="homepage-hero"
+        className="homepage-hero flex-1 flex flex-col items-center justify-center px-8 py-16 min-h-[50vh]"
+      >
+        <div className="homepage-hero-content text-center mb-12">
+          <div className="homepage-hero-icon inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-6 shadow-lg">
             <Sparkles size={32} className="text-white" />
           </div>
-          <h1 className={`text-4xl font-bold ${c.text} mb-3`}>
+          <h1 className={`homepage-hero-title text-4xl font-bold ${c.text} mb-3`}>
             Welcome to MagicBox
           </h1>
-          <p className={`${c.gray} text-lg`}>
+          <p className={`homepage-hero-subtitle ${c.gray} text-lg`}>
             Capture your thoughts. Organize with folders.
           </p>
         </div>
@@ -136,25 +142,29 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
 
       {/* Recent Notes */}
       {recentNotes.length > 0 && (
-        <div className="max-w-4xl mx-auto w-full px-8 pb-16">
-          <h2 className={`text-lg font-semibold ${c.text} mb-4 flex items-center gap-2`}>
+        <div 
+          data-area-id="homepage-recent-section"
+          className="homepage-recent-section max-w-4xl mx-auto w-full px-8 pb-16"
+        >
+          <h2 className={`homepage-recent-title text-lg font-semibold ${c.text} mb-4 flex items-center gap-2`}>
             <FileText size={20} />
             Recent Notes
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="homepage-recent-grid grid grid-cols-1 md:grid-cols-2 gap-3">
             {recentNotes.map((note) => (
               <button
                 key={note.id}
+                data-area-id={`homepage-recent-${note.id}`}
                 onClick={() => onSelectNote(note)}
-                className={`group flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
+                className={`homepage-recent-card group flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
               >
                 <FileText size={20} className={c.gray} />
-                <div className="flex-1 min-w-0">
-                  <h3 className={`font-medium ${c.text} truncate`}>{note.title}</h3>
-                  <p className={`text-sm ${c.gray} line-clamp-2 mt-1`}>
+                <div className="homepage-recent-card-content flex-1 min-w-0">
+                  <h3 className={`homepage-recent-card-title font-medium ${c.text} truncate`}>{note.title}</h3>
+                  <p className={`homepage-recent-card-preview text-sm ${c.gray} line-clamp-2 mt-1`}>
                     {note.content?.replace(/[#*_`]/g, '').slice(0, 100) || 'No content'}
                   </p>
-                  <p className={`text-xs ${c.gray} mt-2`}>
+                  <p className={`homepage-recent-card-date text-xs ${c.gray} mt-2`}>
                     {new Date(note.updated_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -165,32 +175,45 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
       )}
 
       {/* Quick Stats */}
-      <div className={`border-t ${c.border} bg-[#202020]`}>
-        <div className="max-w-4xl mx-auto px-8 py-6 flex items-center justify-center gap-12">
-          <div className="text-center">
-            <p className={`text-2xl font-bold ${c.text}`}>{notes.length}</p>
-            <p className={`text-sm ${c.gray} flex items-center gap-1 justify-center`}>
+      <div 
+        data-area-id="homepage-stats"
+        className={`homepage-stats border-t ${c.border} bg-[#202020]`}
+      >
+        <div className="homepage-stats-content max-w-4xl mx-auto px-8 py-6 flex items-center justify-center gap-12">
+          <div 
+            data-area-id="homepage-stats-notes"
+            className="homepage-stats-notes text-center"
+          >
+            <p className={`homepage-stats-notes-count text-2xl font-bold ${c.text}`}>{notes.length}</p>
+            <p className={`homepage-stats-notes-label text-sm ${c.gray} flex items-center gap-1 justify-center`}>
               <FileText size={14} />
               Notes
             </p>
           </div>
-          <div className={`w-px h-10 ${c.border}`} />
-          <div className="text-center">
-            <p className={`text-2xl font-bold ${c.text}`}>{folders.length}</p>
-            <p className={`text-sm ${c.gray} flex items-center gap-1 justify-center`}>
+          <div className={`homepage-stats-divider w-px h-10 ${c.border}`} />
+          <div 
+            data-area-id="homepage-stats-folders"
+            className="homepage-stats-folders text-center"
+          >
+            <p className={`homepage-stats-folders-count text-2xl font-bold ${c.text}`}>{folders.length}</p>
+            <p className={`homepage-stats-folders-label text-sm ${c.gray} flex items-center gap-1 justify-center`}>
               <Folder size={14} />
               Folders
             </p>
           </div>
-          <div className={`w-px h-10 ${c.border}`} />
-          <div className="text-center">
-            <p className={`text-2xl font-bold ${hasUnusedNotes ? 'text-red-500' : c.text}`}>
+          <div className={`homepage-stats-divider w-px h-10 ${c.border}`} />
+          <div 
+            data-area-id="homepage-stats-unused"
+            className="homepage-stats-unused text-center"
+          >
+            <p className={`homepage-stats-unused-count text-2xl font-bold ${hasUnusedNotes ? 'text-red-500' : c.text}`}>
               {unusedNotes.length}
             </p>
             <button
+              data-area-id="homepage-stats-unused-btn"
               onClick={() => setShowDeleteUnusedModal(true)}
               disabled={!hasUnusedNotes}
-              className={`text-sm flex items-center gap-1 justify-center transition-colors ${
+              className={`homepage-stats-unused-btn text-sm flex items-center gap-1 justify-center transition-colors ${
                 hasUnusedNotes 
                   ? 'text-red-500 hover:text-red-400' 
                   : c.gray
