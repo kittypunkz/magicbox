@@ -6,6 +6,31 @@ import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
 import type { Note } from '../types';
 
+// Debounce utility with flush
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T & { flush?: () => void } {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  let pending = false;
+  
+  const debouncedFn = (...args: any[]) => {
+    pending = true;
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      pending = false;
+      func(...args);
+    }, wait);
+  };
+  
+  debouncedFn.flush = () => {
+    if (timeout && pending) {
+      clearTimeout(timeout);
+      pending = false;
+      func();
+    }
+  };
+  
+  return debouncedFn as T & { flush?: () => void };
+}
+
 // EditorJS and tools
 import EditorJS from '@editorjs/editorjs';
 import Header from '@editorjs/header';
@@ -176,6 +201,37 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
     }
   }, [note, addRecentNote]);
 
+  // Debounced save function
+  const debouncedSave = useCallback(
+    debounce(async () => {
+      if (!note || !editorRef.current || !isReady) return;
+      
+      try {
+        const data = await editorRef.current.save();
+        const content = blocksToContent(data.blocks);
+        
+        const updates: { title?: string; content?: string; folder_id?: number } = {};
+        if (title !== note.title) updates.title = title;
+        if (content !== note.content) updates.content = content;
+        if (folderId !== note.folder_id) updates.folder_id = folderId;
+        
+        if (Object.keys(updates).length === 0) return;
+        
+        setSaving(true);
+        const updated = await updateNote(updates);
+        setSaving(false);
+        setLastSaved(new Date());
+        if (updated) {
+          onUpdate?.(updated);
+        }
+      } catch (err) {
+        console.error('Save error:', err);
+        setSaving(false);
+      }
+    }, 1000),
+    [note, title, folderId, updateNote, onUpdate, isReady]
+  );
+
   // Initialize EditorJS
   useEffect(() => {
     if (!containerRef.current || editorRef.current || !note) return;
@@ -216,6 +272,10 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
       onReady: () => {
         setIsReady(true);
       },
+      onChange: () => {
+        // Trigger save on every change
+        debouncedSave();
+      },
     });
     
     editorRef.current = editor;
@@ -228,42 +288,33 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
     };
   }, [note?.id]); // Only reinitialize when note ID changes
 
-  // Auto-save
-  const save = useCallback(async () => {
-    if (!note || !editorRef.current || !isReady) return;
+  // Save title/folder changes separately
+  const saveMeta = useCallback(async () => {
+    if (!note) return;
     
-    try {
-      const data = await editorRef.current.save();
-      const content = blocksToContent(data.blocks);
-      
-      const updates: { title?: string; content?: string; folder_id?: number } = {};
-      if (title !== note.title) updates.title = title;
-      if (content !== note.content) updates.content = content;
-      if (folderId !== note.folder_id) updates.folder_id = folderId;
-      
-      if (Object.keys(updates).length === 0) return;
-      
-      setSaving(true);
-      const updated = await updateNote(updates);
-      setSaving(false);
-      setLastSaved(new Date());
-      if (updated) {
-        onUpdate?.(updated);
-      }
-    } catch (err) {
-      console.error('Save error:', err);
-      setSaving(false);
+    const updates: { title?: string; folder_id?: number } = {};
+    if (title !== note.title) updates.title = title;
+    if (folderId !== note.folder_id) updates.folder_id = folderId;
+    
+    if (Object.keys(updates).length === 0) return;
+    
+    setSaving(true);
+    const updated = await updateNote(updates);
+    setSaving(false);
+    setLastSaved(new Date());
+    if (updated) {
+      onUpdate?.(updated);
     }
-  }, [note, title, folderId, updateNote, onUpdate, isReady]);
+  }, [note, title, folderId, updateNote, onUpdate]);
 
-  // Debounced auto-save
+  // Auto-save title/folder changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      save();
-    }, 1500);
+      saveMeta();
+    }, 1000);
     
     return () => clearTimeout(timer);
-  }, [title, folderId, save]);
+  }, [title, folderId, saveMeta]);
 
   // Handle delete
   const handleDelete = async () => {
@@ -299,7 +350,11 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
       <div className={`flex items-center justify-between px-6 py-3 border-b ${c.border}`}>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => { save(); onBack(); }}
+            onClick={() => { 
+              // Force save before leaving
+              debouncedSave.flush?.(); 
+              onBack(); 
+            }}
             className={`p-2 ${c.hover} rounded-lg transition-colors ${c.text}`}
           >
             <ArrowLeft size={20} />
