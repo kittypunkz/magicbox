@@ -132,19 +132,19 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
             className="folderpage-notes-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {folder.notes.map((note) => (
-              <button
+              <div
                 key={note.id}
                 data-area-id={`folderpage-note-${note.id}`}
                 onClick={() => onSelectNote(note as Note)}
-                className={`folderpage-note-card group relative flex flex-col p-5 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
+                className={`folderpage-note-card group relative flex flex-col p-5 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all cursor-pointer`}
               >
                 {/* Delete button - appears on hover */}
-                <div className="folderpage-note-delete-wrapper absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="folderpage-note-delete-wrapper absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <button
                     data-area-id={`folderpage-note-delete-${note.id}`}
                     onClick={(e) => handleDeleteClick(e, note as Note)}
                     disabled={isDeleting}
-                    className={`folderpage-note-delete-btn p-2 ${c.gray} hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors`}
+                    className={`folderpage-note-delete-btn p-2 ${c.gray} hover:text-red-500 hover:bg-red-500/20 rounded-lg transition-colors`}
                     title="Delete note"
                   >
                     <Trash2 size={16} />
@@ -164,7 +164,7 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
                   <Clock size={12} />
                   {formatDate(note.updated_at)}
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}

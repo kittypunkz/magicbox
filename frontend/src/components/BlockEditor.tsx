@@ -6,39 +6,6 @@ import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
 import type { Note } from '../types';
 
-// Debounce utility with flush
-function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T & { flush?: () => void } {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  let pending = false;
-  
-  const debouncedFn = (...args: any[]) => {
-    pending = true;
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      pending = false;
-      func(...args);
-    }, wait);
-  };
-  
-  debouncedFn.flush = () => {
-    if (timeout && pending) {
-      clearTimeout(timeout);
-      pending = false;
-      func();
-    }
-  };
-  
-  return debouncedFn as T & { flush?: () => void };
-}
-
-// EditorJS and tools
-import EditorJS from '@editorjs/editorjs';
-import Header from '@editorjs/header';
-import List from '@editorjs/list';
-import Quote from '@editorjs/quote';
-import Code from '@editorjs/code';
-import Paragraph from '@editorjs/paragraph';
-
 const c = {
   bg: 'bg-[#191919]',
   sidebar: 'bg-[#202020]',
@@ -47,6 +14,7 @@ const c = {
   gray: 'text-[#6b6b6b]',
   border: 'border-[#2f2f2f]',
   placeholder: 'placeholder-[#4b5563]',
+  input: 'bg-[#2a2a2a]',
 };
 
 interface BlockEditorProps {
@@ -56,125 +24,6 @@ interface BlockEditorProps {
   onDelete?: (id: number) => void;
 }
 
-// Convert markdown-like content to EditorJS blocks
-function contentToBlocks(content: string): any[] {
-  if (!content.trim()) {
-    return [{ type: 'paragraph', data: { text: '' } }];
-  }
-  
-  const lines = content.split('\n');
-  const blocks: any[] = [];
-  let currentList: any = null;
-  
-  for (const line of lines) {
-    const trimmed = line.trim();
-    
-    if (!trimmed) {
-      // Empty line ends current list
-      if (currentList) {
-        blocks.push(currentList);
-        currentList = null;
-      }
-      continue;
-    }
-    
-    // Heading
-    if (trimmed.startsWith('# ')) {
-      if (currentList) {
-        blocks.push(currentList);
-        currentList = null;
-      }
-      blocks.push({ type: 'header', data: { text: trimmed.replace('# ', ''), level: 1 } });
-    }
-    else if (trimmed.startsWith('## ')) {
-      if (currentList) {
-        blocks.push(currentList);
-        currentList = null;
-      }
-      blocks.push({ type: 'header', data: { text: trimmed.replace('## ', ''), level: 2 } });
-    }
-    else if (trimmed.startsWith('### ')) {
-      if (currentList) {
-        blocks.push(currentList);
-        currentList = null;
-      }
-      blocks.push({ type: 'header', data: { text: trimmed.replace('### ', ''), level: 3 } });
-    }
-    // Quote
-    else if (trimmed.startsWith('> ')) {
-      if (currentList) {
-        blocks.push(currentList);
-        currentList = null;
-      }
-      blocks.push({ type: 'quote', data: { text: trimmed.replace('> ', ''), alignment: 'left' } });
-    }
-    // Code
-    else if (trimmed.startsWith('```')) {
-      if (currentList) {
-        blocks.push(currentList);
-        currentList = null;
-      }
-      // Simple code block handling
-      blocks.push({ type: 'code', data: { code: trimmed.replace('```', '') } });
-    }
-    // Bullet list
-    else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-      if (!currentList || currentList.type !== 'list' || currentList.data.style !== 'unordered') {
-        if (currentList) blocks.push(currentList);
-        currentList = { type: 'list', data: { style: 'unordered', items: [] } };
-      }
-      currentList.data.items.push(trimmed.replace(/^[-*] /, ''));
-    }
-    // Numbered list
-    else if (/^\d+\./.test(trimmed)) {
-      if (!currentList || currentList.type !== 'list' || currentList.data.style !== 'ordered') {
-        if (currentList) blocks.push(currentList);
-        currentList = { type: 'list', data: { style: 'ordered', items: [] } };
-      }
-      currentList.data.items.push(trimmed.replace(/^\d+\.\s*/, ''));
-    }
-    // Paragraph
-    else {
-      if (currentList) {
-        blocks.push(currentList);
-        currentList = null;
-      }
-      blocks.push({ type: 'paragraph', data: { text: trimmed } });
-    }
-  }
-  
-  // Don't forget last list
-  if (currentList) {
-    blocks.push(currentList);
-  }
-  
-  return blocks.length > 0 ? blocks : [{ type: 'paragraph', data: { text: '' } }];
-}
-
-// Convert EditorJS blocks to markdown-like content
-function blocksToContent(blocks: any[]): string {
-  return blocks.map(block => {
-    switch (block.type) {
-      case 'header':
-        return '#'.repeat(block.data.level) + ' ' + block.data.text;
-      case 'paragraph':
-        return block.data.text;
-      case 'list':
-        if (block.data.style === 'unordered') {
-          return block.data.items.map((item: string) => `- ${item}`).join('\n');
-        } else {
-          return block.data.items.map((item: string, i: number) => `${i + 1}. ${item}`).join('\n');
-        }
-      case 'quote':
-        return '> ' + block.data.text;
-      case 'code':
-        return '```\n' + block.data.code + '\n```';
-      default:
-        return '';
-    }
-  }).join('\n\n');
-}
-
 export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorProps) {
   const { note, loading, error, updateNote } = useNote(noteId);
   const { folders } = useFolders();
@@ -182,145 +31,127 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
   
   const [title, setTitle] = useState('');
   const [folderId, setFolderId] = useState<number>(1);
+  const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showFolderMenu, setShowFolderMenu] = useState(false);
   const [showNoteMenu, setShowNoteMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isReady, setIsReady] = useState(false);
   
-  const editorRef = useRef<EditorJS | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load note data
+  // Load note data - only when note ID changes, not on every update
   useEffect(() => {
     if (note) {
       setTitle(note.title);
       setFolderId(note.folder_id);
+      setContent(note.content || '');
       addRecentNote(note);
     }
-  }, [note, addRecentNote]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note?.id]);  // Only re-run when note ID changes
 
-  // Debounced save function
-  const debouncedSave = useCallback(
-    debounce(async () => {
-      if (!note || !editorRef.current || !isReady) return;
-      
-      try {
-        const data = await editorRef.current.save();
-        const content = blocksToContent(data.blocks);
-        
-        const updates: { title?: string; content?: string; folder_id?: number } = {};
-        if (title !== note.title) updates.title = title;
-        if (content !== note.content) updates.content = content;
-        if (folderId !== note.folder_id) updates.folder_id = folderId;
-        
-        if (Object.keys(updates).length === 0) return;
-        
-        setSaving(true);
-        const updated = await updateNote(updates);
-        setSaving(false);
-        setLastSaved(new Date());
-        if (updated) {
-          onUpdate?.(updated);
-        }
-      } catch (err) {
-        console.error('Save error:', err);
-        setSaving(false);
-      }
-    }, 1000),
-    [note, title, folderId, updateNote, onUpdate, isReady]
-  );
-
-  // Initialize EditorJS
+  // Auto-resize textarea
   useEffect(() => {
-    if (!containerRef.current || editorRef.current || !note) return;
-    
-    const blocks = contentToBlocks(note.content || '');
-    
-    const editor = new EditorJS({
-      holder: containerRef.current,
-      tools: {
-        header: {
-          class: Header as any,
-          config: {
-            levels: [1, 2, 3],
-            defaultLevel: 2,
-          },
-        },
-        list: {
-          class: List as any,
-          inlineToolbar: true,
-        },
-        quote: {
-          class: Quote as any,
-          inlineToolbar: true,
-        },
-        code: {
-          class: Code as any,
-        },
-        paragraph: {
-          class: Paragraph as any,
-          inlineToolbar: true,
-        },
-      },
-      data: {
-        blocks,
-      },
-      placeholder: 'Type / for commands or start writing...',
-      autofocus: false,
-      onReady: () => {
-        setIsReady(true);
-      },
-      onChange: () => {
-        // Trigger save on every change
-        debouncedSave();
-      },
-    });
-    
-    editorRef.current = editor;
-    
-    return () => {
-      if (editorRef.current) {
-        editorRef.current.destroy();
-        editorRef.current = null;
-      }
-    };
-  }, [note?.id]); // Only reinitialize when note ID changes
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [content]);
 
-  // Save title/folder changes separately
-  const saveMeta = useCallback(async () => {
+  // Save function
+  const saveNote = useCallback(async () => {
     if (!note) return;
     
-    const updates: { title?: string; folder_id?: number } = {};
+    const updates: { title?: string; content?: string; folder_id?: number } = {};
     if (title !== note.title) updates.title = title;
+    if (content !== note.content) updates.content = content;
     if (folderId !== note.folder_id) updates.folder_id = folderId;
     
     if (Object.keys(updates).length === 0) return;
     
     setSaving(true);
-    const updated = await updateNote(updates);
-    setSaving(false);
-    setLastSaved(new Date());
-    if (updated) {
-      onUpdate?.(updated);
+    try {
+      const updated = await updateNote(updates);
+      setLastSaved(new Date());
+      if (updated) {
+        onUpdate?.(updated);
+      }
+    } catch (err) {
+      console.error('Save error:', err);
+    } finally {
+      setSaving(false);
     }
-  }, [note, title, folderId, updateNote, onUpdate]);
+  }, [note, title, content, folderId, updateNote, onUpdate]);
 
-  // Auto-save title/folder changes
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      saveMeta();
-    }, 1000);
+  // Debounced save
+  const triggerSave = useCallback(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      saveNote();
+    }, 800);
+  }, [saveNote]);
+
+  // Handle content change
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
+    triggerSave();
+  };
+
+  // Handle checkbox toggle on click
+  const handleTextareaClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
+    const textarea = e.currentTarget;
+    const cursorPosition = textarea.selectionStart;
+    const text = textarea.value;
     
-    return () => clearTimeout(timer);
-  }, [title, folderId, saveMeta]);
+    // Find the line where cursor is
+    const lineStart = text.lastIndexOf('\n', cursorPosition - 1) + 1;
+    const lineEnd = text.indexOf('\n', cursorPosition);
+    const line = text.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
+    
+    // Check if line starts with [ ] or [x]
+    const checkboxMatch = line.match(/^(\[ \]|\[x\])\s/);
+    if (checkboxMatch) {
+      // Calculate position of the bracket in the line
+      const bracketPos = lineStart + checkboxMatch.index! + 1;
+      // Check if click was near the checkbox (within brackets)
+      if (Math.abs(cursorPosition - bracketPos) <= 2) {
+        e.preventDefault();
+        const isChecked = checkboxMatch[1] === '[x]';
+        const newLine = line.replace(/^(\[ \]|\[x\])/, isChecked ? '[ ]' : '[x]');
+        const newContent = text.slice(0, lineStart) + newLine + text.slice(lineEnd === -1 ? text.length : lineEnd);
+        setContent(newContent);
+        triggerSave();
+      }
+    }
+  };
+
+  // Handle key commands
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Ctrl/Cmd + S to save
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      saveNote();
+    }
+  };
 
   // Handle delete
   const handleDelete = async () => {
     if (!note) return;
     await onDelete?.(note.id);
     setShowDeleteModal(false);
+    onBack();
+  };
+
+  // Force save before leaving
+  const handleBack = async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    await saveNote();
     onBack();
   };
 
@@ -350,12 +181,9 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
       <div className={`flex items-center justify-between px-6 py-3 border-b ${c.border}`}>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => { 
-              // Force save before leaving
-              debouncedSave.flush?.(); 
-              onBack(); 
-            }}
+            onClick={handleBack}
             className={`p-2 ${c.hover} rounded-lg transition-colors ${c.text}`}
+            title="Back"
           >
             <ArrowLeft size={20} />
           </button>
@@ -419,20 +247,23 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => { setTitle(e.target.value); triggerSave(); }}
             placeholder="Note title"
             className={`w-full text-4xl font-bold bg-transparent outline-none ${c.placeholder} ${c.text} mb-6`}
           />
           
-          {/* EditorJS Container */}
-          <div 
-            ref={containerRef}
-            className="editorjs-container min-h-[400px]"
-            style={{ 
-              '--editor-bg': '#191919',
-              '--editor-text': '#e6e6e6',
-              '--editor-border': '#2f2f2f',
-            } as React.CSSProperties}
+          {/* Textarea */}
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={handleContentChange}
+            onClick={handleTextareaClick}
+            onKeyDown={handleKeyDown}
+            placeholder="Start typing...
+
+Tip: Type [ ] for checkbox, [x] for checked"
+            className={`w-full min-h-[400px] bg-transparent outline-none resize-none ${c.text} ${c.placeholder} font-mono text-base leading-relaxed`}
+            spellCheck={false}
           />
         </div>
       </div>
