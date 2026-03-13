@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft, MoreVertical, Trash2, Image as ImageIcon, Link as LinkIcon } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
@@ -7,7 +7,7 @@ import { ConfirmModal } from './ConfirmModal';
 import type { Note } from '../types';
 
 // BlockNote imports
-import { useCreateBlockNote, BlockNoteViewRaw as BlockNoteView } from '@blocknote/react';
+import { useCreateBlockNote } from '@blocknote/react';
 import '@blocknote/react/style.css';
 import '@blocknote/core/fonts/inter.css';
 
@@ -30,36 +30,6 @@ interface BlockNoteEditorProps {
   onDelete?: (id: number) => void;
 }
 
-// Custom theme for BlockNote dark mode
-const customTheme = {
-  colors: {
-    editor: {
-      text: '#e6e6e6',
-      background: '#191919',
-    },
-    menu: {
-      text: '#e6e6e6',
-      background: '#202020',
-    },
-    toolbar: {
-      text: '#e6e6e6',
-      background: '#202020',
-    },
-    border: '#2f2f2f',
-    sideMenu: '#6b6b6b',
-    highlights: {
-      text: {
-        color: '#e6e6e6',
-      },
-      background: {
-        color: '#2a2a2a',
-      },
-    },
-  },
-  borderRadius: 8,
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-};
-
 export function BlockNoteEditor({ noteId, onBack, onUpdate, onDelete }: BlockNoteEditorProps) {
   const { note, loading, error, updateNote } = useNote(noteId);
   const { folders } = useFolders();
@@ -72,93 +42,91 @@ export function BlockNoteEditor({ noteId, onBack, onUpdate, onDelete }: BlockNot
   const [showFolderMenu, setShowFolderMenu] = useState(false);
   const [showNoteMenu, setShowNoteMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [editorError, setEditorError] = useState<string | null>(null);
+
+  // Create initial blocks from note content
+  const initialBlocks = useMemo(() => {
+    if (!note?.content) {
+      return [{ type: 'paragraph', content: '' }];
+    }
+    
+    const content = note.content;
+    const lines = content.split('\n');
+    const blocks = lines.map((line: string) => {
+      if (line.startsWith('# ')) {
+        return { type: 'heading', props: { level: 1 }, content: line.replace('# ', '') };
+      } else if (line.startsWith('## ')) {
+        return { type: 'heading', props: { level: 2 }, content: line.replace('## ', '') };
+      } else if (line.startsWith('### ')) {
+        return { type: 'heading', props: { level: 3 }, content: line.replace('### ', '') };
+      } else if (line.startsWith('- ') || line.startsWith('* ')) {
+        return { type: 'bulletListItem', content: line.replace(/^[-*] /, '') };
+      } else if (line.match(/^\d+\./)) {
+        return { type: 'numberedListItem', content: line.replace(/^\d+\.\s*/, '') };
+      } else if (line.startsWith('> ')) {
+        return { type: 'quote', content: line.replace('> ', '') };
+      } else {
+        return { type: 'paragraph', content: line };
+      }
+    }).filter((b: any) => b.content || b.type !== 'paragraph');
+    
+    return blocks.length > 0 ? blocks : [{ type: 'paragraph', content: '' }];
+  }, [note?.content]);
 
   // Create BlockNote editor
   const editor = useCreateBlockNote({
-    initialContent: [
-      {
-        type: 'paragraph',
-        content: '',
-      },
-    ],
+    initialContent: initialBlocks as any,
   });
 
-  // Load note data
+  // Load note metadata
   useEffect(() => {
-    if (note && editor) {
+    if (note) {
       setTitle(note.title);
       setFolderId(note.folder_id);
       addRecentNote(note);
-      
-      // Parse content into blocks
-      try {
-        const content = note.content || '';
-        if (content.trim()) {
-          // Convert plain text to blocks (simple conversion)
-          const lines = content.split('\n');
-          const blocks = lines.map((line: string) => {
-            if (line.startsWith('# ')) {
-              return { type: 'heading', props: { level: 1 }, content: line.replace('# ', '') };
-            } else if (line.startsWith('## ')) {
-              return { type: 'heading', props: { level: 2 }, content: line.replace('## ', '') };
-            } else if (line.startsWith('### ')) {
-              return { type: 'heading', props: { level: 3 }, content: line.replace('### ', '') };
-            } else if (line.startsWith('- ') || line.startsWith('* ')) {
-              return { type: 'bulletListItem', content: line.replace(/^[-*] /, '') };
-            } else if (line.match(/^\d+\./)) {
-              return { type: 'numberedListItem', content: line.replace(/^\d+\.\s*/, '') };
-            } else if (line.startsWith('> ')) {
-              return { type: 'quote', content: line.replace('> ', '') };
-            } else {
-              return { type: 'paragraph', content: line };
-            }
-          }).filter((b: any) => b.content || b.type !== 'paragraph');
-          
-          if (blocks.length > 0) {
-            editor.replaceBlocks(editor.document, blocks as any);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to parse content:', e);
-      }
     }
-  }, [note, editor, addRecentNote]);
+  }, [note, addRecentNote]);
 
   // Auto-save
   const save = useCallback(async () => {
     if (!note || !editor) return;
     
-    // Get content as markdown/plain text
-    const blocks = editor.document;
-    const content = blocks.map((block: any) => {
-      const text = block.content?.map((c: any) => c.text || '').join('') || '';
-      switch (block.type) {
-        case 'heading':
-          return `${'#'.repeat(block.props?.level || 1)} ${text}`;
-        case 'bulletListItem':
-          return `- ${text}`;
-        case 'numberedListItem':
-          return `1. ${text}`;
-        case 'quote':
-          return `> ${text}`;
-        default:
-          return text;
+    try {
+      // Get content from blocks
+      const blocks = editor.document;
+      const content = blocks.map((block: any) => {
+        const text = block.content?.map((c: any) => c.text || '').join('') || '';
+        switch (block.type) {
+          case 'heading':
+            return `${'#'.repeat(block.props?.level || 1)} ${text}`;
+          case 'bulletListItem':
+            return `- ${text}`;
+          case 'numberedListItem':
+            return `1. ${text}`;
+          case 'quote':
+            return `> ${text}`;
+          default:
+            return text;
+        }
+      }).join('\n');
+      
+      const updates: { title?: string; content?: string; folder_id?: number } = {};
+      if (title !== note.title) updates.title = title;
+      if (content !== note.content) updates.content = content;
+      if (folderId !== note.folder_id) updates.folder_id = folderId;
+      
+      if (Object.keys(updates).length === 0) return;
+      
+      setSaving(true);
+      const updated = await updateNote(updates);
+      setSaving(false);
+      setLastSaved(new Date());
+      if (updated) {
+        onUpdate?.(updated);
       }
-    }).join('\n');
-    
-    const updates: { title?: string; content?: string; folder_id?: number } = {};
-    if (title !== note.title) updates.title = title;
-    if (content !== note.content) updates.content = content;
-    if (folderId !== note.folder_id) updates.folder_id = folderId;
-    
-    if (Object.keys(updates).length === 0) return;
-    
-    setSaving(true);
-    const updated = await updateNote(updates);
-    setSaving(false);
-    setLastSaved(new Date());
-    if (updated) {
-      onUpdate?.(updated);
+    } catch (err) {
+      console.error('Save error:', err);
+      setSaving(false);
     }
   }, [note, editor, title, folderId, updateNote, onUpdate]);
 
@@ -169,7 +137,7 @@ export function BlockNoteEditor({ noteId, onBack, onUpdate, onDelete }: BlockNot
     }, 1500);
     
     return () => clearTimeout(timer);
-  }, [title, folderId, editor?.document, save]);
+  }, [title, folderId, save]);
 
   // Handle delete
   const handleDelete = async () => {
@@ -200,6 +168,24 @@ export function BlockNoteEditor({ noteId, onBack, onUpdate, onDelete }: BlockNot
         className={`noteeditor-error flex flex-col items-center justify-center h-full ${c.gray} bg-[#191919]`}
       >
         <p>Error loading note</p>
+        <button 
+          data-area-id="noteeditor-back-btn"
+          onClick={onBack} 
+          className="noteeditor-back-btn mt-4 text-blue-500 hover:underline"
+        >
+          Go back
+        </button>
+      </div>
+    );
+  }
+
+  if (editorError) {
+    return (
+      <div 
+        data-area-id="noteeditor"
+        className="noteeditor-error flex flex-col items-center justify-center h-full text-red-400 bg-[#191919]"
+      >
+        <p>Editor Error: {editorError}</p>
         <button 
           data-area-id="noteeditor-back-btn"
           onClick={onBack} 
@@ -284,11 +270,16 @@ export function BlockNoteEditor({ noteId, onBack, onUpdate, onDelete }: BlockNot
             onClick={() => {
               const url = prompt('Enter image URL:');
               if (url && editor) {
-                editor.insertBlocks(
-                  [{ type: 'image', props: { url } }],
-                  editor.getTextCursorPosition().block,
-                  'after'
-                );
+                try {
+                  editor.insertBlocks(
+                    [{ type: 'image', props: { url } }],
+                    editor.getTextCursorPosition().block,
+                    'after'
+                  );
+                } catch (err) {
+                  console.error('Insert image error:', err);
+                  alert('Failed to insert image. Please try again.');
+                }
               }
             }}
             className={`p-2 ${c.hover} rounded-lg transition-colors ${c.gray}`}
@@ -302,12 +293,15 @@ export function BlockNoteEditor({ noteId, onBack, onUpdate, onDelete }: BlockNot
             onClick={() => {
               const url = prompt('Enter URL to embed:');
               if (url && editor) {
-                // Insert as paragraph
-                editor.insertBlocks(
-                  [{ type: 'paragraph', content: url }],
-                  editor.getTextCursorPosition().block,
-                  'after'
-                );
+                try {
+                  editor.insertBlocks(
+                    [{ type: 'paragraph', content: url }],
+                    editor.getTextCursorPosition().block,
+                    'after'
+                  );
+                } catch (err) {
+                  console.error('Insert link error:', err);
+                }
               }
             }}
             className={`p-2 ${c.hover} rounded-lg transition-colors ${c.gray}`}
@@ -366,13 +360,25 @@ export function BlockNoteEditor({ noteId, onBack, onUpdate, onDelete }: BlockNot
             className={`noteeditor-title w-full text-4xl font-bold bg-transparent outline-none ${c.placeholder} ${c.text} mb-6`}
           />
           
-          {/* BlockNote Editor */}
-          <div className="bn-container">
+          {/* BlockNote Editor - Use the editor.mount property */}
+          <div className="bn-container min-h-[400px]">
             {editor && (
-              <BlockNoteView
-                editor={editor}
-                theme={customTheme as any}
-                className="min-h-[400px]"
+              <div 
+                ref={(el) => {
+                  if (el && editor) {
+                    try {
+                      editor.mount(el);
+                    } catch (err) {
+                      console.error('Mount error:', err);
+                      setEditorError('Failed to initialize editor');
+                    }
+                  }
+                }}
+                className="bn-editor"
+                style={{ 
+                  minHeight: '400px',
+                  outline: 'none'
+                }}
               />
             )}
           </div>
