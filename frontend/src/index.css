@@ -122,9 +122,34 @@ html {
   padding: 0 !important;
 }
 
-/* Position toolbar closer to content */
+/* Position toolbar closer to content and vertically centered */
 .editorjs-container .ce-toolbar {
-  left: -40px !important;
+  left: -45px !important;
+}
+
+.editorjs-container .ce-toolbar__content {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
+/* Center the plus button and tune button vertically */
+.editorjs-container .ce-toolbar__actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.editorjs-container .ce-toolbar__plus,
+.editorjs-container .ce-settings-btn {
+  margin: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+/* Remove extra padding from toolbar wrapper */
+.editorjs-container .ce-toolbar__container {
+  padding: 0 !important;
 }
 
 /* AGGRESSIVELY Remove ALL borders AND backgrounds on ALL states */
