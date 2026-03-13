@@ -127,7 +127,7 @@ html {
   left: -40px !important;
 }
 
-/* AGGRESSIVELY Remove ALL borders on ALL states */
+/* AGGRESSIVELY Remove ALL borders AND backgrounds on ALL states */
 .editorjs-container .ce-block,
 .editorjs-container .ce-block *,
 .editorjs-container .ce-block--focused,
@@ -143,11 +143,7 @@ html {
   box-shadow: none !important;
   outline: none !important;
   background-image: none !important;
-}
-
-/* Keep only text selection highlight */
-.editorjs-container .ce-block--selected .ce-block__content {
-  background: rgba(59, 130, 246, 0.1) !important;
+  background-color: transparent !important;
 }
 
 .editorjs-container .ce-paragraph {
