@@ -50,13 +50,14 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
   const unusedNotes = useMemo(() => getUnusedNotes(notes), [notes]);
   const hasUnusedNotes = unusedNotes.length > 0;
 
-  const handleCreateNote = async (title: string, folderId: number) => {
+  const handleCreateNote = async (title: string, content: string, folderId: number) => {
     if (creating) return;
     
     setCreating(true);
     try {
+      // Check if folder exists, if not create it
       let targetFolderId = folderId;
-      const hashTag = title.match(/#(\w+)/);
+      const hashTag = content.match(/#(\w+)/);
       
       if (hashTag) {
         const folderName = hashTag[1];
@@ -72,18 +73,16 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
           });
           const newFolder = await response.json();
           targetFolderId = newFolder.id;
-          // Instantly add to folders list without waiting for refetch
           addFolderLocally(newFolder);
         } else {
           targetFolderId = existingFolder.id;
         }
       }
 
-      const cleanTitle = title.replace(/#\w+/g, '').trim() || 'Untitled';
       const note = await notesAPI.create({
         folder_id: targetFolderId,
-        title: cleanTitle,
-        content: '',
+        title: title,
+        content: content.replace(/#\w+/g, '').trim(), // Remove hashtags from content
       });
 
       refetchNotes();

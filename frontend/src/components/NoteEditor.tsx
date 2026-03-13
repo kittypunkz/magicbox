@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Save, Clock, Folder, Check } from 'lucide-react';
-import MDEditor from '@uiw/react-md-editor';
+import { ArrowLeft, MoreVertical, Trash2 } from 'lucide-react';
+import TextareaAutosize from 'react-textarea-autosize';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
+import { ConfirmModal } from './ConfirmModal';
 import type { Note } from '../types';
 
-// Dark mode colors
+// Dark mode colors - Obsidian style
 const c = {
   bg: 'bg-[#191919]',
   sidebar: 'bg-[#202020]',
@@ -14,16 +15,18 @@ const c = {
   text: 'text-[#e6e6e6]',
   gray: 'text-[#6b6b6b]',
   border: 'border-[#2f2f2f]',
-  input: 'bg-[#2a2a2a]',
+  input: 'bg-transparent',
+  placeholder: 'placeholder-[#4b5563]',
 };
 
 interface NoteEditorProps {
   noteId: number;
   onBack: () => void;
   onUpdate?: (note: Note) => void;
+  onDelete?: (id: number) => void;
 }
 
-export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
+export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorProps) {
   const { note, loading, error, updateNote } = useNote(noteId);
   const { folders } = useFolders();
   const { addRecentNote } = useRecentNotes();
@@ -33,8 +36,11 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
   const [folderId, setFolderId] = useState<number>(1);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [showFolderSelect, setShowFolderSelect] = useState(false);
+  const [showFolderMenu, setShowFolderMenu] = useState(false);
+  const [showNoteMenu, setShowNoteMenu] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Load note data
   useEffect(() => {
     if (note) {
       setTitle(note.title);
@@ -44,6 +50,7 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
     }
   }, [note, addRecentNote]);
 
+  // Auto-save
   const save = useCallback(async () => {
     if (!note) return;
     
@@ -63,19 +70,31 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
     }
   }, [note, title, content, folderId, updateNote, onUpdate]);
 
+  // Debounced auto-save
   useEffect(() => {
     const timer = setTimeout(() => {
       save();
-    }, 2000);
+    }, 1000);
     
     return () => clearTimeout(timer);
   }, [title, content, folderId, save]);
+
+  // Handle delete
+  const handleDelete = async () => {
+    if (!note) return;
+    await onDelete?.(note.id);
+    setShowDeleteModal(false);
+    onBack();
+  };
+
+  // Get folder name
+  const currentFolder = folders.find((f) => f.id === folderId);
 
   if (loading) {
     return (
       <div 
         data-area-id="noteeditor"
-        className="noteeditor flex items-center justify-center h-full"
+        className="noteeditor flex items-center justify-center h-full bg-[#191919]"
       >
         <div className="noteeditor-loading animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
       </div>
@@ -86,7 +105,7 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
     return (
       <div 
         data-area-id="noteeditor"
-        className={`noteeditor-error flex flex-col items-center justify-center h-full ${c.gray}`}
+        className={`noteeditor-error flex flex-col items-center justify-center h-full ${c.gray} bg-[#191919]`}
       >
         <p>Error loading note</p>
         <button 
@@ -100,125 +119,149 @@ export function NoteEditor({ noteId, onBack, onUpdate }: NoteEditorProps) {
     );
   }
 
-  const currentFolder = folders.find((f) => f.id === folderId);
-
   return (
     <div 
       data-area-id="noteeditor"
-      className={`noteeditor h-full flex flex-col bg-[#202020]`}
+      className={`noteeditor h-full flex flex-col ${c.bg}`}
     >
-      {/* Header */}
+      {/* Top Bar - Minimal */}
       <div 
         data-area-id="noteeditor-header"
-        className={`noteeditor-header flex items-center gap-4 px-6 py-4 border-b ${c.border}`}
+        className={`noteeditor-header flex items-center justify-between px-6 py-3 border-b ${c.border}`}
       >
-        <button
-          data-area-id="noteeditor-back-btn"
-          onClick={() => {
-            save();
-            onBack();
-          }}
-          className={`noteeditor-back-btn p-2 ${c.hover} rounded-lg transition-colors`}
-        >
-          <ArrowLeft size={20} className={c.text} />
-        </button>
-        
-        <div className="noteeditor-title-wrapper flex-1">
+        <div className="flex items-center gap-4">
+          <button
+            data-area-id="noteeditor-back-btn"
+            onClick={() => {
+              save();
+              onBack();
+            }}
+            className={`noteeditor-back-btn p-2 ${c.hover} rounded-lg transition-colors ${c.text}`}
+            title="Back"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          
+          {/* Folder Selector */}
+          <div className="relative">
+            <button
+              data-area-id="noteeditor-folder-select"
+              onClick={() => setShowFolderMenu(!showFolderMenu)}
+              className={`noteeditor-folder-select text-sm ${c.gray} hover:text-[#e6e6e6] transition-colors`}
+            >
+              {currentFolder?.name || 'Inbox'}
+              {saving && <span className="ml-2 text-xs opacity-50">• saving</span>}
+              {lastSaved && !saving && <span className="ml-2 text-xs opacity-50">• saved</span>}
+            </button>
+            
+            {/* Folder Dropdown */}
+            {showFolderMenu && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowFolderMenu(false)}
+                />
+                <div 
+                  data-area-id="noteeditor-folder-dropdown"
+                  className={`noteeditor-folder-dropdown absolute top-full left-0 mt-2 w-48 ${c.sidebar} border ${c.border} rounded-lg shadow-lg z-50 py-1`}
+                >
+                  {folders.map((folder) => (
+                    <button
+                      key={folder.id}
+                      onClick={() => {
+                        setFolderId(folder.id);
+                        setShowFolderMenu(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm ${c.hover} transition-colors ${
+                        folder.id === folderId ? 'text-blue-400' : c.text
+                      }`}
+                    >
+                      {folder.name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Note Menu */}
+        <div className="relative">
+          <button
+            onClick={() => setShowNoteMenu(!showNoteMenu)}
+            className={`p-2 ${c.hover} rounded-lg transition-colors ${c.gray}`}
+          >
+            <MoreVertical size={18} />
+          </button>
+          
+          {showNoteMenu && (
+            <>
+              <div 
+                className="fixed inset-0 z-40"
+                onClick={() => setShowNoteMenu(false)}
+              />
+              <div 
+                className={`absolute top-full right-0 mt-1 w-40 ${c.sidebar} border ${c.border} rounded-lg shadow-lg z-50 py-1`}
+              >
+                <button
+                  onClick={() => {
+                    setShowNoteMenu(false);
+                    setShowDeleteModal(true);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm text-red-400 ${c.hover} transition-colors flex items-center gap-2`}
+                >
+                  <Trash2 size={14} />
+                  Delete note
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Editor Content - Clean, Obsidian-style */}
+      <div 
+        data-area-id="noteeditor-content"
+        className="noteeditor-content flex-1 overflow-y-auto"
+      >
+        <div className="max-w-3xl mx-auto px-8 py-8">
+          {/* Title Input */}
           <input
             data-area-id="noteeditor-title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Note title"
-            className={`noteeditor-title w-full text-xl font-semibold bg-transparent outline-none placeholder-[#4b5563] ${c.text}`}
+            className={`noteeditor-title w-full text-4xl font-bold bg-transparent outline-none ${c.placeholder} ${c.text} mb-6`}
+          />
+          
+          {/* Content Textarea - Simple, clean */}
+          <TextareaAutosize
+            data-area-id="noteeditor-textarea"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Start writing..."
+            minRows={10}
+            className={`noteeditor-textarea w-full resize-none outline-none text-base leading-relaxed ${c.placeholder} ${c.text}`}
+            style={{
+              background: 'transparent',
+              fontFamily: 'inherit',
+            }}
           />
         </div>
-
-        <div className="noteeditor-actions flex items-center gap-3">
-          {/* Folder selector */}
-          <div className="noteeditor-folder-selector relative">
-            <button
-              data-area-id="noteeditor-folder-select"
-              onClick={() => setShowFolderSelect(!showFolderSelect)}
-              className={`noteeditor-folder-select-btn flex items-center gap-2 px-3 py-1.5 text-sm ${c.gray} ${c.hover} rounded-lg transition-colors`}
-            >
-              <Folder size={16} className="text-blue-500" />
-              {currentFolder?.name || 'Inbox'}
-            </button>
-            
-            {showFolderSelect && (
-              <div 
-                data-area-id="noteeditor-folder-dropdown"
-                className={`noteeditor-folder-dropdown absolute top-full right-0 mt-2 w-48 ${c.input} border ${c.border} rounded-lg shadow-lg z-10`}
-              >
-                {folders.map((folder) => (
-                  <button
-                    key={folder.id}
-                    onClick={() => {
-                      setFolderId(folder.id);
-                      setShowFolderSelect(false);
-                    }}
-                    className={`noteeditor-folder-option w-full flex items-center justify-between px-4 py-2 text-sm ${c.hover} first:rounded-t-lg last:rounded-b-lg ${
-                      folder.id === folderId ? 'bg-blue-900/20 text-blue-400' : c.text
-                    }`}
-                  >
-                    {folder.name}
-                    {folder.id === folderId && <Check size={14} />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Save status */}
-          <div 
-            data-area-id="noteeditor-save-status"
-            className={`noteeditor-save-status flex items-center gap-2 text-xs ${c.gray}`}
-          >
-            {saving ? (
-              <>
-                <div className="noteeditor-saving-spinner animate-spin rounded-full h-3 w-3 border-b border-current" />
-                Saving...
-              </>
-            ) : lastSaved ? (
-              <>
-                <Clock size={12} />
-                Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </>
-            ) : null}
-          </div>
-
-          <button
-            data-area-id="noteeditor-save-btn"
-            onClick={save}
-            disabled={saving}
-            className="noteeditor-save-btn flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
-          >
-            <Save size={16} />
-            Save
-          </button>
-        </div>
       </div>
 
-      {/* Editor */}
-      <div 
-        data-area-id="noteeditor-content"
-        className="noteeditor-content flex-1 overflow-hidden" 
-        data-color-mode="dark"
-      >
-        <MDEditor
-          value={content}
-          onChange={(val) => setContent(val || '')}
-          height="100%"
-          visibleDragbar={false}
-          preview="edit"
-          hideToolbar={false}
-          textareaProps={{
-            placeholder: 'Start writing...',
-            className: 'noteeditor-textarea',
-          }}
-        />
-      </div>
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        title="Delete Note"
+        message={`Are you sure you want to delete "${title || 'Untitled'}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

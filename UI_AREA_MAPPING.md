@@ -150,42 +150,47 @@ This document maps all UI areas in the MagicBox application for easy reference a
 
 ---
 
-### Note Editor (`noteeditor`)
+### Note Editor (`noteeditor`) - Obsidian Style
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│  noteeditor                                                         │
+│  noteeditor - Clean, minimal, Obsidian-inspired                     │
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐   │
-│  │  noteeditor-header                                          │   │
+│  │  noteeditor-header (minimal)                                │   │
 │  │                                                             │   │
-│  │  [←]  noteeditor-title                              [Save] │   │
-│  │       ┌────────────────────────────────────────┐            │   │
-│  │       │ Meeting Notes with Team                │ 📁 Work ✓ │   │
-│  │       └────────────────────────────────────────┘            │   │
-│  │                                                             │   │
-│  │       noteeditor-back-btn    noteeditor-folder-select      │   │
-│  │                          noteeditor-save-status            │   │
-│  │                          noteeditor-save-btn               │   │
+│  │  [←]  Inbox ▾                                    [ ⋮ ]      │   │
+│  │   ↑           ↑                                    ↑        │   │
+│  │   │           │                              note menu      │   │
+│  │   │    noteeditor-folder-select                (delete)     │   │
+│  │   │                                                           │   │
+│  │   noteeditor-back-btn                                       │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │  noteeditor-content                                         │   │
 │  │                                                             │   │
-│  │  # Meeting Notes                                            │   │
+│  │  Meeting Notes with Team                    ← Big title     │   │
+│  │  ━━━━━━━━━━━━━━━━━━━━━━                    noteeditor-title │   │
 │  │                                                             │   │
-│  │  - Discussed Q1 goals                                       │   │
-│  │  - Action items assigned                                    │   │
-│  │  - Next meeting: Friday                                     │   │
+│  │  Today we discussed Q1 goals and assigned                   │   │
+│  │  action items to each team member.                          │   │
 │  │                                                             │   │
-│  │  [Markdown editor area]                                     │   │
+│  │  - Goal 1: Increase revenue by 20%                          │   │
+│  │  - Goal 2: Launch new product                               │   │
+│  │  - Goal 3: Expand to new markets                            │   │
 │  │                                                             │   │
-│  │  ┌─────────────────────────────────────────────────────┐   │   │
-│  │  │ Write your content here...                          │   │   │
-│  │  │                                                     │   │   │
-│  │  └─────────────────────────────────────────────────────┘   │   │
-│  │                        noteeditor-textarea                  │   │
+│  │  Next meeting scheduled for Friday.                         │   │
+│  │                                                             │   │
+│  │  [Keep writing... auto-expands]                             │   │
+│  │                                                             │   │
+│  │              ↑ Simple textarea, no toolbar                  │   │
+│  │    noteeditor-textarea (react-textarea-autosize)            │   │
+│  │                                                             │   │
 │  └─────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  No toolbar, no preview toggle, no distractions.                    │
+│  Just write. Auto-saves in background.                              │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -299,10 +304,17 @@ This document maps all UI areas in the MagicBox application for easy reference a
 │  central-input                                              │
 │                                                             │
 │   ┌─────────────────────────────────────────────────────┐  │
-│   │ 📝  Type a note... Use #folder to organize    ⮐  ✕ │  │
+│   │                                                     │  │
+│   │  What's on your mind? Use #folder to organize       │  │
+│   │                                                     │  │
+│   │  Today I need to finish the project report and      │  │
+│   │  send it to the team. #Work                         │  │
+│   │                                                     │  │
+│   │                                          [⮐]  [✕] │  │
 │   └─────────────────────────────────────────────────────┘  │
-│        central-input-field       central-input-submit      │
-│                                  central-input-clear       │
+│        ↑ Multi-line textarea (3 rows default)              │
+│        central-input-field                                 │
+│                                                             │
 │                           │                                 │
 │                           ▼                                 │
 │    ┌─────────────────────────────────────────────────┐     │
@@ -314,7 +326,10 @@ This document maps all UI areas in the MagicBox application for easy reference a
 │    └─────────────────────────────────────────────────┘     │
 │         central-input-suggestions                          │
 │                                                             │
-│   💡 Type # to mention folder • Press Tab to select        │
+│   💡 Type # to add to folder • Enter to create             │
+│                                                             │
+│   NEW: Text goes to NOTE CONTENT (not title)               │
+│   Title is auto-generated from first line                  │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -470,22 +485,23 @@ document.querySelector('[data-area-id="folderpage-note-delete-1"]')
 
 ---
 
-### 6. Note Editor (`noteeditor`)
+### 6. Note Editor (`noteeditor`) - Obsidian-style
 
 **File:** `src/components/NoteEditor.tsx`
+
+Simple, clean editor inspired by Obsidian. Just title + content. No toolbar, minimal UI.
 
 | Element | data-area-id | CSS Class | Description |
 |---------|--------------|-----------|-------------|
 | Editor Container | `noteeditor` | `.noteeditor` | Editor wrapper |
-| Editor Header | `noteeditor-header` | `.noteeditor-header` | Top bar with controls |
+| Editor Header | `noteeditor-header` | `.noteeditor-header` | Minimal top bar |
 | Back Button | `noteeditor-back-btn` | `.noteeditor-back-btn` | Return arrow button |
-| Title Input | `noteeditor-title` | `.noteeditor-title` | Note title field |
-| Folder Selector | `noteeditor-folder-select` | `.noteeditor-folder-select` | Current folder dropdown |
+| Folder Selector | `noteeditor-folder-select` | `.noteeditor-folder-select` | Current folder (click to change) |
 | Folder Dropdown | `noteeditor-folder-dropdown` | `.noteeditor-folder-dropdown` | Folder options list |
-| Save Status | `noteeditor-save-status` | `.noteeditor-save-status` | "Saving..." / "Saved" text |
-| Save Button | `noteeditor-save-btn` | `.noteeditor-save-btn` | Manual save button |
-| Editor Content | `noteeditor-content` | `.noteeditor-content` | Markdown editor area |
-| Editor Textarea | `noteeditor-textarea` | `.noteeditor-textarea` | Text input area |
+| Title Input | `noteeditor-title` | `.noteeditor-title` | Large title field (H1 style) |
+| Editor Content | `noteeditor-content` | `.noteeditor-content` | Content wrapper |
+| Content Textarea | `noteeditor-textarea` | `.noteeditor-textarea` | Main writing area (auto-resize) |
+| Note Menu | - | `.noteeditor-menu` | Three-dot menu (delete option) |
 
 **Usage:**
 ```javascript
@@ -585,14 +601,14 @@ app-root
 │       │   │       └── folderpage-note-delete-{id}
 │       │   └── folderpage-empty (conditional)
 │       └── noteeditor (route: /note/:id)
-│           ├── noteeditor-header
+│           ├── noteeditor-header (minimal)
 │           │   ├── noteeditor-back-btn
-│           │   ├── noteeditor-title
 │           │   ├── noteeditor-folder-select
 │           │   │   └── noteeditor-folder-dropdown (conditional)
-│           │   ├── noteeditor-save-status
-│           │   └── noteeditor-save-btn
+│           │   └── noteeditor-menu (3-dot menu)
 │           └── noteeditor-content
+│               ├── noteeditor-title (large, H1 style)
+│               └── noteeditor-textarea (simple textarea)
 └── confirm-modal (overlay, conditional)
     ├── confirm-modal-backdrop
     ├── confirm-modal-container

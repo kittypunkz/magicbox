@@ -5,6 +5,7 @@ import { NoteEditor } from './components/NoteEditor';
 import { HomePage } from './pages/HomePage';
 import { FolderPage } from './pages/FolderPage';
 import { useFolders } from './hooks/useFolders';
+import { useNotes } from './hooks/useNotes';
 import type { Note } from './types';
 
 type ViewType = 'home' | 'folder' | 'note';
@@ -33,6 +34,9 @@ function App() {
     deleteFolder, 
     addFolderLocally 
   } = useFolders();
+  
+  // For note deletion from editor
+  const { deleteNote } = useNotes();
 
   // Wrapper functions that also handle UI updates
   const handleCreateFolder = useCallback(async (name: string) => {
@@ -149,6 +153,7 @@ function App() {
               onUpdate={() => {
                 // Update local state if needed
               }}
+              onDelete={deleteNote}
             />
           )}
         </main>

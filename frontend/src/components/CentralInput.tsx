@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Hash, FileText, CornerDownLeft, X } from 'lucide-react';
+import { Hash, CornerDownLeft, X } from 'lucide-react';
 import type { Folder } from '../types';
 
 // Dark mode colors
@@ -14,7 +14,7 @@ const c = {
 
 interface CentralInputProps {
   folders: Folder[];
-  onCreateNote: (title: string, folderId: number) => void;
+  onCreateNote: (title: string, content: string, folderId: number) => void;
 }
 
 export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
@@ -23,7 +23,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
   const [selectedFolderId, setSelectedFolderId] = useState<number>(1);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [cursorPosition, setCursorPosition] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const hashtagMatch = input.slice(0, cursorPosition).match(/#([\w]*)$/);
   const searchTerm = hashtagMatch ? hashtagMatch[1].toLowerCase() : '';
@@ -53,7 +53,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     };
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     const pos = e.target.selectionStart || 0;
     setInput(value);
@@ -79,8 +79,15 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     }, 0);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!showSuggestions || filteredFolders.length === 0) return;
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!showSuggestions || filteredFolders.length === 0) {
+      // Allow Enter to submit when no suggestions
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmit();
+      }
+      return;
+    }
 
     switch (e.key) {
       case 'Tab':
@@ -107,15 +114,39 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
         setShowSuggestions(false);
         setHighlightedIndex(0);
         break;
+      
+      case 'Enter':
+        e.preventDefault();
+        handleSubmit();
+        break;
     }
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const handleSubmit = () => {
     if (!input.trim()) return;
 
-    const cleanTitle = input.replace(/#\w+/g, '').trim() || 'Untitled';
-    onCreateNote(cleanTitle, selectedFolderId);
+    // Extract folder hashtag
+    const hashTag = input.match(/#(\w+)/);
+    let targetFolderId = selectedFolderId;
+    let cleanContent = input;
+    
+    if (hashTag) {
+      const folderName = hashTag[1];
+      const existingFolder = folders.find(
+        (f) => f.name.toLowerCase() === folderName.toLowerCase()
+      );
+      if (existingFolder) {
+        targetFolderId = existingFolder.id;
+      }
+      // Remove hashtag from content
+      cleanContent = input.replace(/#\w+/g, '').trim();
+    }
+
+    // Auto-generate title from first line (first 50 chars)
+    const firstLine = cleanContent.split('\n')[0].slice(0, 50);
+    const title = firstLine || 'Untitled';
+
+    onCreateNote(title, cleanContent, targetFolderId);
     setInput('');
     setSelectedFolderId(1);
     setHighlightedIndex(0);
@@ -129,38 +160,38 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
       data-area-id="central-input"
       className="central-input w-full max-w-2xl mx-auto"
     >
-      <form onSubmit={handleSubmit} className="central-input-form relative">
-        <div className="central-input-wrapper relative flex items-center">
-          <FileText size={20} className={`absolute left-4 ${c.gray}`} />
-          <input
-            ref={inputRef}
-            data-area-id="central-input-field"
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a note... Use #folder to organize"
-            className={`central-input-field w-full pl-12 pr-12 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
-          />
-          {input && (
-            <button
-              data-area-id="central-input-clear"
-              type="button"
-              onClick={() => setInput('')}
-              className={`central-input-clear-btn absolute right-14 p-1 ${c.gray} hover:text-gray-400`}
-            >
-              <X size={18} />
-            </button>
-          )}
+      <div className="central-input-wrapper relative">
+        <textarea
+          ref={inputRef}
+          data-area-id="central-input-field"
+          value={input}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder="What's on your mind? Use #folder to organize"
+          rows={3}
+          className={`central-input-field w-full px-4 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text} resize-none`}
+        />
+        
+        {/* Clear button */}
+        {input && (
           <button
-            data-area-id="central-input-submit"
-            type="submit"
-            disabled={!input.trim()}
-            className="central-input-submit-btn absolute right-4 p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-[#4b5563] disabled:cursor-not-allowed transition-colors"
+            data-area-id="central-input-clear"
+            onClick={() => setInput('')}
+            className={`central-input-clear-btn absolute top-3 right-14 p-1 ${c.gray} hover:text-gray-400 transition-colors`}
           >
-            <CornerDownLeft size={18} />
+            <X size={18} />
           </button>
-        </div>
+        )}
+        
+        {/* Submit button */}
+        <button
+          data-area-id="central-input-submit"
+          onClick={handleSubmit}
+          disabled={!input.trim()}
+          className="central-input-submit-btn absolute bottom-3 right-3 p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-[#4b5563] disabled:cursor-not-allowed transition-colors"
+        >
+          <CornerDownLeft size={18} />
+        </button>
 
         {/* Folder Suggestions */}
         {afterHash && showSuggestions && filteredFolders.length > 0 && (
@@ -169,7 +200,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
             className={`central-input-suggestions absolute top-full left-0 right-0 mt-2 ${c.input} border ${c.border} rounded-xl shadow-lg z-50 overflow-hidden`}
           >
             <div className={`central-input-suggestions-header px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
-              Select folder (Tab to select, ↑↓ to navigate)
+              Select folder (Tab to select, ↑↓ to navigate, Enter to create)
             </div>
             {filteredFolders.map((folder, index) => (
               <button
@@ -177,7 +208,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
                 type="button"
                 onClick={() => handleFolderSelect(folder)}
                 onMouseEnter={() => setHighlightedIndex(index)}
-                className={`central-input-suggestion-item w-full flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                className={`central-input-suggestion-item w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${
                   index === highlightedIndex ? 'bg-blue-900/20' : c.hover
                 }`}
               >
@@ -193,17 +224,15 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
             ))}
           </div>
         )}
-      </form>
+      </div>
 
       <div className={`central-input-hints flex items-center justify-center gap-4 mt-3 text-xs ${c.gray}`}>
         <span className="flex items-center gap-1">
           <Hash size={12} />
-          Type # to mention folder
+          Type # to add to folder
         </span>
         <span>•</span>
-        <span>Press Tab to select</span>
-        <span>•</span>
-        <span>Enter to create</span>
+        <span>Enter to create note</span>
       </div>
     </div>
   );
