@@ -100,6 +100,18 @@ html {
   margin: 0;
 }
 
+/* Remove blue border on focused blocks */
+.editorjs-container .ce-block--focused .ce-block__content {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.editorjs-container .ce-block--selected .ce-block__content {
+  background: rgba(42, 42, 42, 0.5) !important;
+  box-shadow: none !important;
+}
+
 .editorjs-container .ce-paragraph {
   color: #e6e6e6;
   font-size: 16px;
@@ -179,12 +191,12 @@ html {
 }
 
 .editorjs-container .ce-toolbox__button {
-  color: #6b6b6b;
+  color: #e6e6e6;
 }
 
 .editorjs-container .ce-toolbox__button:hover {
-  color: #e6e6e6;
-  background: #2a2a2a;
+  color: #ffffff;
+  background: #3a3a3a;
 }
 
 /* Inline toolbar */
@@ -207,14 +219,21 @@ html {
   background: rgba(42, 42, 42, 0.3);
 }
 
-/* Plus button */
+/* Plus button - make it more visible */
 .editorjs-container .ce-toolbar__plus {
-  color: #6b6b6b;
+  color: #9b9b9b;
+  background: #2a2a2a;
+  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .editorjs-container .ce-toolbar__plus:hover {
-  color: #e6e6e6;
-  background: #2a2a2a;
+  color: #ffffff;
+  background: #3a3a3a;
 }
 
 /* Settings */
@@ -229,4 +248,28 @@ html {
 
 .editorjs-container .ce-settings__button:hover {
   background: #2a2a2a;
+}
+
+/* Conversion toolbar */
+.editorjs-container .ce-conversion-toolbar {
+  background: #202020;
+  border: 1px solid #2f2f2f;
+  border-radius: 8px;
+}
+
+.editorjs-container .ce-conversion-tool {
+  color: #e6e6e6;
+}
+
+.editorjs-container .ce-conversion-tool:hover {
+  background: #2a2a2a;
+}
+
+/* Tune button */
+.editorjs-container .ce-settings-btn {
+  color: #9b9b9b;
+}
+
+.editorjs-container .ce-settings-btn:hover {
+  color: #ffffff;
 }
