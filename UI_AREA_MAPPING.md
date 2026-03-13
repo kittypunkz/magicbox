@@ -86,10 +86,16 @@ This document maps all UI areas in the MagicBox application for easy reference a
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │  homepage-recent-section                                    │   │
 │  │                                                             │   │
-│  │  Recent Notes                    ┌────────┐ ┌────────┐     │   │
-│  │                                  │ Note 1 │ │ Note 2 │     │   │
-│  │                                  └────────┘ └────────┘     │   │
+│  │  Recent Notes                                               │   │
+│  │  ┌─────────────┐ ┌─────────────┐                           │   │
+│  │  │ 🗑️         │ │ 🗑️         │                           │   │
+│  │  │ Meeting     │ │ Project     │                           │   │
+│  │  │ Notes       │ │ Plan        │                           │   │
+│  │  │ Jan 15      │ │ Jan 10      │                           │   │
+│  │  └─────────────┘ └─────────────┘                           │   │
 │  │                                                             │   │
+│  │  homepage-recent-1  homepage-recent-2                       │   │
+│  │  (hover to see 🗑️ delete button)                            │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐   │
@@ -412,6 +418,7 @@ document.querySelector('[data-area-id="searchbar-results"]')
 | Folder Suggestions | `central-input-suggestions` | `.central-input-suggestions` | Folder hashtag dropdown |
 | Recent Notes Section | `homepage-recent-section` | `.homepage-recent-section` | Recent notes grid |
 | Recent Note Card | `homepage-recent-{id}` | `.homepage-recent-card` | Individual recent note |
+| Recent Card Delete | `homepage-recent-delete-{id}` | `.homepage-recent-card-delete-btn` | Delete button on card (hover) |
 | Quick Stats Section | `homepage-stats` | `.homepage-stats` | Stats bar at bottom |
 | Stats Notes Count | `homepage-stats-notes` | `.homepage-stats-notes` | Total notes number |
 | Stats Folders Count | `homepage-stats-folders` | `.homepage-stats-folders` | Total folders number |

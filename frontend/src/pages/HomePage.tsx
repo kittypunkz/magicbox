@@ -42,6 +42,10 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
   const [showDeleteUnusedModal, setShowDeleteUnusedModal] = useState(false);
   const [isDeletingUnused, setIsDeletingUnused] = useState(false);
   const [deleteResult, setDeleteResult] = useState<{ success: number; failed: number } | null>(null);
+  
+  // State for single note delete
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [isDeletingNote, setIsDeletingNote] = useState(false);
 
   const unusedNotes = useMemo(() => getUnusedNotes(notes), [notes]);
   const hasUnusedNotes = unusedNotes.length > 0;
@@ -113,6 +117,30 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
     setShowDeleteUnusedModal(false);
   };
 
+  // Single note delete handlers
+  const handleDeleteClick = (e: React.MouseEvent, note: Note) => {
+    e.stopPropagation();
+    setNoteToDelete(note);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!noteToDelete) return;
+    
+    setIsDeletingNote(true);
+    try {
+      await deleteNote(noteToDelete.id);
+      await refetchNotes();
+    } finally {
+      setIsDeletingNote(false);
+      setNoteToDelete(null);
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (isDeletingNote) return;
+    setNoteToDelete(null);
+  };
+
   const recentNotes = notes.slice(0, 5);
 
   return (
@@ -156,10 +184,23 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
                 key={note.id}
                 data-area-id={`homepage-recent-${note.id}`}
                 onClick={() => onSelectNote(note)}
-                className={`homepage-recent-card group flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
+                className={`homepage-recent-card group relative flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all text-left`}
               >
+                {/* Delete button - appears on hover */}
+                <div className="homepage-recent-card-delete-wrapper absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    data-area-id={`homepage-recent-delete-${note.id}`}
+                    onClick={(e) => handleDeleteClick(e, note)}
+                    disabled={isDeletingNote}
+                    className={`homepage-recent-card-delete-btn p-2 ${c.gray} hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors`}
+                    title="Delete note"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
                 <FileText size={20} className={c.gray} />
-                <div className="homepage-recent-card-content flex-1 min-w-0">
+                <div className="homepage-recent-card-content flex-1 min-w-0 pr-8">
                   <h3 className={`homepage-recent-card-title font-medium ${c.text} truncate`}>{note.title}</h3>
                   <p className={`homepage-recent-card-preview text-sm ${c.gray} line-clamp-2 mt-1`}>
                     {note.content?.replace(/[#*_`]/g, '').slice(0, 100) || 'No content'}
@@ -226,6 +267,19 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
           </div>
         </div>
       </div>
+
+      {/* Single Note Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={noteToDelete !== null}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Delete Note"
+        message={`Are you sure you want to delete "${noteToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={isDeletingNote}
+        variant="danger"
+      />
 
       {/* Delete Unused Notes Confirmation Modal */}
       <ConfirmModal
