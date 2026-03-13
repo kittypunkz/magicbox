@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Sparkles, FileText, Folder } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Sparkles, FileText, Folder, Trash2 } from 'lucide-react';
 import { CentralInput } from '../components/CentralInput';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { useNotes } from '../hooks/useNotes';
 import { notesAPI } from '../api/client';
 import type { Folder as FolderType, Note } from '../types';
@@ -22,9 +23,28 @@ interface HomePageProps {
   onSelectNote: (note: Note) => void;
 }
 
+// Days to consider a note as "unused"
+const UNUSED_DAYS = 30;
+
+function getUnusedNotes(notes: Note[]): Note[] {
+  const now = new Date().getTime();
+  const unusedThreshold = UNUSED_DAYS * 24 * 60 * 60 * 1000; // 30 days in ms
+  
+  return notes.filter((note) => {
+    const updatedAt = new Date(note.updated_at).getTime();
+    return now - updatedAt > unusedThreshold;
+  });
+}
+
 export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePageProps) {
-  const { notes, refetch: refetchNotes } = useNotes();
+  const { notes, refetch: refetchNotes, deleteNote } = useNotes();
   const [creating, setCreating] = useState(false);
+  const [showDeleteUnusedModal, setShowDeleteUnusedModal] = useState(false);
+  const [isDeletingUnused, setIsDeletingUnused] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<{ success: number; failed: number } | null>(null);
+
+  const unusedNotes = useMemo(() => getUnusedNotes(notes), [notes]);
+  const hasUnusedNotes = unusedNotes.length > 0;
 
   const handleCreateNote = async (title: string, folderId: number) => {
     if (creating) return;
@@ -67,6 +87,30 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
     } finally {
       setCreating(false);
     }
+  };
+
+  const handleDeleteUnused = async () => {
+    setIsDeletingUnused(true);
+    let success = 0;
+    let failed = 0;
+
+    for (const note of unusedNotes) {
+      try {
+        await deleteNote(note.id);
+        success++;
+      } catch {
+        failed++;
+      }
+    }
+
+    setIsDeletingUnused(false);
+    setDeleteResult({ success, failed });
+    refetchNotes();
+  };
+
+  const handleCloseResultModal = () => {
+    setDeleteResult(null);
+    setShowDeleteUnusedModal(false);
   };
 
   const recentNotes = notes.slice(0, 5);
@@ -125,7 +169,7 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
         <div className="max-w-4xl mx-auto px-8 py-6 flex items-center justify-center gap-12">
           <div className="text-center">
             <p className={`text-2xl font-bold ${c.text}`}>{notes.length}</p>
-            <p className={`text-sm ${c.gray} flex items-center gap-1`}>
+            <p className={`text-sm ${c.gray} flex items-center gap-1 justify-center`}>
               <FileText size={14} />
               Notes
             </p>
@@ -133,13 +177,61 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
           <div className={`w-px h-10 ${c.border}`} />
           <div className="text-center">
             <p className={`text-2xl font-bold ${c.text}`}>{folders.length}</p>
-            <p className={`text-sm ${c.gray} flex items-center gap-1`}>
+            <p className={`text-sm ${c.gray} flex items-center gap-1 justify-center`}>
               <Folder size={14} />
               Folders
             </p>
           </div>
+          <div className={`w-px h-10 ${c.border}`} />
+          <div className="text-center">
+            <p className={`text-2xl font-bold ${hasUnusedNotes ? 'text-red-500' : c.text}`}>
+              {unusedNotes.length}
+            </p>
+            <button
+              onClick={() => setShowDeleteUnusedModal(true)}
+              disabled={!hasUnusedNotes}
+              className={`text-sm flex items-center gap-1 justify-center transition-colors ${
+                hasUnusedNotes 
+                  ? 'text-red-500 hover:text-red-400' 
+                  : c.gray
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+              title={hasUnusedNotes ? `Delete notes not updated in ${UNUSED_DAYS} days` : 'No unused notes'}
+            >
+              <Trash2 size={14} />
+              Unused
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Delete Unused Notes Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteUnusedModal && deleteResult === null}
+        onClose={() => setShowDeleteUnusedModal(false)}
+        onConfirm={handleDeleteUnused}
+        title="Delete Unused Notes"
+        message={`You have ${unusedNotes.length} note${unusedNotes.length !== 1 ? 's' : ''} that haven't been updated in ${UNUSED_DAYS} days. Are you sure you want to delete them? This action cannot be undone.`}
+        confirmText={`Delete ${unusedNotes.length} Note${unusedNotes.length !== 1 ? 's' : ''}`}
+        cancelText="Cancel"
+        isLoading={isDeletingUnused}
+        variant="warning"
+      />
+
+      {/* Delete Result Modal */}
+      <ConfirmModal
+        isOpen={deleteResult !== null}
+        onClose={handleCloseResultModal}
+        onConfirm={handleCloseResultModal}
+        title="Deletion Complete"
+        message={
+          deleteResult?.failed === 0
+            ? `Successfully deleted ${deleteResult?.success} note${deleteResult?.success !== 1 ? 's' : ''}.`
+            : `Deleted ${deleteResult?.success} note${deleteResult?.success !== 1 ? 's' : ''}. ${deleteResult?.failed} failed.`
+        }
+        confirmText="OK"
+        cancelText=""
+        variant={deleteResult?.failed === 0 ? 'info' : 'warning'}
+      />
     </div>
   );
 }
