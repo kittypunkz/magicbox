@@ -1,15 +1,16 @@
 {
   "name": "magicbox",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "A markdown-based note taking app like Notion",
   "scripts": {
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
     "dev:api": "cd backend && npm run dev",
     "dev:web": "cd frontend && npm run dev",
-    "build": "cd frontend && npm run build",
-    "deploy": "./deploy.sh",
-    "deploy:api": "cd backend && npm run deploy",
-    "deploy:web": "cd frontend && npm run build && npx wrangler pages deploy dist --project-name=magicbox-app",
+    "sync-version": "node scripts/sync-version.js",
+    "build": "npm run sync-version && cd frontend && npm run build",
+    "deploy": "npm run sync-version && ./deploy.sh",
+    "deploy:api": "npm run sync-version && cd backend && npm run deploy",
+    "deploy:web": "npm run sync-version && cd frontend && npm run build && npx wrangler pages deploy dist --project-name=magicbox-app",
     "db:create": "cd backend && npm run db:create",
     "db:migrate": "cd backend && npm run db:migrate",
     "setup": "npm install && cd backend && npm install && cd ../frontend && npm install"

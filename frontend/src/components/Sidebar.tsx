@@ -225,7 +225,7 @@ export function Sidebar({
           <div className="flex items-center gap-2">
             <span className={`text-xs font-medium ${c.text}`}>MagicBox</span>
             <span className="px-1.5 py-0.5 text-[10px] bg-blue-900/30 text-blue-400 rounded-full">
-              v1.2.2
+              v1.2.3
             </span>
           </div>
           <a 
