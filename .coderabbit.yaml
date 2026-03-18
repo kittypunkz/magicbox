@@ -1,0 +1,66 @@
+# CodeRabbit AI Configuration
+# https://coderabbit.ai/docs/get-started/customize-coderabbit
+
+language: "en-US"
+
+reviews:
+  # Review style: "chill" for gentle, "assertive" for strict
+  profile: "chill"
+  
+  # High-level summary of changes
+  high_level_summary: true
+  
+  # Add a fun poem to each review
+  poem: true
+  
+  # Show review status check
+  review_status: true
+  
+  # Request changes workflow
+  request_changes_workflow: true
+  
+  # Auto-collapse walkthrough sections
+  collapse_walkthrough: false
+  
+  # Auto-review settings
+  auto_review:
+    enabled: true
+    # Don't review draft PRs
+    drafts: false
+    # Review when PR is opened
+    on_open: true
+    # Re-review when new commits are pushed
+    on_commit: true
+  
+  # Tools to run during review
+  tools:
+    # ESLint for JavaScript/TypeScript
+    eslint:
+      enabled: true
+    
+    # Markdown linting
+    markdownlint:
+      enabled: true
+    
+    # Shell script checks
+    shellcheck:
+      enabled: true
+    
+    # Dependency vulnerability checks
+    gitleaks:
+      enabled: true
+
+# Chat settings
+chat:
+  # Enable chat replies
+  auto_reply: true
+
+# Knowledge base (optional)
+knowledge_base:
+  # Learn from your codebase
+  learnings:
+    enabled: true
+  
+  # Use external docs
+  docs:
+    enabled: false
