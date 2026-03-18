@@ -412,6 +412,7 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
         <CreateNoteModal
           isOpen={isNoteModalOpen}
           onClose={() => setIsNoteModalOpen(false)}
+          folders={propFolders}
           onCreateNote={handleCreateNote}
           defaultFolderName={folder?.name}
         />

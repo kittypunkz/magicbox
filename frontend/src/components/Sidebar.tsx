@@ -301,6 +301,7 @@ export function Sidebar({
         <CreateNoteModal
           isOpen={isNoteModalOpen}
           onClose={() => setIsNoteModalOpen(false)}
+          folders={folders}
           onCreateNote={handleCreateNote}
         />
       )}

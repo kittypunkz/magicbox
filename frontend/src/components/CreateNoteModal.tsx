@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, FileText, Hash } from 'lucide-react';
+import type { Folder } from '../types';
 
 // Dark mode colors
 const c = {
@@ -17,6 +18,7 @@ const c = {
 interface CreateNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
+  folders: Folder[];
   onCreateNote: (title: string, content: string, folderName: string | null) => void;
   defaultFolderName?: string;
 }
@@ -24,18 +26,24 @@ interface CreateNoteModalProps {
 export function CreateNoteModal({ 
   isOpen, 
   onClose, 
+  folders,
   onCreateNote,
   defaultFolderName 
 }: CreateNoteModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [activeInput, setActiveInput] = useState<'title' | 'content'>('title');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const contentInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setTitle('');
       setContent('');
+      setHighlightedIndex(0);
+      setActiveInput('title');
       // Focus title input after modal opens
       setTimeout(() => titleInputRef.current?.focus(), 100);
     }
@@ -52,12 +60,106 @@ export function CreateNoteModal({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // Get hashtag at cursor position
+  const getHashtagAtCursor = (text: string, pos: number): { match: RegExpMatchArray | null; searchTerm: string } => {
+    const textBeforeCursor = text.slice(0, pos);
+    const match = textBeforeCursor.match(/#([\w.-]*)$/);
+    return { 
+      match, 
+      searchTerm: match ? match[1].toLowerCase() : '' 
+    };
+  };
+
+  // Get current active text and cursor position
+  const getActiveTextInfo = () => {
+    if (activeInput === 'title') {
+      return { text: title, cursor: titleInputRef.current?.selectionStart || 0 };
+    }
+    return { text: content, cursor: contentInputRef.current?.selectionStart || 0 };
+  };
+
+  const { text: activeText, cursor: activeCursor } = getActiveTextInfo();
+  const { match: hashtagMatch, searchTerm } = getHashtagAtCursor(activeText, activeCursor);
+
+  // Filter folders based on search term
+  const filteredFolders = useMemo(() => {
+    if (!hashtagMatch) return [];
+    return folders.filter(f => 
+      f.name.toLowerCase().includes(searchTerm)
+    );
+  }, [hashtagMatch, searchTerm, folders]);
+
+  // Check if we should show suggestions
+  const showSuggestions = hashtagMatch !== null;
+
+  // Handle folder selection
+  const handleFolderSelect = (folder: Folder) => {
+    const inputRef = activeInput === 'title' ? titleInputRef : contentInputRef;
+    const currentText = activeInput === 'title' ? title : content;
+    const pos = inputRef.current?.selectionStart || 0;
+    
+    // Find the hashtag position
+    const textBeforeCursor = currentText.slice(0, pos);
+    const match = textBeforeCursor.match(/#([\w.-]*)$/);
+    
+    if (match) {
+      const before = currentText.slice(0, match.index);
+      const after = currentText.slice(pos);
+      const newText = `${before}#${folder.name}${after}`;
+      
+      if (activeInput === 'title') {
+        setTitle(newText);
+      } else {
+        setContent(newText);
+      }
+      
+      // Focus back and set cursor position
+      setTimeout(() => {
+        inputRef.current?.focus();
+        const newPos = (match.index || 0) + folder.name.length + 1;
+        inputRef.current?.setSelectionRange(newPos, newPos);
+      }, 0);
+    }
+    
+    setHighlightedIndex(0);
+  };
+
+  // Handle keyboard navigation for suggestions
+  const handleKeyDown = (e: React.KeyboardEvent, inputType: 'title' | 'content') => {
+    setActiveInput(inputType);
+    
+    if (!showSuggestions || filteredFolders.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightedIndex(prev => 
+          prev < filteredFolders.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightedIndex(prev => prev > 0 ? prev - 1 : 0);
+        break;
+      case 'Tab':
+      case 'Enter':
+        e.preventDefault();
+        if (filteredFolders[highlightedIndex]) {
+          handleFolderSelect(filteredFolders[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        // Just clear the highlight, don't close modal
+        setHighlightedIndex(0);
+        break;
+    }
+  };
+
   // Extract hashtag from text
   const extractFolderName = (text: string): { folderName: string | null; cleanText: string } => {
     const hashMatch = text.match(/#([\w.-]+)/);
     if (hashMatch) {
       const folderName = hashMatch[1];
-      // Remove the hashtag from text
       const cleanText = text.replace(/#[\w.-]+/, '').trim();
       return { folderName, cleanText };
     }
@@ -122,7 +224,7 @@ export function CreateNoteModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Title Input */}
-          <div>
+          <div className="relative">
             <label className={`block text-sm font-medium ${c.gray} mb-2`}>
               <span className="flex items-center gap-2">
                 Title
@@ -136,13 +238,16 @@ export function CreateNoteModal({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'title')}
+              onFocus={() => setActiveInput('title')}
+
               placeholder="Note title... #work"
               className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
             />
           </div>
 
           {/* Content Input */}
-          <div>
+          <div className="relative">
             <label className={`block text-sm font-medium ${c.gray} mb-2`}>
               <span className="flex items-center gap-2">
                 Content
@@ -152,19 +257,67 @@ export function CreateNoteModal({
               </span>
             </label>
             <textarea
+              ref={contentInputRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'content')}
+              onFocus={() => setActiveInput('content')}
+
               placeholder="What's on your mind? #ideas"
               rows={4}
               className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text} resize-none`}
             />
           </div>
 
+          {/* Folder Suggestions Dropdown */}
+          {showSuggestions && filteredFolders.length > 0 && (
+            <div 
+              data-area-id="create-note-folder-suggestions"
+              className={`${c.input} border ${c.border} rounded-lg overflow-hidden`}
+            >
+              <div className={`px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
+                {searchTerm ? `Folders matching "${searchTerm}"` : 'Select folder (Enter or Tab to select, ↑↓ to navigate)'}
+              </div>
+              <div className="max-h-40 overflow-y-auto">
+                {filteredFolders.map((folder, index) => (
+                  <button
+                    key={folder.id}
+                    type="button"
+                    onClick={() => handleFolderSelect(folder)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                      index === highlightedIndex ? 'bg-blue-900/20' : c.hover
+                    }`}
+                  >
+                    <Hash size={16} className="text-blue-500" />
+                    <span className={`text-sm ${c.text}`}>{folder.name}</span>
+                    {folder.id === 1 && (
+                      <span className={`ml-auto text-xs ${c.gray}`}>default</span>
+                    )}
+                    {index === highlightedIndex && (
+                      <span className="ml-auto text-xs text-blue-400">Enter</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Create New Folder Option */}
+          {showSuggestions && searchTerm && !filteredFolders.find(f => f.name.toLowerCase() === searchTerm.toLowerCase()) && (
+            <div className={`flex items-center gap-2 text-xs ${c.gray} px-3 py-2 bg-blue-900/10 rounded-lg`}>
+              <Hash size={12} className="text-blue-500" />
+              <span>
+                Will create new folder: <span className="text-blue-400 font-medium">#{searchTerm}</span>
+              </span>
+            </div>
+          )}
+
           {/* Folder Hint */}
           <div className={`flex items-center gap-2 text-xs ${c.gray} bg-[#2a2a2a] px-3 py-2 rounded-lg`}>
             <Hash size={12} className="text-blue-500" />
             <span>
-              Type <code className="text-blue-400">#foldername</code> in title or content to organize. 
+              Type <code className="text-blue-400">#foldername</code> to organize. 
               If folder doesn't exist, it will be created automatically.
             </span>
           </div>
