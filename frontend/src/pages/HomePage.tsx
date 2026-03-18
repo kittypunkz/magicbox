@@ -1,154 +1,356 @@
-import { Plus, Trash2, Folder } from 'lucide-react';
-import { formatDistanceToNow } from '../lib/utils';
-import { SkeletonCard as SkeletonNoteCard } from '../components/Skeleton';
-import type { Note, Folder as FolderType } from '../types';
+import { useState, useMemo } from 'react';
+import { Sparkles, FileText, Folder, Trash2, Plus } from 'lucide-react';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { useNotes } from '../hooks/useNotes';
+import { SkeletonNoteItem, SkeletonStat } from '../components/Skeleton';
+import { useMinLoading } from '../hooks/useMinLoading';
+import type { Folder as FolderType, Note } from '../types';
+
+// Dark mode colors
+const c = {
+  bg: 'bg-[#191919]',
+  sidebar: 'bg-[#202020]',
+  hover: 'hover:bg-[#2a2a2a]',
+  text: 'text-[#e6e6e6]',
+  gray: 'text-[#6b6b6b]',
+  border: 'border-[#2f2f2f]',
+  input: 'bg-[#2a2a2a]',
+};
 
 interface HomePageProps {
-  notes: Note[];
   folders: FolderType[];
-  onNoteClick: (note: Note) => void;
-  onCreateNote: () => void;
-  onDeleteNote: (e: React.MouseEvent, noteId: number) => void;
-  loading: boolean;
+  onSelectNote: (note: Note) => void;
+  onCreateNote?: (title: string, content: string, folderId: number) => void;
 }
 
-export function HomePage({ notes, folders, onNoteClick, onCreateNote, onDeleteNote, loading }: HomePageProps) {
-  const getFolderName = (folderId: number | null) => {
-    if (!folderId) return null;
-    return folders.find(f => f.id === folderId)?.name;
+// Days to consider a note as "unused"
+const UNUSED_DAYS = 30;
+
+function getUnusedNotes(notes: Note[]): Note[] {
+  const now = new Date().getTime();
+  const unusedThreshold = UNUSED_DAYS * 24 * 60 * 60 * 1000; // 30 days in ms
+  
+  return notes.filter((note) => {
+    const updatedAt = new Date(note.updated_at).getTime();
+    return now - updatedAt > unusedThreshold;
+  });
+}
+
+export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps) {
+  const { notes, loading: notesLoading, refetch: refetchNotes, deleteNote } = useNotes();
+  // Minimum 500ms loading time for skeleton
+  const showLoading = useMinLoading(notesLoading, 500);
+  const [showDeleteUnusedModal, setShowDeleteUnusedModal] = useState(false);
+  const [isDeletingUnused, setIsDeletingUnused] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<{ success: number; failed: number } | null>(null);
+  
+  // State for single note delete
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [isDeletingNote, setIsDeletingNote] = useState(false);
+
+  const unusedNotes = useMemo(() => getUnusedNotes(notes), [notes]);
+  const hasUnusedNotes = unusedNotes.length > 0;
+
+  const handleDeleteUnused = async () => {
+    setIsDeletingUnused(true);
+    let success = 0;
+    let failed = 0;
+
+    for (const note of unusedNotes) {
+      try {
+        await deleteNote(note.id);
+        success++;
+      } catch {
+        failed++;
+      }
+    }
+
+    setIsDeletingUnused(false);
+    setDeleteResult({ success, failed });
+    refetchNotes();
   };
 
-  if (loading) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <SkeletonNoteCard key={i} />
+  const handleCloseResultModal = () => {
+    setDeleteResult(null);
+    setShowDeleteUnusedModal(false);
+  };
+
+  // Single note delete handlers
+  const handleDeleteClick = (e: React.MouseEvent, note: Note) => {
+    e.stopPropagation();
+    setNoteToDelete(note);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!noteToDelete) return;
+    
+    setIsDeletingNote(true);
+    try {
+      await deleteNote(noteToDelete.id);
+      await refetchNotes();
+    } finally {
+      setIsDeletingNote(false);
+      setNoteToDelete(null);
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (isDeletingNote) return;
+    setNoteToDelete(null);
+  };
+
+  const recentNotes = notes.slice(0, 5);
+
+  return (
+    <div 
+      data-area-id="homepage"
+      className={`homepage flex flex-col h-full overflow-y-auto ${c.bg}`}
+    >
+      {/* Hero Section with Rainbow Animation */}
+      <div 
+        data-area-id="homepage-hero"
+        className="homepage-hero flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-12 sm:py-16 min-h-[40vh] sm:min-h-[50vh] relative overflow-hidden"
+      >
+        {/* Rainbow Gradient Animation Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: 'linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)',
+              backgroundSize: '400% 400%',
+              animation: 'rainbow-shift 15s ease infinite',
+            }}
+          />
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse at center, transparent 0%, #191919 70%)',
+            }}
+          />
+        </div>
+        
+        <style>{`
+          @keyframes rainbow-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+        `}</style>
+
+        <div className="homepage-hero-content text-center mb-8 sm:mb-12 relative z-10">
+          <div className="homepage-hero-icon inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-2xl mb-4 sm:mb-6 shadow-lg">
+            <Sparkles size={28} className="text-white sm:hidden" />
+            <Sparkles size={32} className="text-white hidden sm:block" />
+          </div>
+          <h1 className={`homepage-hero-title text-2xl sm:text-4xl font-bold ${c.text} mb-2 sm:mb-3`}>
+            Welcome to MagicBox
+          </h1>
+          <p className={`homepage-hero-subtitle ${c.gray} text-base sm:text-lg`}>
+            Capture your thoughts. Organize with folders.
+          </p>
+        </div>
+      </div>
+
+      {/* Recent Notes */}
+      {showLoading ? (
+        <div 
+          data-area-id="homepage-recent-section"
+          className="homepage-recent-section max-w-4xl mx-auto w-full px-4 sm:px-8 pb-12 sm:pb-16"
+        >
+          <h2 className={`homepage-recent-title text-lg font-semibold ${c.text} mb-4 flex items-center gap-2`}>
+            <FileText size={20} />
+            Recent Notes
+          </h2>
+          <div className="homepage-recent-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonNoteItem key={i} />
             ))}
           </div>
         </div>
-      </div>
-    );
-  }
-
-  if (notes.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-[#6b6b6b] p-4">
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 mx-auto border-2 border-dashed border-[#2f2f2f] rounded-2xl flex items-center justify-center">
-            <span className="text-3xl">📝</span>
-          </div>
-          <h2 className="text-xl font-semibold text-[#e6e6e6]">No notes yet</h2>
-          <p className="text-sm max-w-xs mx-auto">Create your first note to get started with MagicBox</p>
-          <button
-            onClick={onCreateNote}
-            className="mt-4 px-6 py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-xl text-sm font-medium active:scale-95 transition-all shadow-lg shadow-blue-500/20"
-          >
-            <Plus size={18} className="inline mr-2" />
-            Create Note
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Stats */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-semibold text-[#e6e6e6]">All Notes</h2>
-            <p className="text-sm text-[#6b6b6b] mt-1">{notes.length} note{notes.length !== 1 ? 's' : ''}</p>
-          </div>
-          <button
-            onClick={onCreateNote}
-            className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-lg text-sm font-medium active:scale-95 transition-all"
-          >
-            <Plus size={18} />
-            New Note
-          </button>
-        </div>
-
-        {/* Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {notes.map((note) => {
-            const folderName = getFolderName(note.folder_id);
-            return (
+      ) : recentNotes.length > 0 ? (
+        <div 
+          data-area-id="homepage-recent-section"
+          className="homepage-recent-section max-w-4xl mx-auto w-full px-4 sm:px-8 pb-12 sm:pb-16"
+        >
+          <h2 className={`homepage-recent-title text-lg font-semibold ${c.text} mb-4 flex items-center gap-2`}>
+            <FileText size={20} />
+            Recent Notes
+          </h2>
+          <div className="homepage-recent-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+            {recentNotes.map((note) => (
               <div
                 key={note.id}
-                onClick={() => onNoteClick(note)}
-                className="group bg-[#202020] rounded-xl p-4 border border-[#2f2f2f] hover:border-[#4b4b4b] active:scale-[0.98] transition-all cursor-pointer touch-manipulation"
+                data-area-id={`homepage-recent-${note.id}`}
+                onClick={() => onSelectNote(note)}
+                className={`homepage-recent-card group relative flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all cursor-pointer touch-manipulation active:scale-[0.98]`}
               >
-                {/* Card Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-[#e6e6e6] font-medium line-clamp-2 flex-1 pr-2">
-                    {note.title || 'Untitled'}
-                  </h3>
+                {/* Delete button - appears on hover for desktop, always visible on touch */}
+                <div 
+                  className="homepage-recent-card-delete-wrapper absolute top-3 right-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteNote(e, note.id);
-                    }}
-                    className="
-                      opacity-0 group-hover:opacity-100 
-                      sm:opacity-0 sm:group-hover:opacity-100
-                      p-2 text-[#6b6b6b] hover:text-red-400 
-                      hover:bg-red-500/10 rounded-lg 
-                      transition-all active:scale-95
-                      sm:pointer-events-auto pointer-events-auto
-                    "
-                    aria-label="Delete note"
+                    data-area-id={`homepage-recent-delete-${note.id}`}
+                    onClick={(e) => handleDeleteClick(e, note)}
+                    disabled={isDeletingNote}
+                    className={`homepage-recent-card-delete-btn p-2 ${c.gray} hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors`}
+                    title="Delete note"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
 
-                {/* Preview */}
-                <p className="text-sm text-[#6b6b6b] line-clamp-3 mb-4 min-h-[3.5em]">
-                  {note.content || 'No content'}
-                </p>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-3 border-t border-[#2f2f2f]">
-                  {folderName ? (
-                    <div className="flex items-center gap-1.5 text-xs text-blue-400">
-                      <Folder size={12} />
-                      <span className="truncate max-w-[100px]">{folderName}</span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-[#4b4b4b]">No folder</span>
-                  )}
-                  <span className="text-xs text-[#4b4b4b]">
-                    {formatDistanceToNow(new Date(note.updated_at))}
-                  </span>
+                <FileText size={20} className={`${c.gray} flex-shrink-0`} />
+                <div className="homepage-recent-card-content flex-1 min-w-0 pr-10 sm:pr-8">
+                  <h3 className={`homepage-recent-card-title font-medium ${c.text} truncate`}>{note.title}</h3>
+                  <p className={`homepage-recent-card-preview text-sm ${c.gray} line-clamp-2 mt-1`}>
+                    {note.content?.replace(/[#*_`]/g, '').slice(0, 100) || 'No content'}
+                  </p>
+                  <p className={`homepage-recent-card-date text-xs ${c.gray} mt-2`}>
+                    {new Date(note.updated_at).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
-            );
-          })}
-
-          {/* Add New Note Card - Always visible on mobile, hover on desktop */}
-          <button
-            onClick={onCreateNote}
-            className="
-              flex flex-col items-center justify-center 
-              min-h-[160px] sm:min-h-[180px]
-              border-2 border-dashed border-[#2f2f2f] 
-              hover:border-blue-500/50 hover:bg-blue-500/5
-              active:border-blue-500 active:bg-blue-500/10
-              rounded-xl p-4 
-              transition-all active:scale-[0.98]
-              group
-            "
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* New Note Button when no notes */
+        onCreateNote && (
+          <div 
+            data-area-id="homepage-empty-state"
+            className="homepage-empty-state max-w-4xl mx-auto w-full px-4 sm:px-8 pb-12 sm:pb-16 text-center"
           >
-            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-3 group-hover:bg-blue-500/20 transition-colors">
-              <Plus size={24} className="text-blue-500" />
+            <div className={`p-6 sm:p-8 border-2 border-dashed ${c.border} rounded-2xl`}>
+              <div className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center`}>
+                <FileText size={28} className="text-blue-400 sm:hidden" />
+                <FileText size={32} className="text-blue-400 hidden sm:block" />
+              </div>
+              <h3 className={`text-base sm:text-lg font-semibold ${c.text} mb-2`}>No notes yet</h3>
+              <p className={`text-sm ${c.gray} mb-4 sm:mb-6`}>Create your first note to get started</p>
+              <button
+                data-area-id="homepage-create-note-btn"
+                onClick={() => onCreateNote('New Note', '', 1)}
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition-colors"
+              >
+                <Plus size={18} className="sm:hidden" />
+                <Plus size={20} className="hidden sm:block" />
+                Create New Note
+              </button>
             </div>
-            <span className="text-sm font-medium text-blue-500">Add New Note</span>
-          </button>
+          </div>
+        )
+      )}
+
+      {/* Quick Stats */}
+      <div 
+        data-area-id="homepage-stats"
+        className={`homepage-stats border-t ${c.border} bg-[#202020]`}
+      >
+        <div className="homepage-stats-content max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-center gap-6 sm:gap-12">
+          {showLoading ? (
+            <>
+              <SkeletonStat />
+              <div className={`w-px h-10 ${c.border}`} />
+              <SkeletonStat />
+              <div className={`w-px h-10 ${c.border}`} />
+              <SkeletonStat />
+            </>
+          ) : (
+            <>
+              <div 
+                data-area-id="homepage-stats-notes"
+                className="homepage-stats-notes text-center"
+              >
+                <p className={`homepage-stats-notes-count text-xl sm:text-2xl font-bold ${c.text}`}>{notes.length}</p>
+                <p className={`homepage-stats-notes-label text-xs sm:text-sm ${c.gray} flex items-center gap-1 justify-center`}>
+                  <FileText size={12} className="sm:hidden" />
+                  <FileText size={14} className="hidden sm:block" />
+                  Notes
+                </p>
+              </div>
+              <div className={`homepage-stats-divider w-px h-8 sm:h-10 ${c.border}`} />
+              <div 
+                data-area-id="homepage-stats-folders"
+                className="homepage-stats-folders text-center"
+              >
+                <p className={`homepage-stats-folders-count text-xl sm:text-2xl font-bold ${c.text}`}>{folders.length}</p>
+                <p className={`homepage-stats-folders-label text-xs sm:text-sm ${c.gray} flex items-center gap-1 justify-center`}>
+                  <Folder size={12} className="sm:hidden" />
+                  <Folder size={14} className="hidden sm:block" />
+                  Folders
+                </p>
+              </div>
+              <div className={`homepage-stats-divider w-px h-8 sm:h-10 ${c.border}`} />
+              <div 
+                data-area-id="homepage-stats-unused"
+                className="homepage-stats-unused text-center"
+              >
+                <p className={`homepage-stats-unused-count text-xl sm:text-2xl font-bold ${hasUnusedNotes ? 'text-red-500' : c.text}`}>
+                  {unusedNotes.length}
+                </p>
+                <button
+                  data-area-id="homepage-stats-unused-btn"
+                  onClick={() => setShowDeleteUnusedModal(true)}
+                  disabled={!hasUnusedNotes}
+                  className={`homepage-stats-unused-btn text-xs sm:text-sm flex items-center gap-1 justify-center transition-colors ${
+                    hasUnusedNotes 
+                      ? 'text-red-500 hover:text-red-400' 
+                      : c.gray
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title={hasUnusedNotes ? `Delete notes not updated in ${UNUSED_DAYS} days` : 'No unused notes'}
+                >
+                  <Trash2 size={12} className="sm:hidden" />
+                  <Trash2 size={14} className="hidden sm:block" />
+                  Unused
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Single Note Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={noteToDelete !== null}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Delete Note"
+        message={`Are you sure you want to delete "${noteToDelete?.title}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={isDeletingNote}
+        variant="danger"
+      />
+
+      {/* Delete Unused Notes Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteUnusedModal && deleteResult === null}
+        onClose={() => setShowDeleteUnusedModal(false)}
+        onConfirm={handleDeleteUnused}
+        title="Delete Unused Notes"
+        message={`You have ${unusedNotes.length} note${unusedNotes.length !== 1 ? 's' : ''} that haven't been updated in ${UNUSED_DAYS} days. Are you sure you want to delete them? This action cannot be undone.`}
+        confirmText={`Delete ${unusedNotes.length} Note${unusedNotes.length !== 1 ? 's' : ''}`}
+        cancelText="Cancel"
+        isLoading={isDeletingUnused}
+        variant="warning"
+      />
+
+      {/* Delete Result Modal */}
+      <ConfirmModal
+        isOpen={deleteResult !== null}
+        onClose={handleCloseResultModal}
+        onConfirm={handleCloseResultModal}
+        title="Deletion Complete"
+        message={
+          deleteResult?.failed === 0
+            ? `Successfully deleted ${deleteResult?.success} note${deleteResult?.success !== 1 ? 's' : ''}.`
+            : `Deleted ${deleteResult?.success} note${deleteResult?.success !== 1 ? 's' : ''}. ${deleteResult?.failed} failed.`
+        }
+        confirmText="OK"
+        cancelText=""
+        variant={deleteResult?.failed === 0 ? 'info' : 'warning'}
+      />
     </div>
   );
 }

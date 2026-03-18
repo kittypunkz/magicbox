@@ -32,7 +32,7 @@ function AppContent() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
+
   const [noteDropdownOpen, setNoteDropdownOpen] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -118,10 +118,7 @@ function AppContent() {
     updateURL('note', selectedFolderId, noteId);
   }, [selectedFolderId, updateURL]);
 
-  // Note handlers
-  const handleNoteCreated = useCallback((note: Note) => {
-    showNote(note.id);
-  }, [showNote]);
+
 
   const handleNoteClick = useCallback((note: Note) => {
     showNote(note.id);
@@ -134,10 +131,7 @@ function AppContent() {
     }
   }, [deleteNote, selectedNoteId, showAllNotes]);
 
-  const handleDeleteNote = useCallback((e: React.MouseEvent, noteId: number) => {
-    e.stopPropagation();
-    handleNoteDeleted(noteId);
-  }, [handleNoteDeleted]);
+
 
   // Folder handlers
   const handleCreateFolder = useCallback(async (name: string) => {
@@ -165,16 +159,12 @@ function AppContent() {
     setIsCreateModalOpen(true);
   }, []);
 
-  const handleCreateNoteWithFolder = useCallback((folderId: number) => {
-    setSelectedFolderId(folderId);
-    setIsCreateModalOpen(true);
-  }, []);
+
 
 
 
   const handleCloseModal = useCallback(() => {
     setIsCreateModalOpen(false);
-    setEditingNote(null);
   }, []);
   
 
@@ -189,13 +179,7 @@ function AppContent() {
 
 
 
-  // Filter notes
-  const filteredNotes = notes.filter(note => {
-    const query = searchQuery.toLowerCase();
-    const titleMatch = note.title?.toLowerCase().includes(query) ?? false;
-    const contentMatch = note.content?.toLowerCase().includes(query) ?? false;
-    return titleMatch || contentMatch;
-  });
+
 
   const getFolderName = useCallback((folderId: number | null) => {
     if (!folderId) return 'All Notes';
@@ -321,12 +305,12 @@ function AppContent() {
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           {view === 'home' && (
             <HomePage
-              notes={filteredNotes}
               folders={folders}
-              onNoteClick={handleNoteClick}
-              onCreateNote={handleCreateNote}
-              onDeleteNote={handleDeleteNote}
-              loading={showLoading}
+              onSelectNote={handleNoteClick}
+              onCreateNote={() => {
+                // TODO: Create note with provided details
+                setIsCreateModalOpen(true);
+              }}
             />
           )}
           
@@ -334,11 +318,11 @@ function AppContent() {
             <FolderPage
               folderId={selectedFolderId}
               folders={folders}
-              notes={filteredNotes}
-              onNoteClick={handleNoteClick}
-              onCreateNote={() => handleCreateNoteWithFolder(selectedFolderId)}
-              onDeleteNote={handleDeleteNote}
-              loading={showLoading}
+              onSelectNote={handleNoteClick}
+              onCreateNote={() => {
+                // TODO: Create note with provided details
+                setIsCreateModalOpen(true);
+              }}
             />
           )}
           
@@ -366,15 +350,16 @@ function AppContent() {
       </div>
 
       {/* Modals */}
-      {isCreateModalOpen && (
-        <CreateNoteModal
-          folders={folders}
-          initialFolderId={selectedFolderId ?? undefined}
-          editingNote={editingNote ?? undefined}
-          onClose={handleCloseModal}
-          onNoteCreated={handleNoteCreated}
-        />
-      )}
+      <CreateNoteModal
+        isOpen={isCreateModalOpen}
+        folders={folders}
+        onClose={handleCloseModal}
+        onCreateNote={() => {
+          // TODO: Implement note creation
+          handleCloseModal();
+        }}
+        defaultFolderName={selectedFolderId ? folders.find(f => f.id === selectedFolderId)?.name : undefined}
+      />
 
 
     </div>

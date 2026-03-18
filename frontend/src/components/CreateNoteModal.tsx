@@ -1,363 +1,363 @@
-import { useState, useRef, useEffect } from 'react';
-import { X, Hash, ChevronDown } from 'lucide-react';
-import type { Note, Folder } from '../types';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { X, FileText, Hash } from 'lucide-react';
+import type { Folder } from '../types';
 
-interface CreateNoteModalProps {
-  folders: Folder[];
-  initialFolderId?: number;
-  editingNote?: Note;
-  onClose: () => void;
-  onNoteCreated: (note: Note) => void;
-
-}
-
+// Dark mode colors
 const c = {
-  overlay: 'bg-black/70 backdrop-blur-sm',
-  bg: 'bg-[#202020]',
+  overlay: 'bg-black/60',
+  modal: 'bg-[#202020]',
+  input: 'bg-[#2a2a2a]',
   text: 'text-[#e6e6e6]',
   gray: 'text-[#6b6b6b]',
   border: 'border-[#2f2f2f]',
-  primary: 'text-blue-500',
-  input: 'bg-[#2f2f2f] text-[#e6e6e6] placeholder-[#6b6b6b]',
-  button: 'bg-blue-500 hover:bg-blue-600 active:bg-blue-700',
+  hover: 'hover:bg-[#3a3a3a]',
+  primary: 'bg-blue-600 hover:bg-blue-700',
+  secondary: 'bg-[#2a2a2a] hover:bg-[#3a3a3a]',
 };
 
-// Hashtag autocomplete logic
-function getHashtagAtCursor(text: string, cursorPosition: number): { match: RegExpMatchArray; searchTerm: string } | null {
-  const textBeforeCursor = text.slice(0, cursorPosition);
-  const hashtagMatch = textBeforeCursor.match(/#([\w\s.-]*)$/);
-  
-  if (hashtagMatch) {
-    return {
-      match: hashtagMatch,
-      searchTerm: hashtagMatch[1].toLowerCase().trim()
-    };
-  }
-  return null;
+interface CreateNoteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  folders: Folder[];
+  onCreateNote: (title: string, content: string, folderName: string | null) => void;
+  defaultFolderName?: string;
 }
 
 export function CreateNoteModal({ 
-  folders, 
-  initialFolderId,
-  editingNote, 
+  isOpen, 
   onClose, 
-  onNoteCreated
+  folders,
+  onCreateNote,
+  defaultFolderName 
 }: CreateNoteModalProps) {
-  const [title, setTitle] = useState(editingNote?.title ?? '');
-  const [content, setContent] = useState(editingNote?.content ?? '');
-  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(
-    editingNote?.folder_id ?? initialFolderId ?? null
-  );
-  const [showFolderDropdown, setShowFolderDropdown] = useState(false);
-  
-  // Hashtag autocomplete state
-  const [hashtagSuggestions, setHashtagSuggestions] = useState<Folder[]>([]);
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
-  const [activeHashtag, setActiveHashtag] = useState<{ start: number; end: number; searchTerm: string } | null>(null);
-  
-  const titleRef = useRef<HTMLInputElement>(null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [activeInput, setActiveInput] = useState<'title' | 'content'>('title');
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [justSelected, setJustSelected] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const contentInputRef = useRef<HTMLTextAreaElement>(null);
 
-  const isEditing = !!editingNote;
-
-  // Focus title on mount
+  // Reset form when modal opens
   useEffect(() => {
-    setTimeout(() => titleRef.current?.focus(), 100);
-  }, []);
+    if (isOpen) {
+      setTitle('');
+      setContent('');
+      setHighlightedIndex(0);
+      setJustSelected(false);
+      setActiveInput('title');
+      // Focus title input after modal opens
+      setTimeout(() => titleInputRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
 
-  // Close dropdowns when clicking outside
+  // Handle escape key
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowFolderDropdown(false);
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
-  // Handle hashtag input
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    const cursorPosition = e.target.selectionStart;
-    setContent(newContent);
-    
-    const hashtag = getHashtagAtCursor(newContent, cursorPosition);
-    if (hashtag) {
-      const filtered = folders.filter(f => 
-        f.name.toLowerCase().includes(hashtag.searchTerm)
-      );
-      setHashtagSuggestions(filtered);
-      setActiveHashtag({
-        start: cursorPosition - hashtag.match[0].length,
-        end: cursorPosition,
-        searchTerm: hashtag.match[0]
-      });
-      setSelectedSuggestionIndex(0);
-    } else {
-      setHashtagSuggestions([]);
-      setActiveHashtag(null);
+  // Get hashtag at cursor position
+  const getHashtagAtCursor = (text: string, pos: number): { match: RegExpMatchArray | null; searchTerm: string } => {
+    const textBeforeCursor = text.slice(0, pos);
+    const match = textBeforeCursor.match(/#([\w.-]*)$/);
+    return { 
+      match, 
+      searchTerm: match ? match[1].toLowerCase() : '' 
+    };
+  };
+
+  // Get current active text and cursor position
+  const getActiveTextInfo = () => {
+    if (activeInput === 'title') {
+      return { text: title, cursor: titleInputRef.current?.selectionStart || 0 };
     }
+    return { text: content, cursor: contentInputRef.current?.selectionStart || 0 };
   };
 
-  // Select hashtag suggestion
-  const selectHashtag = (folder: Folder) => {
-    if (!activeHashtag || !contentRef.current) return;
+  const { text: activeText, cursor: activeCursor } = getActiveTextInfo();
+  const { match: hashtagMatch, searchTerm } = getHashtagAtCursor(activeText, activeCursor);
+
+  // Filter folders based on search term
+  const filteredFolders = useMemo(() => {
+    if (!hashtagMatch) return [];
+    return folders.filter(f => 
+      f.name.toLowerCase().includes(searchTerm)
+    );
+  }, [hashtagMatch, searchTerm, folders]);
+
+  // Check if we should show suggestions
+  const showSuggestions = hashtagMatch !== null && !justSelected;
+
+  // Handle folder selection
+  const handleFolderSelect = (folder: Folder) => {
+    const inputRef = activeInput === 'title' ? titleInputRef : contentInputRef;
+    const currentText = activeInput === 'title' ? title : content;
+    const pos = inputRef.current?.selectionStart || 0;
     
-    const before = content.slice(0, activeHashtag.start);
-    const after = content.slice(activeHashtag.end);
-    const newContent = `${before}#${folder.name} ${after}`;
+    // Find the hashtag position
+    const textBeforeCursor = currentText.slice(0, pos);
+    const match = textBeforeCursor.match(/#([\w.-]*)$/);
     
-    setContent(newContent);
-    setSelectedFolderId(folder.id);
-    setHashtagSuggestions([]);
-    setActiveHashtag(null);
+    if (match) {
+      const before = currentText.slice(0, match.index);
+      const after = currentText.slice(pos);
+      // Add space after folder name so user can continue typing
+      const newText = `${before}#${folder.name} ${after}`;
+      
+      if (activeInput === 'title') {
+        setTitle(newText);
+      } else {
+        setContent(newText);
+      }
+      
+      // Focus back and set cursor position (after the space)
+      setTimeout(() => {
+        inputRef.current?.focus();
+        const newPos = (match.index || 0) + folder.name.length + 2; // +2 for # and space
+        inputRef.current?.setSelectionRange(newPos, newPos);
+      }, 0);
+    }
     
-    // Restore cursor position after hashtag
-    setTimeout(() => {
-      const newPosition = activeHashtag.start + folder.name.length + 2;
-      contentRef.current?.setSelectionRange(newPosition, newPosition);
-      contentRef.current?.focus();
-    }, 0);
+    // Reset to hide dropdown immediately
+    setHighlightedIndex(0);
+    setJustSelected(true);
+    
+    // Re-enable suggestions after a short delay
+    setTimeout(() => setJustSelected(false), 100);
   };
 
-  // Handle keyboard navigation for hashtags
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (hashtagSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
+  // Handle keyboard navigation for suggestions
+  const handleKeyDown = (e: React.KeyboardEvent, inputType: 'title' | 'content') => {
+    setActiveInput(inputType);
+    
+    if (!showSuggestions || filteredFolders.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
         e.preventDefault();
-        setSelectedSuggestionIndex(prev => 
-          prev < hashtagSuggestions.length - 1 ? prev + 1 : prev
+        setHighlightedIndex(prev => 
+          prev < filteredFolders.length - 1 ? prev + 1 : prev
         );
-      } else if (e.key === 'ArrowUp') {
+        break;
+      case 'ArrowUp':
         e.preventDefault();
-        setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : 0);
-      } else if (e.key === 'Tab' || e.key === 'Enter') {
+        setHighlightedIndex(prev => prev > 0 ? prev - 1 : 0);
+        break;
+      case 'Tab':
         e.preventDefault();
-        selectHashtag(hashtagSuggestions[selectedSuggestionIndex]);
-      } else if (e.key === 'Escape') {
-        setHashtagSuggestions([]);
-        setActiveHashtag(null);
-      }
-    } else if (e.key === 'Enter' && e.metaKey) {
-      handleSubmit();
-    } else if (e.key === 'Escape') {
-      onClose();
+        // Tab always selects the first matching folder or creates new if exact match
+        if (filteredFolders.length > 0) {
+          // If there's an exact match with search term, use that
+          const exactMatch = filteredFolders.find(f => 
+            f.name.toLowerCase() === searchTerm.toLowerCase()
+          );
+          handleFolderSelect(exactMatch || filteredFolders[0]);
+        }
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (filteredFolders[highlightedIndex]) {
+          handleFolderSelect(filteredFolders[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        // Just clear the highlight, don't close modal
+        setHighlightedIndex(0);
+        break;
     }
   };
 
-  const handleSubmit = () => {
-    if (!title.trim() && !content.trim()) {
-      onClose();
-      return;
+  // Extract hashtag from text
+  const extractFolderName = (text: string): { folderName: string | null; cleanText: string } => {
+    const hashMatch = text.match(/#([\w.-]+)/);
+    if (hashMatch) {
+      const folderName = hashMatch[1];
+      const cleanText = text.replace(/#[\w.-]+/, '').trim();
+      return { folderName, cleanText };
     }
+    return { folderName: null, cleanText: text };
+  };
 
-    const noteData: Partial<Note> = {
-      title: title.trim() || 'Untitled',
-      content: content.trim(),
-      folder_id: selectedFolderId ?? undefined,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (isEditing && editingNote) {
-      onNoteCreated({ ...editingNote, ...noteData } as Note);
-    } else {
-      onNoteCreated({
-        id: Date.now(),
-        ...noteData,
-        created_at: new Date().toISOString(),
-      } as Note);
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() && !content.trim()) return;
+    
+    // Try to extract folder from title first, then content
+    const titleResult = extractFolderName(title);
+    const contentResult = extractFolderName(content);
+    
+    // Use folder from title if found, otherwise from content, otherwise default
+    const folderName = titleResult.folderName || contentResult.folderName || defaultFolderName || null;
+    
+    // Use cleaned text
+    const cleanTitle = titleResult.cleanText || 'Untitled';
+    const cleanContent = titleResult.folderName ? content : contentResult.cleanText;
+    
+    onCreateNote(cleanTitle, cleanContent, folderName);
     onClose();
   };
 
-  // Get selected folder name
-  const selectedFolderName = selectedFolderId 
-    ? folders.find(f => f.id === selectedFolderId)?.name ?? 'Select Folder'
-    : 'No Folder';
-
-  // Scroll selected suggestion into view
-  useEffect(() => {
-    if (suggestionsRef.current && hashtagSuggestions.length > 0) {
-      const selected = suggestionsRef.current.children[selectedSuggestionIndex] as HTMLElement;
-      selected?.scrollIntoView({ block: 'nearest' });
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
     }
-  }, [selectedSuggestionIndex, hashtagSuggestions.length]);
+  };
+
+  if (!isOpen) return null;
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center ${c.overlay}`}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      data-area-id="create-note-modal"
+      className={`create-note-modal fixed inset-0 z-50 flex items-center justify-center ${c.overlay} backdrop-blur-sm`}
+      onClick={handleBackdropClick}
     >
       <div 
-        className={`
-          ${c.bg} w-full sm:w-[600px] sm:rounded-xl
-          rounded-t-xl sm:rounded-t-xl
-          max-h-[90vh] sm:max-h-[80vh]
-          flex flex-col
-          shadow-2xl
-        `}
-        onClick={e => e.stopPropagation()}
+        data-area-id="create-note-modal-content"
+        className={`create-note-modal-content w-full max-w-lg ${c.modal} rounded-xl shadow-2xl border ${c.border} overflow-hidden`}
       >
         {/* Header */}
-        <div className={`flex items-center justify-between px-4 sm:px-6 py-4 border-b ${c.border}`}>
-          <h2 className={`text-lg font-semibold ${c.text}`}>
-            {isEditing ? 'Edit Note' : 'Create Note'}
-          </h2>
+        <div 
+          data-area-id="create-note-modal-header"
+          className={`create-note-modal-header flex items-center justify-between px-6 py-4 border-b ${c.border}`}
+        >
+          <div className="flex items-center gap-3">
+            <FileText size={20} className="text-blue-500" />
+            <h2 className={`text-lg font-semibold ${c.text}`}>Create New Note</h2>
+          </div>
           <button
+            data-area-id="create-note-modal-close"
             onClick={onClose}
-            className={`p-2 ${c.gray} hover:text-[#e6e6e6] active:scale-95 transition-all rounded-lg hover:bg-[#2f2f2f]`}
+            className={`p-2 rounded-lg ${c.hover} transition-colors`}
           >
-            <X size={20} />
+            <X size={18} className={c.gray} />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Title Input */}
-          <input
-            ref={titleRef}
-            type="text"
-            placeholder="Note title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className={`
-              w-full text-xl sm:text-2xl font-semibold 
-              bg-transparent ${c.text} placeholder-[#4b4b4b]
-              outline-none
-            `}
-          />
-
-          {/* Folder Selector */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setShowFolderDropdown(!showFolderDropdown)}
-              className={`
-                w-full sm:w-auto flex items-center gap-2 px-3 py-2 
-                ${c.input} rounded-lg text-sm
-                active:scale-[0.98] transition-transform
-              `}
-            >
-              <Hash size={16} className={c.primary} />
-              <span className={selectedFolderId ? c.text : c.gray}>
-                {selectedFolderName}
-              </span>
-              <ChevronDown size={14} className={`${c.gray} transition-transform ${showFolderDropdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showFolderDropdown && (
-              <div className={`
-                absolute left-0 top-full mt-1 w-full sm:w-64
-                ${c.bg} border ${c.border} rounded-lg shadow-lg py-1 z-50
-                max-h-48 overflow-y-auto
-              `}>
-                <button
-                  onClick={() => {
-                    setSelectedFolderId(null);
-                    setShowFolderDropdown(false);
-                  }}
-                  className={`
-                    w-full px-3 py-2.5 text-left text-sm ${c.gray} hover:bg-[#2f2f2f]
-                    transition-colors
-                    ${selectedFolderId === null ? 'bg-[#2f2f2f]' : ''}
-                  `}
-                >
-                  No Folder
-                </button>
-                {folders.map(folder => (
-                  <button
-                    key={folder.id}
-                    onClick={() => {
-                      setSelectedFolderId(folder.id);
-                      setShowFolderDropdown(false);
-                    }}
-                    className={`
-                      w-full px-3 py-2.5 text-left text-sm ${c.text} hover:bg-[#2f2f2f]
-                      transition-colors
-                      ${selectedFolderId === folder.id ? 'bg-[#2f2f2f]' : ''}
-                    `}
-                  >
-                    #{folder.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Content Input with Hashtag Suggestions */}
           <div className="relative">
-            <textarea
-              ref={contentRef}
-              placeholder="Start typing... Use # to tag a folder"
-              value={content}
-              onChange={handleContentChange}
-              onKeyDown={handleKeyDown}
-              rows={8}
-              className={`
-                w-full ${c.input} rounded-lg px-4 py-3 
-                text-sm sm:text-base leading-relaxed
-                outline-none focus:ring-2 focus:ring-blue-500/20 resize-none
-                min-h-[150px] sm:min-h-[200px]
-              `}
-            />
+            <label className={`block text-sm font-medium ${c.gray} mb-2`}>
+              <span className="flex items-center gap-2">
+                Title
+                <span className={`text-xs ${c.gray} font-normal`}>
+                  (use #foldername to organize)
+                </span>
+              </span>
+            </label>
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'title')}
+              onFocus={() => setActiveInput('title')}
 
-            {/* Hashtag Suggestions */}
-            {hashtagSuggestions.length > 0 && (
-              <div
-                ref={suggestionsRef}
-                className={`
-                  absolute left-0 right-0 sm:right-auto sm:w-64
-                  ${c.bg} border ${c.border} rounded-lg shadow-lg 
-                  mt-1 max-h-40 overflow-y-auto z-50
-                `}
-              >
-                {hashtagSuggestions.map((folder, index) => (
+              placeholder="Note title... #work"
+              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
+            />
+          </div>
+
+          {/* Content Input */}
+          <div className="relative">
+            <label className={`block text-sm font-medium ${c.gray} mb-2`}>
+              <span className="flex items-center gap-2">
+                Content
+                <span className={`text-xs ${c.gray} font-normal`}>
+                  (or use #foldername here)
+                </span>
+              </span>
+            </label>
+            <textarea
+              ref={contentInputRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'content')}
+              onFocus={() => setActiveInput('content')}
+
+              placeholder="What's on your mind? #ideas"
+              rows={4}
+              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text} resize-none`}
+            />
+          </div>
+
+          {/* Folder Suggestions Dropdown */}
+          {showSuggestions && filteredFolders.length > 0 && (
+            <div 
+              data-area-id="create-note-folder-suggestions"
+              className={`${c.input} border ${c.border} rounded-lg overflow-hidden`}
+            >
+              <div className={`px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
+                {searchTerm ? `Folders matching "${searchTerm}"` : 'Select folder (Enter or Tab to select, ↑↓ to navigate)'}
+              </div>
+              <div className="max-h-40 overflow-y-auto">
+                {filteredFolders.map((folder, index) => (
                   <button
                     key={folder.id}
-                    onClick={() => selectHashtag(folder)}
-                    className={`
-                      w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm
-                      ${index === selectedSuggestionIndex ? 'bg-blue-500/20 text-blue-400' : `${c.text} hover:bg-[#2f2f2f]`}
-                      transition-colors
-                    `}
+                    type="button"
+                    onClick={() => handleFolderSelect(folder)}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                      index === highlightedIndex ? 'bg-blue-900/20' : c.hover
+                    }`}
                   >
-                    <Hash size={14} />
-                    {folder.name}
+                    <Hash size={16} className="text-blue-500" />
+                    <span className={`text-sm ${c.text}`}>{folder.name}</span>
+                    {folder.id === 1 && (
+                      <span className={`ml-auto text-xs ${c.gray}`}>default</span>
+                    )}
+                    {index === highlightedIndex && (
+                      <span className="ml-auto text-xs text-blue-400">Enter</span>
+                    )}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          )}
 
-        {/* Footer */}
-        <div className={`flex items-center justify-end gap-3 px-4 sm:px-6 py-4 border-t ${c.border}`}>
-          <button
-            onClick={onClose}
-            className={`
-              px-4 py-2.5 rounded-lg text-sm font-medium
-              ${c.gray} hover:text-[#e6e6e6] hover:bg-[#2f2f2f]
-              active:scale-95 transition-all
-            `}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            className={`
-              px-6 py-2.5 rounded-lg text-sm font-medium text-white
-              ${c.button}
-              active:scale-95 transition-all
-              disabled:opacity-50 disabled:cursor-not-allowed
-            `}
-            disabled={!title.trim() && !content.trim()}
-          >
-            {isEditing ? 'Save Changes' : 'Create Note'}
-          </button>
-        </div>
+          {/* Create New Folder Option */}
+          {showSuggestions && searchTerm && !filteredFolders.find(f => f.name.toLowerCase() === searchTerm.toLowerCase()) && (
+            <div className={`flex items-center gap-2 text-xs ${c.gray} px-3 py-2 bg-blue-900/10 rounded-lg`}>
+              <Hash size={12} className="text-blue-500" />
+              <span>
+                Will create new folder: <span className="text-blue-400 font-medium">#{searchTerm}</span>
+              </span>
+            </div>
+          )}
+
+          {/* Folder Hint */}
+          <div className={`flex items-center gap-2 text-xs ${c.gray} bg-[#2a2a2a] px-3 py-2 rounded-lg`}>
+            <Hash size={12} className="text-blue-500" />
+            <span>
+              Type <code className="text-blue-400">#foldername</code> to organize. 
+              If folder doesn't exist, it will be created automatically.
+            </span>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#2f2f2f]">
+            <button
+              type="button"
+              onClick={onClose}
+              className={`px-4 py-2 text-sm font-medium ${c.gray} ${c.secondary} rounded-lg transition-colors`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!title.trim() && !content.trim()}
+              className={`px-4 py-2 text-sm font-medium text-white ${c.primary} rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              Create Note
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
