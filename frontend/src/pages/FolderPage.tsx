@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square } from 'lucide-react';
 import { useFolder } from '../hooks/useFolders';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { CreateNoteModal } from '../components/CreateNoteModal';
 import { SkeletonCard } from '../components/Skeleton';
 import { useMinLoading } from '../hooks/useMinLoading';
 import { notesAPI } from '../api/client';
-import type { Note } from '../types';
+import type { Note, Folder as FolderType } from '../types';
 
 // Dark mode colors
 const c = {
@@ -20,6 +21,7 @@ const c = {
 
 interface FolderPageProps {
   folderId: number;
+  folders: FolderType[];
   onSelectNote: (note: Note) => void;
   onCreateNote?: (title: string, content: string, folderId: number) => void;
 }
@@ -32,7 +34,7 @@ function formatDate(dateStr: string) {
   });
 }
 
-export function FolderPage({ folderId, onSelectNote, onCreateNote }: FolderPageProps) {
+export function FolderPage({ folderId, folders, onSelectNote, onCreateNote }: FolderPageProps) {
   const { folder, loading, error, refetch } = useFolder(folderId);
   // Minimum 500ms loading time for skeleton
   const showLoading = useMinLoading(loading, 500);
@@ -46,6 +48,9 @@ export function FolderPage({ folderId, onSelectNote, onCreateNote }: FolderPageP
   const [selectedNotes, setSelectedNotes] = useState<Set<number>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  
+  // New Note Modal state
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 
   const handleDeleteClick = (e: React.MouseEvent, note: Note) => {
     e.stopPropagation();
@@ -124,9 +129,9 @@ export function FolderPage({ folderId, onSelectNote, onCreateNote }: FolderPageP
     setShowBulkDeleteConfirm(false);
   };
 
-  const handleCreateNote = () => {
+  const handleCreateNote = (title: string, content: string, targetFolderId: number) => {
     if (onCreateNote) {
-      onCreateNote('New Note', '', folderId);
+      onCreateNote(title, content, targetFolderId);
     }
   };
 
@@ -275,7 +280,7 @@ export function FolderPage({ folderId, onSelectNote, onCreateNote }: FolderPageP
             {onCreateNote && (
               <button
                 data-area-id="folderpage-create-note-btn"
-                onClick={handleCreateNote}
+                onClick={() => setIsNoteModalOpen(true)}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
               >
                 <Plus size={20} />
@@ -378,6 +383,17 @@ export function FolderPage({ folderId, onSelectNote, onCreateNote }: FolderPageP
         isLoading={isBulkDeleting}
         variant="danger"
       />
+
+      {/* Create Note Modal */}
+      {onCreateNote && (
+        <CreateNoteModal
+          isOpen={isNoteModalOpen}
+          onClose={() => setIsNoteModalOpen(false)}
+          folders={folders}
+          onCreateNote={handleCreateNote}
+          initialFolderId={folderId}
+        />
+      )}
     </div>
   );
 }

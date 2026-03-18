@@ -163,7 +163,8 @@ function App() {
           )}
           {view === 'folder' && selectedFolderId && (
             <FolderPage 
-              folderId={selectedFolderId} 
+              folderId={selectedFolderId}
+              folders={folders}
               onSelectNote={handleSelectNote}
               onCreateNote={handleCreateNote}
             />
