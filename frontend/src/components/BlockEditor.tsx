@@ -3,6 +3,7 @@ import { ArrowLeft, MoreVertical, Trash2 } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
+import { useMinLoading } from '../hooks/useMinLoading';
 import { ConfirmModal } from './ConfirmModal';
 import type { Note } from '../types';
 
@@ -26,6 +27,8 @@ interface BlockEditorProps {
 
 export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorProps) {
   const { note, loading, error, updateNote } = useNote(noteId);
+  // Minimum 500ms loading time for skeleton
+  const showLoading = useMinLoading(loading, 500);
   const { folders } = useFolders();
   const { addRecentNote } = useRecentNotes();
   
@@ -159,7 +162,7 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
   // Get folder name
   const currentFolder = folders.find((f) => f.id === folderId);
 
-  if (loading) {
+  if (showLoading) {
     return (
       <div className="flex flex-col h-full bg-[#191919]">
         {/* Skeleton Header */}

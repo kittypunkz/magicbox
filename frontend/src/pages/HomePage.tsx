@@ -3,6 +3,7 @@ import { Sparkles, FileText, Folder, Trash2, Plus } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useNotes } from '../hooks/useNotes';
 import { SkeletonNoteItem, SkeletonStat } from '../components/Skeleton';
+import { useMinLoading } from '../hooks/useMinLoading';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -37,6 +38,8 @@ function getUnusedNotes(notes: Note[]): Note[] {
 
 export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps) {
   const { notes, loading: notesLoading, refetch: refetchNotes, deleteNote } = useNotes();
+  // Minimum 500ms loading time for skeleton
+  const showLoading = useMinLoading(notesLoading, 500);
   const [showDeleteUnusedModal, setShowDeleteUnusedModal] = useState(false);
   const [isDeletingUnused, setIsDeletingUnused] = useState(false);
   const [deleteResult, setDeleteResult] = useState<{ success: number; failed: number } | null>(null);
@@ -148,7 +151,7 @@ export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps)
       </div>
 
       {/* Recent Notes */}
-      {notesLoading ? (
+      {showLoading ? (
         <div 
           data-area-id="homepage-recent-section"
           className="homepage-recent-section max-w-4xl mx-auto w-full px-8 pb-16"
@@ -242,7 +245,7 @@ export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps)
         className={`homepage-stats border-t ${c.border} bg-[#202020]`}
       >
         <div className="homepage-stats-content max-w-4xl mx-auto px-8 py-6 flex items-center justify-center gap-12">
-          {notesLoading ? (
+          {showLoading ? (
             <>
               <SkeletonStat />
               <div className={`w-px h-10 ${c.border}`} />

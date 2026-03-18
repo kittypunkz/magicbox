@@ -3,6 +3,7 @@ import { Folder, FileText, Clock, Trash2 } from 'lucide-react';
 import { useFolder } from '../hooks/useFolders';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { SkeletonCard } from '../components/Skeleton';
+import { useMinLoading } from '../hooks/useMinLoading';
 import { notesAPI } from '../api/client';
 import type { Note } from '../types';
 
@@ -32,6 +33,8 @@ function formatDate(dateStr: string) {
 
 export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
   const { folder, loading, error, refetch } = useFolder(folderId);
+  // Minimum 500ms loading time for skeleton
+  const showLoading = useMinLoading(loading, 500);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -58,7 +61,7 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
     setNoteToDelete(null);
   };
 
-  if (loading) {
+  if (showLoading) {
     return (
       <div 
         data-area-id="folderpage"

@@ -3,6 +3,7 @@ import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github, FileText } from '
 import { RecentNotes } from './RecentNotes';
 import { CreateNoteModal } from './CreateNoteModal';
 import { SkeletonFolderItem } from './Skeleton';
+import { useMinLoading } from '../hooks/useMinLoading';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -47,6 +48,9 @@ export function Sidebar({
   
   // New Note Modal state
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  
+  // Minimum 500ms loading time for skeleton
+  const showLoading = useMinLoading(loading, 500);
 
   const handleCreate = async () => {
     if (!newFolderName.trim()) return;
@@ -154,7 +158,7 @@ export function Sidebar({
         )}
 
         {/* Folder List */}
-        {loading ? (
+        {showLoading ? (
           <div className="sidebar-folder-list-loading px-2 py-1 space-y-1">
             {Array.from({ length: 5 }).map((_, i) => (
               <SkeletonFolderItem key={i} />
