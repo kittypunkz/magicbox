@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { SearchBar } from './components/SearchBar';
 import { BlockEditor } from './components/BlockEditor';
@@ -12,8 +13,6 @@ import type { Note } from './types';
 // Agentation - Visual annotation tool for AI agents (dev only)
 import { Agentation } from 'agentation';
 
-type ViewType = 'home' | 'folder' | 'note';
-
 // Dark mode colors
 const colors = {
   bg: 'bg-[#191919]',
@@ -24,10 +23,14 @@ const colors = {
   border: 'border-[#2f2f2f]',
 };
 
-function App() {
-  const [view, setView] = useState<ViewType>('home');
+// Main App Content with Router
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const [view, setView] = useState<'home' | 'folder' | 'note'>('home');
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
-  const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
+  const [, setSelectedNoteId] = useState<number | null>(null);
   
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
@@ -48,6 +51,29 @@ function App() {
   // For note creation and deletion
   const { createNote, deleteNote } = useNotes();
 
+  // Handle URL changes - sync URL with state
+  useEffect(() => {
+    const path = location.pathname;
+    
+    if (path.startsWith('/note/')) {
+      const id = parseInt(path.split('/')[2]);
+      if (!isNaN(id)) {
+        setSelectedNoteId(id);
+        setView('note');
+      }
+    } else if (path.startsWith('/folder/')) {
+      const id = parseInt(path.split('/')[2]);
+      if (!isNaN(id)) {
+        setSelectedFolderId(id);
+        setView('folder');
+      }
+    } else if (path === '/') {
+      setView('home');
+      setSelectedFolderId(null);
+      setSelectedNoteId(null);
+    }
+  }, [location.pathname]);
+
   // Wrapper functions that also handle UI updates
   const handleCreateFolder = useCallback(async (name: string) => {
     const newFolder = await createFolder(name);
@@ -63,6 +89,7 @@ function App() {
   }, [deleteFolder]);
 
   const handleShowAllNotes = () => {
+    navigate('/');
     setView('home');
     setSelectedFolderId(null);
     setSelectedNoteId(null);
@@ -73,13 +100,14 @@ function App() {
       handleShowAllNotes();
       return;
     }
+    navigate(`/folder/${id}`);
     setSelectedFolderId(id);
     setView('folder');
     setSelectedNoteId(null);
   };
 
   const handleSelectNote = (note: Note) => {
-    setSelectedNoteId(note.id);
+    navigate(`/note/${note.id}`);
     setView('note');
     if (note.folder_id) {
       setSelectedFolderId(note.folder_id);
@@ -87,17 +115,18 @@ function App() {
   };
 
   const handleSelectNoteById = (id: number) => {
-    setSelectedNoteId(id);
+    navigate(`/note/${id}`);
     setView('note');
   };
 
   const handleBackFromEditor = () => {
     if (selectedFolderId) {
+      navigate(`/folder/${selectedFolderId}`);
       setView('folder');
     } else {
+      navigate('/');
       setView('home');
     }
-    setSelectedNoteId(null);
   };
 
   const handleCreateNote = useCallback(async (title: string, content: string, folderId: number) => {
@@ -154,31 +183,28 @@ function App() {
           data-area-id="main-content"
           className="main-content flex-1 overflow-hidden"
         >
-          {view === 'home' && (
-            <HomePage 
-              folders={folders}
-              onSelectNote={handleSelectNote}
-              onCreateNote={handleCreateNote}
-            />
-          )}
-          {view === 'folder' && selectedFolderId && (
-            <FolderPage 
-              folderId={selectedFolderId}
-              folders={folders}
-              onSelectNote={handleSelectNote}
-              onCreateNote={handleCreateNote}
-            />
-          )}
-          {view === 'note' && selectedNoteId && (
-            <BlockEditor
-              noteId={selectedNoteId}
-              onBack={handleBackFromEditor}
-              onUpdate={() => {
-                // Update local state if needed
-              }}
-              onDelete={deleteNote}
-            />
-          )}
+          <Routes>
+            <Route path="/" element={
+              <HomePage 
+                folders={folders}
+                onSelectNote={handleSelectNote}
+                onCreateNote={handleCreateNote}
+              />
+            } />
+            <Route path="/folder/:folderId" element={
+              <FolderPageWrapper 
+                folders={folders}
+                onSelectNote={handleSelectNote}
+                onCreateNote={handleCreateNote}
+              />
+            } />
+            <Route path="/note/:noteId" element={
+              <BlockEditorWrapper 
+                onBack={handleBackFromEditor}
+                onDelete={deleteNote}
+              />
+            } />
+          </Routes>
         </main>
       </div>
 
@@ -195,6 +221,59 @@ function App() {
       {import.meta.env.DEV && <Agentation />}
     </div>
   );
+}
+
+// Wrapper components to handle URL params
+function FolderPageWrapper({ 
+  folders, 
+  onSelectNote, 
+  onCreateNote 
+}: { 
+  folders: any[]; 
+  onSelectNote: (note: Note) => void; 
+  onCreateNote: (title: string, content: string, folderId: number) => void;
+}) {
+  const { folderId } = useParams();
+  const id = parseInt(folderId || '0');
+  
+  if (!id) return null;
+  
+  return (
+    <FolderPage 
+      folderId={id}
+      folders={folders}
+      onSelectNote={onSelectNote}
+      onCreateNote={onCreateNote}
+    />
+  );
+}
+
+function BlockEditorWrapper({ 
+  onBack, 
+  onDelete 
+}: { 
+  onBack: () => void; 
+  onDelete: (id: number) => void;
+}) {
+  const { noteId } = useParams();
+  const id = parseInt(noteId || '0');
+  
+  if (!id) return null;
+  
+  return (
+    <BlockEditor
+      noteId={id}
+      onBack={onBack}
+      onUpdate={() => {
+        // Update local state if needed
+      }}
+      onDelete={onDelete}
+    />
+  );
+}
+
+function App() {
+  return <AppContent />;
 }
 
 export default App;
