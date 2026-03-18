@@ -1,279 +1,394 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
-import { SearchBar } from './components/SearchBar';
-import { BlockEditor } from './components/BlockEditor';
-import { HomePage } from './pages/HomePage';
+
+import { CreateNoteModal } from './components/CreateNoteModal';
+
+import { MobileNav } from './components/MobileNav';
 import { FolderPage } from './pages/FolderPage';
-import { useFolders } from './hooks/useFolders';
+import { NoteEditor } from './components/NoteEditor';
+import { HomePage } from './pages/HomePage';
 import { useNotes } from './hooks/useNotes';
-import { Toast, type ToastType } from './components/Toast';
-import type { Note } from './types';
+import { useFolders } from './hooks/useFolders';
+import type { Note, Folder } from './types';
+import { useMinLoading } from './hooks/useMinLoading';
+import { Search, ArrowLeft, MoreVertical } from 'lucide-react';
+import './App.css';
 
-// Agentation - Visual annotation tool for AI agents (dev only)
-import { Agentation } from 'agentation';
+type ViewType = 'home' | 'folder' | 'note';
 
-// Dark mode colors
-const colors = {
-  bg: 'bg-[#191919]',
-  sidebar: 'bg-[#202020]',
-  hover: 'hover:bg-[#2a2a2a]',
-  text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
-};
-
-// Main App Content with Router
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const [view, setView] = useState<'home' | 'folder' | 'note'>('home');
-  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
-  const [, setSelectedNoteId] = useState<number | null>(null);
-  
-  // Toast state
-  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const { folderId, noteId } = useParams<{ folderId?: string; noteId?: string }>();
 
-  const showToast = useCallback((message: string, type: ToastType = 'success') => {
-    setToast({ message, type });
+  // View state
+  const [view, setView] = useState<ViewType>('home');
+  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
+  const [selectedNote, setSelectedNote] = useState<Note | undefined>(undefined);
+
+  // UI state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [noteDropdownOpen, setNoteDropdownOpen] = useState<number | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const { notes, deleteNote, loading: notesLoading } = useNotes();
+  const { folders, createFolder, updateFolder, deleteFolder, loading: foldersLoading } = useFolders();
+
+  const loading = notesLoading || foldersLoading;
+  const showLoading = useMinLoading(loading);
+
+  // Check mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Shared folders state for both Sidebar and HomePage
-  const { 
-    folders, 
-    loading, 
-    createFolder, 
-    updateFolder, 
-    deleteFolder
-  } = useFolders();
-  
-  // For note creation and deletion
-  const { createNote, deleteNote } = useNotes();
-
-  // Handle URL changes - sync URL with state
+  // Close sidebar on route change on mobile
   useEffect(() => {
-    const path = location.pathname;
-    
-    if (path.startsWith('/note/')) {
-      const id = parseInt(path.split('/')[2]);
+    if (isMobile) setSidebarOpen(false);
+  }, [location.pathname, isMobile]);
+
+  // URL sync - update state when URL changes
+  useEffect(() => {
+    if (noteId) {
+      const id = parseInt(noteId);
       if (!isNaN(id)) {
-        setSelectedNoteId(id);
         setView('note');
+        setSelectedNoteId(id);
       }
-    } else if (path.startsWith('/folder/')) {
-      const id = parseInt(path.split('/')[2]);
+    } else if (folderId) {
+      const id = parseInt(folderId);
       if (!isNaN(id)) {
-        setSelectedFolderId(id);
         setView('folder');
+        setSelectedFolderId(id);
       }
-    } else if (path === '/') {
+    } else if (location.pathname === '/') {
       setView('home');
       setSelectedFolderId(null);
       setSelectedNoteId(null);
     }
-  }, [location.pathname]);
+  }, [noteId, folderId, location.pathname]);
 
-  // Wrapper functions that also handle UI updates
-  const handleCreateFolder = useCallback(async (name: string) => {
-    const newFolder = await createFolder(name);
-    return newFolder;
-  }, [createFolder]);
+  // Update selectedNote when selectedNoteId changes
+  useEffect(() => {
+    if (selectedNoteId) {
+      const note = notes.find(n => n.id === selectedNoteId);
+      setSelectedNote(note);
+    } else {
+      setSelectedNote(undefined);
+    }
+  }, [selectedNoteId, notes]);
 
-  const handleUpdateFolder = useCallback(async (id: number, name: string) => {
-    await updateFolder(id, name);
-  }, [updateFolder]);
+  const updateURL = useCallback((view: ViewType, folderId?: number | null, noteId?: number | null) => {
+    if (view === 'note' && noteId) {
+      navigate(`/note/${noteId}`, { replace: true });
+    } else if (view === 'folder' && folderId) {
+      navigate(`/folder/${folderId}`, { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
 
-  const handleDeleteFolder = useCallback(async (id: number) => {
-    await deleteFolder(id);
-  }, [deleteFolder]);
-
-  const handleShowAllNotes = () => {
-    navigate('/');
+  // Navigation handlers
+  const showAllNotes = useCallback(() => {
     setView('home');
     setSelectedFolderId(null);
     setSelectedNoteId(null);
-  };
+    updateURL('home');
+  }, [updateURL]);
 
-  const handleSelectFolder = (id: number | null) => {
-    if (id === null) {
-      handleShowAllNotes();
-      return;
-    }
-    navigate(`/folder/${id}`);
-    setSelectedFolderId(id);
+  const showFolder = useCallback((folderId: number) => {
     setView('folder');
+    setSelectedFolderId(folderId);
     setSelectedNoteId(null);
-  };
+    updateURL('folder', folderId);
+  }, [updateURL]);
 
-  const handleSelectNote = (note: Note) => {
-    navigate(`/note/${note.id}`);
+  const showNote = useCallback((noteId: number) => {
     setView('note');
-    if (note.folder_id) {
-      setSelectedFolderId(note.folder_id);
+    setSelectedNoteId(noteId);
+    updateURL('note', selectedFolderId, noteId);
+  }, [selectedFolderId, updateURL]);
+
+  // Note handlers
+  const handleNoteCreated = useCallback((note: Note) => {
+    showNote(note.id);
+  }, [showNote]);
+
+  const handleNoteClick = useCallback((note: Note) => {
+    showNote(note.id);
+  }, [showNote]);
+
+  const handleNoteDeleted = useCallback((noteId: number) => {
+    deleteNote(noteId);
+    if (selectedNoteId === noteId) {
+      showAllNotes();
     }
-  };
+  }, [deleteNote, selectedNoteId, showAllNotes]);
 
-  const handleSelectNoteById = (id: number) => {
-    navigate(`/note/${id}`);
-    setView('note');
-  };
+  const handleDeleteNote = useCallback((e: React.MouseEvent, noteId: number) => {
+    e.stopPropagation();
+    handleNoteDeleted(noteId);
+  }, [handleNoteDeleted]);
 
-  const handleBackFromEditor = () => {
+  // Folder handlers
+  const handleCreateFolder = useCallback(async (name: string) => {
+    return await createFolder(name);
+  }, [createFolder]);
+
+  const handleFolderEdit = useCallback((folder: Folder) => {
+    setEditingFolder(folder);
+  }, []);
+
+  const handleFolderUpdate = useCallback((id: number, name: string) => {
+    updateFolder(id, name);
+    setEditingFolder(null);
+  }, [updateFolder]);
+
+  const handleFolderDeleted = useCallback((folderId: number) => {
+    deleteFolder(folderId);
+    if (selectedFolderId === folderId) {
+      showAllNotes();
+    }
+  }, [deleteFolder, selectedFolderId, showAllNotes]);
+
+  // Modal handlers
+  const handleCreateNote = useCallback(() => {
+    setIsCreateModalOpen(true);
+  }, []);
+
+  const handleCreateNoteWithFolder = useCallback((folderId: number) => {
+    setSelectedFolderId(folderId);
+    setIsCreateModalOpen(true);
+  }, []);
+
+
+
+  const handleCloseModal = useCallback(() => {
+    setIsCreateModalOpen(false);
+    setEditingNote(null);
+  }, []);
+  
+
+
+  const handleBack = useCallback(() => {
     if (selectedFolderId) {
-      navigate(`/folder/${selectedFolderId}`);
-      setView('folder');
+      showFolder(selectedFolderId);
     } else {
-      navigate('/');
-      setView('home');
+      showAllNotes();
     }
-  };
+  }, [selectedFolderId, showFolder, showAllNotes]);
 
-  const handleCreateNote = useCallback(async (title: string, content: string, folderId: number) => {
-    const note = await createNote({ title, content, folder_id: folderId });
-    // Navigate to the newly created note
-    handleSelectNote(note);
-    showToast('Note created successfully');
-  }, [createNote, showToast]);
+
+
+  // Filter notes
+  const filteredNotes = notes.filter(note => {
+    const query = searchQuery.toLowerCase();
+    const titleMatch = note.title?.toLowerCase().includes(query) ?? false;
+    const contentMatch = note.content?.toLowerCase().includes(query) ?? false;
+    return titleMatch || contentMatch;
+  });
+
+  const getFolderName = useCallback((folderId: number | null) => {
+    if (!folderId) return 'All Notes';
+    const folder = folders.find(f => f.id === folderId);
+    return folder?.name ?? 'Unknown Folder';
+  }, [folders]);
+
+  const SearchBar = () => (
+    <div className="relative">
+      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b6b6b]" />
+      <input
+        type="text"
+        placeholder="Search notes..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full lg:w-64 bg-[#202020] text-[#e6e6e6] text-sm rounded-lg pl-10 pr-4 py-2.5 border border-[#2f2f2f] placeholder-[#6b6b6b] focus:outline-none focus:border-blue-500"
+      />
+    </div>
+  );
 
   return (
-    <div 
-      data-area-id="app-root"
-      className={`app-container flex h-screen ${colors.bg}`}
-    >
-      <Sidebar
-        folders={folders}
-        loading={loading}
-        selectedFolderId={selectedFolderId}
-        onSelectFolder={handleSelectFolder}
-        onShowAllNotes={handleShowAllNotes}
-        onSelectNote={handleSelectNote}
-        onCreateFolder={handleCreateFolder}
-        onUpdateFolder={handleUpdateFolder}
-        onDeleteFolder={handleDeleteFolder}
-        onCreateNote={handleCreateNote}
-      />
-
-      <div 
-        data-area-id="main-layout"
-        className="main-layout flex-1 flex flex-col min-w-0"
-      >
-        {/* Top Bar */}
-        <header 
-          data-area-id="top-bar"
-          className={`top-bar flex items-center justify-between px-6 py-3 border-b ${colors.border} bg-[#202020]`}
-        >
-          <div className="flex items-center gap-2">
-            <h2 className={`text-lg font-semibold ${colors.text}`}>
-              {view === 'home' && 'Home'}
-              {view === 'folder' && 'Folder'}
-              {view === 'note' && 'Note'}
-            </h2>
-          </div>
-          <div className="flex items-center gap-4">
-            <SearchBar
-              onSelectNote={handleSelectNoteById}
-              onSelectFolder={handleSelectFolder}
-            />
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main 
-          data-area-id="main-content"
-          className="main-content flex-1 overflow-hidden"
-        >
-          <Routes>
-            <Route path="/" element={
-              <HomePage 
-                folders={folders}
-                onSelectNote={handleSelectNote}
-                onCreateNote={handleCreateNote}
-              />
-            } />
-            <Route path="/folder/:folderId" element={
-              <FolderPageWrapper 
-                folders={folders}
-                onSelectNote={handleSelectNote}
-                onCreateNote={handleCreateNote}
-              />
-            } />
-            <Route path="/note/:noteId" element={
-              <BlockEditorWrapper 
-                onBack={handleBackFromEditor}
-                onDelete={deleteNote}
-              />
-            } />
-          </Routes>
-        </main>
-      </div>
-
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
+    <div className="flex h-screen bg-[#191919] overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Agentation - Visual annotation tool (dev only) */}
-      {import.meta.env.DEV && <Agentation />}
+      {/* Sidebar */}
+      <div 
+        className={`
+          ${isMobile ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300' : 'relative'}
+          ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}
+          w-[280px] flex-shrink-0
+        `}
+      >
+        <Sidebar
+          folders={folders}
+          recentNotes={notes.slice(0, 5)}
+          onFolderClick={showFolder}
+          onNoteClick={handleNoteClick}
+          onCreateNote={handleCreateNote}
+          onCreateFolder={handleCreateFolder}
+          onFolderEdit={handleFolderEdit}
+          onFolderDelete={handleFolderDeleted}
+          editingFolder={editingFolder}
+          onFolderUpdate={handleFolderUpdate}
+          onCancelEdit={() => setEditingFolder(null)}
+          loading={showLoading}
+          currentView={view}
+          selectedFolderId={selectedFolderId}
+          onCloseMobile={() => setSidebarOpen(false)}
+          isMobile={isMobile}
+        />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="flex items-center gap-3 px-4 lg:px-6 py-3 border-b border-[#2f2f2f] bg-[#202020]/50 backdrop-blur-sm sticky top-0 z-30">
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 -ml-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all"
+              aria-label="Open menu"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+          )}
+          
+          {view === 'note' && (
+            <button
+              onClick={handleBack}
+              className="p-2 -ml-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all lg:hidden"
+              aria-label="Back"
+            >
+              <ArrowLeft size={20} />
+            </button>
+          )}
+          
+          <h1 className="text-lg font-semibold text-[#e6e6e6] truncate">
+            {view === 'home' && 'All Notes'}
+            {view === 'folder' && getFolderName(selectedFolderId)}
+            {view === 'note' && (selectedNote?.title || 'Untitled')}
+          </h1>
+          
+          <div className="flex-1" />
+          
+          <SearchBar />
+          
+          {view === 'note' && selectedNote && (
+            <div className="relative">
+              <button
+                onClick={() => setNoteDropdownOpen(noteDropdownOpen === selectedNote.id ? null : selectedNote.id)}
+                className="p-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all"
+              >
+                <MoreVertical size={20} />
+              </button>
+              {noteDropdownOpen === selectedNote.id && (
+                <div className="absolute right-0 mt-1 w-48 bg-[#202020] border border-[#2f2f2f] rounded-lg shadow-lg py-1 z-50">
+                  <button
+                    onClick={() => {
+                      handleNoteDeleted(selectedNote.id);
+                      setNoteDropdownOpen(null);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-[#2f2f2f]"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </header>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+          {view === 'home' && (
+            <HomePage
+              notes={filteredNotes}
+              folders={folders}
+              onNoteClick={handleNoteClick}
+              onCreateNote={handleCreateNote}
+              onDeleteNote={handleDeleteNote}
+              loading={showLoading}
+            />
+          )}
+          
+          {view === 'folder' && selectedFolderId && (
+            <FolderPage
+              folderId={selectedFolderId}
+              folders={folders}
+              notes={filteredNotes}
+              onNoteClick={handleNoteClick}
+              onCreateNote={() => handleCreateNoteWithFolder(selectedFolderId)}
+              onDeleteNote={handleDeleteNote}
+              loading={showLoading}
+            />
+          )}
+          
+          {view === 'note' && selectedNoteId && (
+            <NoteEditor
+              noteId={selectedNoteId}
+              onBack={handleBack}
+              onUpdate={() => {
+                // Note will be updated via the hook
+              }}
+              onDelete={(id) => {
+                deleteNote(id);
+                showAllNotes();
+              }}
+            />
+          )}
+        </main>
+
+        {/* Mobile Navigation */}
+        <MobileNav
+          onShowAllNotes={showAllNotes}
+          onCreateNote={handleCreateNote}
+          currentView={view}
+        />
+      </div>
+
+      {/* Modals */}
+      {isCreateModalOpen && (
+        <CreateNoteModal
+          folders={folders}
+          initialFolderId={selectedFolderId ?? undefined}
+          editingNote={editingNote ?? undefined}
+          onClose={handleCloseModal}
+          onNoteCreated={handleNoteCreated}
+        />
+      )}
+
+
     </div>
   );
 }
 
-// Wrapper components to handle URL params
-function FolderPageWrapper({ 
-  folders, 
-  onSelectNote, 
-  onCreateNote 
-}: { 
-  folders: any[]; 
-  onSelectNote: (note: Note) => void; 
-  onCreateNote: (title: string, content: string, folderId: number) => void;
-}) {
-  const { folderId } = useParams();
-  const id = parseInt(folderId || '0');
-  
-  if (!id) return null;
-  
-  return (
-    <FolderPage 
-      folderId={id}
-      folders={folders}
-      onSelectNote={onSelectNote}
-      onCreateNote={onCreateNote}
-    />
-  );
-}
-
-function BlockEditorWrapper({ 
-  onBack, 
-  onDelete 
-}: { 
-  onBack: () => void; 
-  onDelete: (id: number) => void;
-}) {
-  const { noteId } = useParams();
-  const id = parseInt(noteId || '0');
-  
-  if (!id) return null;
-  
-  return (
-    <BlockEditor
-      noteId={id}
-      onBack={onBack}
-      onUpdate={() => {
-        // Update local state if needed
-      }}
-      onDelete={onDelete}
-    />
-  );
-}
-
 function App() {
-  return <AppContent />;
+  return (
+    <Routes>
+      <Route path="/" element={<AppContent />} />
+      <Route path="/folder/:folderId" element={<AppContent />} />
+      <Route path="/note/:noteId" element={<AppContent />} />
+    </Routes>
+  );
 }
 
 export default App;

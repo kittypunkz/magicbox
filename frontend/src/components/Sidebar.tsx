@@ -1,310 +1,347 @@
-import { useState } from 'react';
-import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github, FileText } from 'lucide-react';
-import { RecentNotes } from './RecentNotes';
-import { CreateNoteModal } from './CreateNoteModal';
-import { SkeletonFolderItem } from './Skeleton';
-import { useMinLoading } from '../hooks/useMinLoading';
-import { foldersAPI } from '../api/client';
-import type { Folder as FolderType, Note } from '../types';
+import { useState, useEffect, useCallback } from 'react';
+import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home } from 'lucide-react';
 
-// Dark mode colors
-const c = {
-  sidebar: 'bg-[#202020]',
-  hover: 'hover:bg-[#2a2a2a]',
-  text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
-  input: 'bg-[#2a2a2a]',
-};
+import type { Folder as FolderType, Note } from '../types';
+import { SkeletonFolderItem } from './Skeleton';
 
 interface SidebarProps {
   folders: FolderType[];
-  loading: boolean;
-  selectedFolderId: number | null;
-  onSelectFolder: (id: number | null) => void;
-  onShowAllNotes: () => void;
-  onSelectNote?: (note: Note) => void;
+  recentNotes: Note[];
+  onFolderClick: (folderId: number) => void;
+  onNoteClick: (note: Note) => void;
+  onCreateNote: () => void;
   onCreateFolder: (name: string) => Promise<FolderType>;
-  onUpdateFolder: (id: number, name: string) => Promise<void>;
-  onDeleteFolder: (id: number) => Promise<void>;
-  onCreateNote?: (title: string, content: string, folderId: number) => Promise<void> | void;
+  onFolderEdit: (folder: FolderType) => void;
+  onFolderDelete: (folderId: number) => void;
+  editingFolder: FolderType | null;
+  onFolderUpdate: (id: number, name: string) => void;
+  onCancelEdit: () => void;
+  loading: boolean;
+  currentView: 'home' | 'folder' | 'note';
+  selectedFolderId: number | null;
+  onCloseMobile?: () => void;
+  isMobile?: boolean;
 }
 
-export function Sidebar({ 
-  folders, 
-  loading, 
-  selectedFolderId, 
-  onSelectFolder, 
-  onShowAllNotes, 
-  onSelectNote,
-  onCreateFolder,
-  onUpdateFolder,
-  onDeleteFolder,
-  onCreateNote
-}: SidebarProps) {
-  const [isCreating, setIsCreating] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingName, setEditingName] = useState('');
-  
-  // New Note Modal state
-  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
-  
-  // Minimum 500ms loading time for skeleton
-  const showLoading = useMinLoading(loading, 500);
+const c = {
+  bg: 'bg-[#202020]',
+  text: 'text-[#e6e6e6]',
+  gray: 'text-[#6b6b6b]',
+  border: 'border-[#2f2f2f]',
+  hover: 'hover:bg-[#2f2f2f]',
+  primary: 'text-blue-500',
+  active: 'bg-[#2f2f2f] text-blue-500',
+};
 
-  const handleCreateNote = async (title: string, content: string, folderName: string | null) => {
-    if (!onCreateNote) return;
-    
-    // Default to folder ID 1 if no folder specified
-    let targetFolderId = selectedFolderId || 1;
-    
-    // If folder name provided, find or create it
-    if (folderName) {
-      const existingFolder = folders.find(
-        (f) => f.name.toLowerCase() === folderName.toLowerCase()
-      );
-      
-      if (existingFolder) {
-        targetFolderId = existingFolder.id;
-      } else {
-        // Create new folder
-        const newFolder = await foldersAPI.create(folderName);
-        targetFolderId = newFolder.id;
-        // Refresh folders list will happen via parent
+export function Sidebar({
+  folders,
+  recentNotes,
+  onFolderClick,
+  onNoteClick,
+  onCreateNote,
+  onCreateFolder,
+  onFolderEdit,
+  onFolderDelete,
+  editingFolder,
+  onFolderUpdate,
+  onCancelEdit,
+  loading,
+  currentView,
+  selectedFolderId,
+  onCloseMobile,
+  isMobile,
+}: SidebarProps) {
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [editingName, setEditingName] = useState('');
+  const [folderDropdownOpen, setFolderDropdownOpen] = useState<number | null>(null);
+
+  // Update editing name when editingFolder changes
+  useEffect(() => {
+    if (editingFolder) {
+      setEditingName(editingFolder.name);
+    }
+  }, [editingFolder]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setFolderDropdownOpen(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  const handleCreateFolder = useCallback(async () => {
+    if (!newFolderName.trim()) return;
+    try {
+      await onCreateFolder(newFolderName.trim());
+      setNewFolderName('');
+      setIsCreatingFolder(false);
+    } catch (error) {
+      console.error('Failed to create folder:', error);
+    }
+  }, [newFolderName, onCreateFolder]);
+
+  const handleFolderUpdate = useCallback(() => {
+    if (!editingName.trim() || !editingFolder) return;
+    onFolderUpdate(editingFolder.id, editingName.trim());
+    setEditingName('');
+  }, [editingName, editingFolder, onFolderUpdate]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isCreatingFolder) {
+        handleCreateFolder();
+      } else if (editingFolder) {
+        handleFolderUpdate();
+      }
+    } else if (e.key === 'Escape') {
+      if (isCreatingFolder) {
+        setIsCreatingFolder(false);
+        setNewFolderName('');
+      } else if (editingFolder) {
+        onCancelEdit();
+        setEditingName('');
       }
     }
-    
-    await onCreateNote(title, content, targetFolderId);
-  };
+  }, [isCreatingFolder, editingFolder, handleCreateFolder, handleFolderUpdate, onCancelEdit]);
 
-  const handleCreate = async () => {
-    if (!newFolderName.trim()) return;
-    await onCreateFolder(newFolderName.trim());
-    setNewFolderName('');
-    setIsCreating(false);
-  };
-
-  const handleUpdate = async (id: number) => {
-    if (!editingName.trim()) return;
-    await onUpdateFolder(id, editingName.trim());
-    setEditingId(null);
-    setEditingName('');
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Delete this folder? Notes will be deleted too.')) return;
-    await onDeleteFolder(id);
-    if (selectedFolderId === id) {
-      onShowAllNotes();
+  const handleFolderClick = useCallback((folder: FolderType) => {
+    onFolderClick(folder.id);
+    if (isMobile && onCloseMobile) {
+      onCloseMobile();
     }
-  };
+  }, [onFolderClick, isMobile, onCloseMobile]);
+
+  const handleHomeClick = useCallback(() => {
+    // Navigate to home by calling onFolderClick with null or using window.location
+    window.location.href = '/';
+    if (isMobile && onCloseMobile) {
+      onCloseMobile();
+    }
+  }, [isMobile, onCloseMobile]);
+
+  const FolderDropdown = ({ folder }: { folder: FolderType }) => (
+    <div 
+      className="absolute right-0 top-full mt-1 w-36 bg-[#202020] border border-[#2f2f2f] rounded-lg shadow-lg py-1 z-50"
+      onClick={e => e.stopPropagation()}
+    >
+      <button
+        onClick={() => {
+          onFolderEdit(folder);
+          setFolderDropdownOpen(null);
+        }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#e6e6e6] hover:bg-[#2f2f2f]"
+      >
+        <Pencil size={14} />
+        Rename
+      </button>
+      <button
+        onClick={() => {
+          onFolderDelete(folder.id);
+          setFolderDropdownOpen(null);
+        }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-[#2f2f2f]"
+      >
+        <Trash2 size={14} />
+        Delete
+      </button>
+    </div>
+  );
 
   return (
-    <aside 
-      data-area-id="sidebar"
-      className={`sidebar w-64 ${c.sidebar} h-screen flex flex-col border-r ${c.border}`}
-    >
-      {/* All Notes & New Note Buttons */}
-      <div className="p-4 space-y-2">
-        <button
-          data-area-id="sidebar-all-notes"
-          onClick={onShowAllNotes}
-          className={`sidebar-all-notes-btn w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
-            selectedFolderId === null ? 'bg-[#2a2a2a]' : c.hover
-          }`}
-        >
-          <Inbox size={18} className={c.gray} />
-          <span className={`font-medium ${c.text}`}>All Notes</span>
-        </button>
-        
-        {/* New Note Button */}
-        {onCreateNote && (
-          <button
-            data-area-id="sidebar-new-note-btn"
-            onClick={() => setIsNoteModalOpen(true)}
-            className={`sidebar-new-note-btn w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/30`}
+    <div className={`h-full ${c.bg} border-r ${c.border} flex flex-col`}>
+      {/* Mobile Header */}
+      {isMobile && (
+        <div className="flex items-center justify-between p-4 border-b border-[#2f2f2f]">
+          <h2 className="text-lg font-semibold text-[#e6e6e6]">Menu</h2>
+          <button 
+            onClick={onCloseMobile}
+            className="p-2 text-[#6b6b6b] hover:text-[#e6e6e6]"
           >
-            <FileText size={18} className="text-blue-400" />
-            <span className={`font-medium text-blue-400`}>New Note</span>
+            <X size={20} />
           </button>
-        )}
+        </div>
+      )}
+
+      {/* New Note Button */}
+      <div className="p-3">
+        <button
+          onClick={onCreateNote}
+          className={`
+            w-full flex items-center justify-center gap-2 px-4 py-3 
+            bg-blue-500 hover:bg-blue-600 active:bg-blue-700
+            text-white rounded-lg font-medium text-sm
+            transition-colors active:scale-[0.98] transform
+            shadow-lg shadow-blue-500/20
+          `}
+        >
+          <Plus size={18} />
+          <span>New Note</span>
+        </button>
       </div>
 
-      {/* Folders Section */}
-      <div 
-        data-area-id="sidebar-folders-section"
-        className="sidebar-folders-section flex-1 overflow-y-auto px-2"
-      >
-        <div 
-          data-area-id="sidebar-folders-header"
-          className="sidebar-folders-header flex items-center justify-between px-3 py-2"
-        >
-          <span className={`text-xs font-semibold ${c.gray} uppercase tracking-wider`}>
-            Folders
-          </span>
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto py-2 space-y-4">
+        {/* All Notes */}
+        <div className="px-2">
           <button
-            data-area-id="sidebar-new-folder-btn"
-            onClick={() => setIsCreating(true)}
-            className={`sidebar-new-folder-btn p-1 ${c.hover} rounded transition-colors`}
-            title="New folder"
+            onClick={handleHomeClick}
+            className={`
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+              transition-colors min-h-[44px]
+              ${currentView === 'home' && !selectedFolderId ? c.active : `${c.text} ${c.hover}`}
+            `}
           >
-            <Plus size={16} className={c.gray} />
+            <Home size={18} />
+            <span className="flex-1 text-left">All Notes</span>
           </button>
         </div>
 
-        {/* New Folder Input */}
-        {isCreating && (
-          <div className="px-2 py-1">
-            <div 
-              data-area-id="sidebar-new-folder-input"
-              className={`sidebar-new-folder-input flex items-center gap-2 px-2 py-1.5 ${c.input} rounded-md border ${c.border}`}
+        {/* Folders Section */}
+        <div>
+          <div className="flex items-center justify-between px-4 mb-2">
+            <h3 className={`text-xs font-semibold uppercase tracking-wider ${c.gray}`}>
+              Folders
+            </h3>
+            <button
+              onClick={() => setIsCreatingFolder(true)}
+              className={`p-1.5 rounded ${c.gray} hover:text-[#e6e6e6] hover:bg-[#2f2f2f] active:scale-95 transition-all`}
+              title="New Folder"
             >
-              <Folder size={16} className={c.gray} />
-              <input
-                autoFocus
-                type="text"
-                value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCreate();
-                  if (e.key === 'Escape') setIsCreating(false);
-                }}
-                placeholder="Folder name"
-                className={`flex-1 text-sm bg-transparent outline-none ${c.text}`}
-              />
-              <button onClick={handleCreate} className="text-green-600 hover:text-green-700">
-                <Check size={14} />
-              </button>
-              <button onClick={() => setIsCreating(false)} className="text-[#6b6b6b] hover:text-red-500">
-                <X size={14} />
-              </button>
-            </div>
+              <Plus size={14} />
+            </button>
           </div>
-        )}
 
-        {/* Folder List */}
-        {showLoading ? (
-          <div className="sidebar-folder-list-loading px-2 py-1 space-y-1">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <SkeletonFolderItem key={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="sidebar-folder-list">
-            {folders.map((folder) => (
-              <div 
-                key={folder.id} 
-                data-area-id={`sidebar-folder-${folder.id}`}
-                className="sidebar-folder-item px-2 py-0.5 group"
-              >
-                {editingId === folder.id ? (
-                  <div className={`flex items-center gap-2 px-2 py-1.5 ${c.input} rounded-md border ${c.border}`}>
+          <div className="px-2 space-y-1">
+            {loading ? (
+              <><SkeletonFolderItem /><SkeletonFolderItem /><SkeletonFolderItem /><SkeletonFolderItem /><SkeletonFolderItem /></>
+            ) : (
+              <>
+                {/* Create Folder Input */}
+                {isCreatingFolder && (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#2f2f2f]">
                     <Folder size={16} className={c.gray} />
                     <input
-                      autoFocus
                       type="text"
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleUpdate(folder.id);
-                        if (e.key === 'Escape') setEditingId(null);
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      onBlur={() => {
+                        if (!newFolderName.trim()) {
+                          setIsCreatingFolder(false);
+                        }
                       }}
-                      className={`flex-1 text-sm bg-transparent outline-none ${c.text}`}
+                      placeholder="Folder name"
+                      className="flex-1 bg-transparent text-sm text-[#e6e6e6] placeholder-[#6b6b6b] outline-none"
+                      autoFocus
                     />
-                    <button onClick={() => handleUpdate(folder.id)} className="text-green-600">
-                      <Check size={14} />
-                    </button>
-                    <button onClick={() => setEditingId(null)} className="text-[#6b6b6b] hover:text-red-500">
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => onSelectFolder(folder.id)}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
-                      selectedFolderId === folder.id ? 'bg-[#2a2a2a]' : c.hover
-                    }`}
-                  >
-                    <Folder size={16} className={selectedFolderId === folder.id ? 'text-blue-500' : c.gray} />
-                    <span className={`flex-1 text-sm text-left truncate ${c.text}`}>{folder.name}</span>
-                    
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        data-area-id={`sidebar-folder-edit-${folder.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingId(folder.id);
-                          setEditingName(folder.name);
-                        }}
-                        className="sidebar-folder-edit-btn p-1 hover:bg-[#3a3a3a] rounded"
-                      >
-                        <Edit2 size={12} className={c.gray} />
-                      </button>
-                      {folder.id !== 1 && (
-                        <button
-                          data-area-id={`sidebar-folder-delete-${folder.id}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(folder.id);
-                          }}
-                          className="sidebar-folder-delete-btn p-1 hover:bg-[#3a3a3a] rounded"
-                        >
-                          <Trash2 size={12} className="text-red-400 hover:text-red-500" />
-                        </button>
-                      )}
-                    </div>
                   </div>
                 )}
-              </div>
-            ))}
+
+                {/* Folder List */}
+                {folders.map((folder) => (
+                  <div
+                    key={folder.id}
+                    className="group relative"
+                  >
+                    {editingFolder?.id === folder.id ? (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#2f2f2f]">
+                        <Folder size={16} className={c.primary} />
+                        <input
+                          type="text"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          onBlur={handleFolderUpdate}
+                          className="flex-1 bg-transparent text-sm text-[#e6e6e6] outline-none"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleFolderClick(folder)}
+                        className={`
+                          w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                          transition-colors min-h-[44px]
+                          ${selectedFolderId === folder.id ? c.active : `${c.text} ${c.hover}`}
+                        `}
+                      >
+                        <Folder size={16} className={selectedFolderId === folder.id ? c.primary : c.gray} />
+                        <span className="flex-1 text-left truncate">{folder.name}</span>
+                        
+                        {/* Dropdown Toggle */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFolderDropdownOpen(folderDropdownOpen === folder.id ? null : folder.id);
+                          }}
+                          className={`
+                            p-1.5 rounded opacity-0 group-hover:opacity-100
+                            ${selectedFolderId === folder.id ? 'opacity-100' : ''}
+                            hover:bg-[#3f3f3f] transition-opacity
+                          `}
+                        >
+                          <MoreHorizontal size={14} className={c.gray} />
+                        </button>
+                      </button>
+                    )}
+                    
+                    {folderDropdownOpen === folder.id && <FolderDropdown folder={folder} />}
+                  </div>
+                ))}
+
+                {folders.length === 0 && !isCreatingFolder && (
+                  <div className={`px-3 py-4 text-center ${c.gray} text-sm`}>
+                    No folders yet
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Recent Notes */}
+        <div>
+          <h3 className={`text-xs font-semibold uppercase tracking-wider ${c.gray} px-4 mb-2`}>
+            Recent
+          </h3>
+          <div className="px-2 space-y-1">
+            {loading ? (
+              <><SkeletonFolderItem /><SkeletonFolderItem /><SkeletonFolderItem /></>
+            ) : (
+              recentNotes.slice(0, 5).map((note) => (
+                <button
+                  key={note.id}
+                  onClick={() => onNoteClick(note)}
+                  className={`
+                    w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                    ${c.text} ${c.hover} transition-colors min-h-[44px]
+                  `}
+                >
+                  <FileText size={16} className={c.gray} />
+                  <span className="flex-1 text-left truncate">
+                    {note.title || 'Untitled'}
+                  </span>
+                </button>
+              ))
+            )}
+            
+            {recentNotes.length === 0 && !loading && (
+              <div className={`px-3 py-4 text-center ${c.gray} text-sm`}>
+                No recent notes
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Recent Notes */}
-      {onSelectNote && (
-        <div data-area-id="sidebar-recent-section" className="sidebar-recent-section">
-          <RecentNotes onSelectNote={onSelectNote} />
+      {/* Footer */}
+      <div className={`p-4 border-t ${c.border}`}>
+        <div className={`text-xs ${c.gray} text-center`}>
+          {folders.length} folder{folders.length !== 1 ? 's' : ''} · {recentNotes.length} recent
         </div>
-      )}
-
-      {/* Version Footer */}
-      <footer 
-        data-area-id="sidebar-footer"
-        className={`sidebar-footer p-4 border-t ${c.border} ${c.sidebar}`}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium ${c.text}`}>MagicBox</span>
-            <span className="px-1.5 py-0.5 text-[10px] bg-blue-900/30 text-blue-400 rounded-full">
-              v1.4.0
-            </span>
-          </div>
-          <a 
-            href="https://github.com/kittypunkz/magicbox" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className={`flex items-center gap-1 text-xs ${c.gray} hover:text-blue-500 transition-colors`}
-          >
-            <Github size={12} />
-            <span>GitHub</span>
-          </a>
-        </div>
-        <p className={`text-[10px] ${c.gray} mt-1 opacity-70`}>
-          {folders.length} folder{folders.length !== 1 ? 's' : ''}
-        </p>
-      </footer>
-
-      {/* Create Note Modal */}
-      {onCreateNote && (
-        <CreateNoteModal
-          isOpen={isNoteModalOpen}
-          onClose={() => setIsNoteModalOpen(false)}
-          folders={folders}
-          onCreateNote={handleCreateNote}
-        />
-      )}
-    </aside>
+      </div>
+    </div>
   );
 }

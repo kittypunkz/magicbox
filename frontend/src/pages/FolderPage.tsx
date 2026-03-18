@@ -1,88 +1,30 @@
-import { useState } from 'react';
-import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square } from 'lucide-react';
-import { useFolder, useFolders } from '../hooks/useFolders';
-import { ConfirmModal } from '../components/ConfirmModal';
-import { CreateNoteModal } from '../components/CreateNoteModal';
-import { SkeletonCard } from '../components/Skeleton';
-import { useMinLoading } from '../hooks/useMinLoading';
-import { notesAPI, foldersAPI } from '../api/client';
+import { useState, useMemo } from 'react';
+import { Plus, Trash2, Folder, CheckSquare, Square, X } from 'lucide-react';
+import { formatDistanceToNow } from '../lib/utils';
+import { SkeletonCard as SkeletonNoteCard } from '../components/Skeleton';
 import type { Note, Folder as FolderType } from '../types';
-
-// Dark mode colors
-const c = {
-  bg: 'bg-[#191919]',
-  sidebar: 'bg-[#202020]',
-  hover: 'hover:bg-[#2a2a2a]',
-  text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
-  input: 'bg-[#2a2a2a]',
-};
 
 interface FolderPageProps {
   folderId: number;
   folders: FolderType[];
-  onSelectNote: (note: Note) => void;
-  onCreateNote?: (title: string, content: string, folderId: number) => Promise<void> | void;
+  notes: Note[];
+  onNoteClick: (note: Note) => void;
+  onCreateNote: () => void;
+  onDeleteNote: (e: React.MouseEvent, noteId: number) => void;
+  loading: boolean;
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCreateNote }: FolderPageProps) {
-  const { folder, loading, error, refetch } = useFolder(folderId);
-  const { refetch: refetchFolders } = useFolders();
-  // Minimum 500ms loading time for skeleton
-  const showLoading = useMinLoading(loading, 500);
-  
-  // Single note delete state
-  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  
-  // Bulk delete state
+export function FolderPage({ folderId, folders, notes, onNoteClick, onCreateNote, onDeleteNote, loading }: FolderPageProps) {
   const [isBulkDeleteMode, setIsBulkDeleteMode] = useState(false);
   const [selectedNotes, setSelectedNotes] = useState<Set<number>>(new Set());
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
-  
-  // New Note Modal state
-  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 
-  const handleDeleteClick = (e: React.MouseEvent, note: Note) => {
-    e.stopPropagation();
-    setNoteToDelete(note);
-  };
+  const folder = folders.find(f => f.id === folderId);
+  const folderNotes = useMemo(() => 
+    notes.filter(n => n.folder_id === folderId),
+    [notes, folderId]
+  );
 
-  const handleConfirmDelete = async () => {
-    if (!noteToDelete) return;
-    
-    setIsDeleting(true);
-    try {
-      await notesAPI.delete(noteToDelete.id);
-      await refetch(); // Refresh the folder notes
-    } finally {
-      setIsDeleting(false);
-      setNoteToDelete(null);
-    }
-  };
-
-  const handleCloseModal = () => {
-    if (isDeleting) return;
-    setNoteToDelete(null);
-  };
-
-  // Bulk delete handlers
-  const toggleBulkDeleteMode = () => {
-    setIsBulkDeleteMode(!isBulkDeleteMode);
-    setSelectedNotes(new Set()); // Clear selection when toggling
-  };
-
-  const handleNoteSelect = (noteId: number) => {
+  const handleSelectNote = (noteId: number) => {
     const newSelected = new Set(selectedNotes);
     if (newSelected.has(noteId)) {
       newSelected.delete(noteId);
@@ -93,92 +35,36 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
   };
 
   const handleSelectAll = () => {
-    if (folder?.notes) {
-      if (selectedNotes.size === folder.notes.length) {
-        // Deselect all
-        setSelectedNotes(new Set());
-      } else {
-        // Select all
-        setSelectedNotes(new Set(folder.notes.map(n => n.id)));
-      }
+    if (selectedNotes.size === folderNotes.length) {
+      setSelectedNotes(new Set());
+    } else {
+      setSelectedNotes(new Set(folderNotes.map(n => n.id)));
     }
   };
 
-  const handleBulkDelete = async () => {
-    setIsBulkDeleting(true);
-    let success = 0;
-    let failed = 0;
-
-    for (const noteId of selectedNotes) {
-      try {
-        await notesAPI.delete(noteId);
-        success++;
-      } catch {
-        failed++;
-      }
+  const handleBulkDelete = () => {
+    if (selectedNotes.size === 0) return;
+    if (confirm(`Delete ${selectedNotes.size} note${selectedNotes.size > 1 ? 's' : ''}?`)) {
+      selectedNotes.forEach(noteId => {
+        onDeleteNote({ stopPropagation: () => {} } as React.MouseEvent, noteId);
+      });
+      setSelectedNotes(new Set());
+      setIsBulkDeleteMode(false);
     }
-
-    setIsBulkDeleting(false);
-    setShowBulkDeleteConfirm(false);
-    setIsBulkDeleteMode(false);
-    setSelectedNotes(new Set());
-    await refetch(); // Refresh the folder notes
   };
 
   const handleCancelBulkDelete = () => {
-    if (isBulkDeleting) return;
-    setShowBulkDeleteConfirm(false);
+    setIsBulkDeleteMode(false);
+    setSelectedNotes(new Set());
   };
 
-  const handleCreateNote = async (title: string, content: string, folderName: string | null) => {
-    if (!onCreateNote) return;
-    
-    // Default to current folder
-    let targetFolderId = folderId;
-    
-    // If folder name provided and different from current, find or create it
-    if (folderName && folderName.toLowerCase() !== folder?.name.toLowerCase()) {
-      const existingFolder = propFolders.find(
-        (f) => f.name.toLowerCase() === folderName.toLowerCase()
-      );
-      
-      if (existingFolder) {
-        targetFolderId = existingFolder.id;
-      } else {
-        // Create new folder
-        const newFolder = await foldersAPI.create(folderName);
-        targetFolderId = newFolder.id;
-        // Refresh folders list
-        await refetchFolders();
-      }
-    }
-    
-    await onCreateNote(title, content, targetFolderId);
-    // Refresh folder to show new note
-    await refetch();
-  };
-
-  if (showLoading) {
+  if (loading) {
     return (
-      <div 
-        data-area-id="folderpage"
-        className={`folderpage h-full overflow-y-auto ${c.bg}`}
-      >
-        {/* Skeleton Header */}
-        <div className={`sticky top-0 bg-[#202020] border-b ${c.border} px-8 py-6 z-10`}>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#2a2a2a] rounded-xl animate-pulse" />
-            <div className="space-y-2">
-              <div className="h-6 w-48 bg-[#2a2a2a] rounded animate-pulse" />
-              <div className="h-4 w-24 bg-[#2a2a2a] rounded animate-pulse" />
-            </div>
-          </div>
-        </div>
-        {/* Skeleton Notes Grid */}
-        <div className="px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonCard key={i} />
+              <SkeletonNoteCard key={i} />
             ))}
           </div>
         </div>
@@ -186,252 +72,197 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
     );
   }
 
-  if (error || !folder) {
+  if (!folder) {
     return (
-      <div 
-        data-area-id="folderpage"
-        className={`folderpage-error flex flex-col items-center justify-center h-full ${c.gray}`}
-      >
-        <Folder size={48} className="mb-4 opacity-30" />
-        <p>Folder not found</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-[#6b6b6b] p-4">
+        <div className="w-16 h-16 rounded-2xl bg-[#2f2f2f] flex items-center justify-center mb-4">
+          <Folder size={32} className="text-[#4b4b4b]" />
+        </div>
+        <h2 className="text-xl font-semibold text-[#e6e6e6]">Folder not found</h2>
       </div>
     );
   }
 
-  const hasNotes = folder.notes && folder.notes.length > 0;
-  const selectedCount = selectedNotes.size;
+  const hasNotes = folderNotes.length > 0;
 
   return (
-    <div 
-      data-area-id="folderpage"
-      className={`folderpage h-full overflow-y-auto ${c.bg}`}
-    >
-      {/* Header */}
-      <div 
-        data-area-id="folderpage-header"
-        className={`folderpage-header sticky top-0 bg-[#202020] border-b ${c.border} px-8 py-6 z-10`}
-      >
-        <div className="folderpage-header-content flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div 
-              data-area-id="folderpage-icon"
-              className="folderpage-icon w-12 h-12 bg-blue-900/30 rounded-xl flex items-center justify-center"
-            >
-              <Folder size={24} className="text-blue-500" />
+    <div className="p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-[#6b6b6b] mb-1">
+              <Folder size={14} />
+              <span>Folder</span>
             </div>
-            <div className="folderpage-header-info">
-              <h1 
-                data-area-id="folderpage-name"
-                className={`folderpage-name text-2xl font-bold ${c.text}`}
-              >
-                {folder.name}
-              </h1>
-              <p 
-                data-area-id="folderpage-count"
-                className={`folderpage-count text-sm ${c.gray} flex items-center gap-2`}
-              >
-                <FileText size={14} />
-                {folder.notes?.length || 0} note{folder.notes?.length !== 1 ? 's' : ''}
-              </p>
-            </div>
+            <h2 className="text-xl sm:text-2xl font-semibold text-[#e6e6e6]">{folder.name}</h2>
+            <p className="text-sm text-[#6b6b6b] mt-1">
+              {folderNotes.length} note{folderNotes.length !== 1 ? 's' : ''}
+            </p>
           </div>
 
-          {/* Header Actions */}
-          <div className="flex items-center gap-3">
-            {isBulkDeleteMode ? (
-              // Bulk Delete Mode Actions
-              <>
-                <span className={`text-sm ${c.gray}`}>
-                  {selectedCount} selected
-                </span>
-                <button
-                  data-area-id="folderpage-select-all-btn"
-                  onClick={handleSelectAll}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg ${c.hover} ${c.text} transition-colors`}
-                >
-                  {selectedCount === folder.notes?.length ? (
-                    <CheckSquare size={18} className="text-blue-500" />
-                  ) : (
-                    <Square size={18} className={c.gray} />
-                  )}
-                  <span className="text-sm">All</span>
-                </button>
-                <button
-                  data-area-id="folderpage-bulk-delete-confirm-btn"
-                  onClick={() => setShowBulkDeleteConfirm(true)}
-                  disabled={selectedCount === 0}
-                  className={`flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-[#4b5563] disabled:cursor-not-allowed text-white rounded-lg transition-colors`}
-                >
-                  <Trash2 size={18} />
-                  <span className="text-sm">Delete ({selectedCount})</span>
-                </button>
-                <button
-                  data-area-id="folderpage-cancel-bulk-delete-btn"
-                  onClick={toggleBulkDeleteMode}
-                  className={`p-2 ${c.gray} hover:text-white rounded-lg transition-colors`}
-                >
-                  <X size={20} />
-                </button>
-              </>
-            ) : (
-              // Normal Mode Actions
-              hasNotes && (
-                <button
-                  data-area-id="folderpage-bulk-delete-mode-btn"
-                  onClick={toggleBulkDeleteMode}
-                  className={`flex items-center gap-2 px-4 py-2 ${c.input} border ${c.border} rounded-lg ${c.text} ${c.hover} transition-colors`}
-                >
-                  <Trash2 size={18} />
-                  <span className="text-sm">Delete</span>
-                </button>
-              )
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Notes List */}
-      <div className="folderpage-content px-8 py-6">
-        {!hasNotes ? (
-          <div 
-            data-area-id="folderpage-empty"
-            className={`folderpage-empty flex flex-col items-center justify-center py-16 ${c.gray}`}
-          >
-            <FileText size={48} className="mb-4 opacity-30" />
-            <p className="text-lg font-medium">No notes in this folder</p>
-            <p className="text-sm mt-1 mb-6">Create a note to get started</p>
-            {onCreateNote && (
+          {/* Bulk Delete Controls */}
+          {isBulkDeleteMode ? (
+            <div className="flex items-center gap-2">
               <button
-                data-area-id="folderpage-create-note-btn"
-                onClick={() => setIsNoteModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                onClick={handleSelectAll}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-[#6b6b6b] hover:text-[#e6e6e6] transition-colors"
               >
-                <Plus size={20} />
-                Create New Note
+                {selectedNotes.size === folderNotes.length ? <CheckSquare size={18} /> : <Square size={18} />}
+                {selectedNotes.size === folderNotes.length ? 'Deselect All' : 'Select All'}
+              </button>
+              <div className="w-px h-6 bg-[#2f2f2f]" />
+              <span className="text-sm text-[#6b6b6b] min-w-[80px]">
+                {selectedNotes.size} selected
+              </span>
+              <button
+                onClick={handleBulkDelete}
+                disabled={selectedNotes.size === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all"
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+              <button
+                onClick={handleCancelBulkDelete}
+                className="p-2 text-[#6b6b6b] hover:text-[#e6e6e6] hover:bg-[#2f2f2f] rounded-lg active:scale-95 transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsBulkDeleteMode(true)}
+                disabled={!hasNotes}
+                className="flex items-center gap-2 px-4 py-2.5 text-[#6b6b6b] hover:text-[#e6e6e6] hover:bg-[#2f2f2f] rounded-lg text-sm font-medium disabled:opacity-50 active:scale-95 transition-all"
+              >
+                <CheckSquare size={16} />
+                Select
+              </button>
+              <button
+                onClick={onCreateNote}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-lg text-sm font-medium active:scale-95 transition-all"
+              >
+                <Plus size={18} />
+                New Note
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Notes Grid */}
+        {hasNotes ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {folderNotes.map((note) => (
+              <div
+                key={note.id}
+                onClick={() => {
+                  if (isBulkDeleteMode) {
+                    handleSelectNote(note.id);
+                  } else {
+                    onNoteClick(note);
+                  }
+                }}
+                className={`
+                  group bg-[#202020] rounded-xl p-4 border 
+                  ${isBulkDeleteMode && selectedNotes.has(note.id) 
+                    ? 'border-blue-500 bg-blue-500/10' 
+                    : 'border-[#2f2f2f] hover:border-[#4b4b4b]'
+                  }
+                  active:scale-[0.98] transition-all cursor-pointer touch-manipulation relative
+                `}
+              >
+                {/* Bulk Delete Checkbox */}
+                {isBulkDeleteMode && (
+                  <div className="absolute top-3 right-3 z-10">
+                    {selectedNotes.has(note.id) ? (
+                      <CheckSquare size={20} className="text-blue-500" />
+                    ) : (
+                      <Square size={20} className="text-[#4b4b4b]" />
+                    )}
+                  </div>
+                )}
+
+                {/* Card Header */}
+                <div className="flex items-start justify-between mb-3 pr-8">
+                  <h3 className="text-[#e6e6e6] font-medium line-clamp-2 flex-1 pr-2">
+                    {note.title || 'Untitled'}
+                  </h3>
+                  {!isBulkDeleteMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteNote(e, note.id);
+                      }}
+                      className="
+                        opacity-0 group-hover:opacity-100 
+                        sm:opacity-0 sm:group-hover:opacity-100
+                        p-2 text-[#6b6b6b] hover:text-red-400 
+                        hover:bg-red-500/10 rounded-lg 
+                        transition-all active:scale-95
+                      "
+                      aria-label="Delete note"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Preview */}
+                <p className="text-sm text-[#6b6b6b] line-clamp-3 mb-4 min-h-[3.5em]">
+                  {note.content || 'No content'}
+                </p>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-3 border-t border-[#2f2f2f]">
+                  <span className="text-xs text-[#4b4b4b]">
+                    {formatDistanceToNow(new Date(note.updated_at))}
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {/* Add New Note Card */}
+            {!isBulkDeleteMode && (
+              <button
+                onClick={onCreateNote}
+                className="
+                  flex flex-col items-center justify-center 
+                  min-h-[160px] sm:min-h-[180px]
+                  border-2 border-dashed border-[#2f2f2f] 
+                  hover:border-blue-500/50 hover:bg-blue-500/5
+                  active:border-blue-500 active:bg-blue-500/10
+                  rounded-xl p-4 
+                  transition-all active:scale-[0.98]
+                  group
+                "
+              >
+                <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-3 group-hover:bg-blue-500/20 transition-colors">
+                  <Plus size={24} className="text-blue-500" />
+                </div>
+                <span className="text-sm font-medium text-blue-500">Add New Note</span>
               </button>
             )}
           </div>
         ) : (
-          <div 
-            data-area-id="folderpage-notes-grid"
-            className="folderpage-notes-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          >
-            {folder.notes.map((note) => (
-              <div
-                key={note.id}
-                data-area-id={`folderpage-note-${note.id}`}
-                onClick={() => !isBulkDeleteMode && onSelectNote(note as Note)}
-                className={`folderpage-note-card group relative flex flex-col p-5 ${c.input} border ${c.border} rounded-xl transition-all ${
-                  isBulkDeleteMode 
-                    ? 'cursor-default' 
-                    : 'hover:shadow-md hover:border-blue-700 cursor-pointer'
-                } ${selectedNotes.has(note.id) ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
-              >
-                {/* Checkbox for bulk delete */}
-                {isBulkDeleteMode && (
-                  <div 
-                    className="absolute top-3 left-3 z-10"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      data-area-id={`folderpage-note-checkbox-${note.id}`}
-                      onClick={() => handleNoteSelect(note.id)}
-                      className="p-1 rounded transition-colors"
-                    >
-                      {selectedNotes.has(note.id) ? (
-                        <CheckSquare size={20} className="text-blue-500" />
-                      ) : (
-                        <Square size={20} className={c.gray} />
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {/* Single Delete button - appears on hover (only in normal mode) */}
-                {!isBulkDeleteMode && (
-                  <div className="folderpage-note-delete-wrapper absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <button
-                      data-area-id={`folderpage-note-delete-${note.id}`}
-                      onClick={(e) => handleDeleteClick(e, note as Note)}
-                      disabled={isDeleting}
-                      className={`folderpage-note-delete-btn p-2 ${c.gray} hover:text-red-500 hover:bg-red-500/20 rounded-lg transition-colors`}
-                      title="Delete note"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                )}
-
-                <h3 
-                  data-area-id={`folderpage-note-title-${note.id}`}
-                  className={`folderpage-note-title font-semibold ${c.text} truncate mb-2 ${isBulkDeleteMode ? 'pl-8' : 'pr-8'}`}
-                >
-                  {note.title}
-                </h3>
-                <p className={`folderpage-note-preview text-sm ${c.gray} line-clamp-3 flex-1`}>
-                  Click to open this note
-                </p>
-                <div className={`folderpage-note-meta flex items-center gap-2 mt-4 pt-4 border-t ${c.border} text-xs ${c.gray}`}>
-                  <Clock size={12} />
-                  {formatDate(note.updated_at)}
-                </div>
-              </div>
-            ))}
-            
-            {/* Add New Note Card */}
-            {!isBulkDeleteMode && onCreateNote && (
-              <button
-                data-area-id="folderpage-add-note-card"
-                onClick={() => setIsNoteModalOpen(true)}
-                className={`folderpage-add-note-card group relative flex flex-col items-center justify-center p-5 border-2 border-dashed ${c.border} rounded-xl hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer min-h-[180px]`}
-              >
-                <div className={`w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-3 group-hover:bg-blue-500/20 transition-colors`}>
-                  <Plus size={24} className="text-blue-500" />
-                </div>
-                <span className={`text-sm font-medium ${c.text}`}>Add New Note</span>
-                <span className={`text-xs ${c.gray} mt-1`}>Click to create</span>
-              </button>
-            )}
+          /* Empty State */
+          <div className="flex flex-col items-center justify-center py-16 text-[#6b6b6b]">
+            <div className="w-16 h-16 border-2 border-dashed border-[#2f2f2f] rounded-2xl flex items-center justify-center mb-4">
+              <span className="text-3xl">📝</span>
+            </div>
+            <h3 className="text-lg font-medium text-[#e6e6e6] mb-2">No notes in this folder</h3>
+            <p className="text-sm mb-6 max-w-xs text-center">Create your first note in this folder</p>
+            <button
+              onClick={onCreateNote}
+              className="px-6 py-3 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-xl text-sm font-medium active:scale-95 transition-all"
+            >
+              <Plus size={18} className="inline mr-2" />
+              Create Note
+            </button>
           </div>
         )}
       </div>
-
-      {/* Single Note Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={noteToDelete !== null}
-        onClose={handleCloseModal}
-        onConfirm={handleConfirmDelete}
-        title="Delete Note"
-        message={`Are you sure you want to delete "${noteToDelete?.title}"? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        isLoading={isDeleting}
-        variant="danger"
-      />
-
-      {/* Bulk Delete Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showBulkDeleteConfirm}
-        onClose={handleCancelBulkDelete}
-        onConfirm={handleBulkDelete}
-        title="Delete Selected Notes"
-        message={`Are you sure you want to delete ${selectedCount} selected note${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`}
-        confirmText={`Delete ${selectedCount} Note${selectedCount !== 1 ? 's' : ''}`}
-        cancelText="Cancel"
-        isLoading={isBulkDeleting}
-        variant="danger"
-      />
-
-      {/* Create Note Modal */}
-      {onCreateNote && (
-        <CreateNoteModal
-          isOpen={isNoteModalOpen}
-          onClose={() => setIsNoteModalOpen(false)}
-          folders={propFolders}
-          onCreateNote={handleCreateNote}
-          defaultFolderName={folder?.name}
-        />
-      )}
     </div>
   );
 }
