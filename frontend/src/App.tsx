@@ -46,8 +46,8 @@ function App() {
     addFolderLocally 
   } = useFolders();
   
-  // For note deletion from editor
-  const { deleteNote } = useNotes();
+  // For note creation and deletion
+  const { createNote, deleteNote } = useNotes();
 
   // Wrapper functions that also handle UI updates
   const handleCreateFolder = useCallback(async (name: string) => {
@@ -101,6 +101,13 @@ function App() {
     setSelectedNoteId(null);
   };
 
+  const handleCreateNote = useCallback(async (title: string, content: string, folderId: number) => {
+    const note = await createNote({ title, content, folder_id: folderId });
+    // Navigate to the newly created note
+    handleSelectNote(note);
+    showToast('Note created successfully');
+  }, [createNote, showToast]);
+
   return (
     <div 
       data-area-id="app-root"
@@ -116,6 +123,7 @@ function App() {
         onCreateFolder={handleCreateFolder}
         onUpdateFolder={handleUpdateFolder}
         onDeleteFolder={handleDeleteFolder}
+        onCreateNote={handleCreateNote}
       />
 
       <div 

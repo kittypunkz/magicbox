@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github } from 'lucide-react';
+import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github, FileText } from 'lucide-react';
 import { RecentNotes } from './RecentNotes';
+import { CreateNoteModal } from './CreateNoteModal';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -23,6 +24,7 @@ interface SidebarProps {
   onCreateFolder: (name: string) => Promise<FolderType>;
   onUpdateFolder: (id: number, name: string) => Promise<void>;
   onDeleteFolder: (id: number) => Promise<void>;
+  onCreateNote?: (title: string, content: string, folderId: number) => void;
 }
 
 export function Sidebar({ 
@@ -34,12 +36,16 @@ export function Sidebar({
   onSelectNote,
   onCreateFolder,
   onUpdateFolder,
-  onDeleteFolder
+  onDeleteFolder,
+  onCreateNote
 }: SidebarProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState('');
+  
+  // New Note Modal state
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 
   const handleCreate = async () => {
     if (!newFolderName.trim()) return;
@@ -68,8 +74,8 @@ export function Sidebar({
       data-area-id="sidebar"
       className={`sidebar w-64 ${c.sidebar} h-screen flex flex-col border-r ${c.border}`}
     >
-      {/* All Notes Button */}
-      <div className="p-4">
+      {/* All Notes & New Note Buttons */}
+      <div className="p-4 space-y-2">
         <button
           data-area-id="sidebar-all-notes"
           onClick={onShowAllNotes}
@@ -80,6 +86,18 @@ export function Sidebar({
           <Inbox size={18} className={c.gray} />
           <span className={`font-medium ${c.text}`}>All Notes</span>
         </button>
+        
+        {/* New Note Button */}
+        {onCreateNote && (
+          <button
+            data-area-id="sidebar-new-note-btn"
+            onClick={() => setIsNoteModalOpen(true)}
+            className={`sidebar-new-note-btn w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/30`}
+          >
+            <FileText size={18} className="text-blue-400" />
+            <span className={`font-medium text-blue-400`}>New Note</span>
+          </button>
+        )}
       </div>
 
       {/* Folders Section */}
@@ -242,6 +260,17 @@ export function Sidebar({
           {folders.length} folder{folders.length !== 1 ? 's' : ''}
         </p>
       </footer>
+
+      {/* Create Note Modal */}
+      {onCreateNote && (
+        <CreateNoteModal
+          isOpen={isNoteModalOpen}
+          onClose={() => setIsNoteModalOpen(false)}
+          folders={folders}
+          onCreateNote={onCreateNote}
+          initialFolderId={selectedFolderId}
+        />
+      )}
     </aside>
   );
 }
