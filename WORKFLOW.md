@@ -4,149 +4,257 @@ Choose the workflow that fits your needs!
 
 ---
 
-## 🎯 Option 1: Quick Workflow (Skip Dev)
+## 🎯 Option 1: PR-Based Workflow (Recommended)
 
-**For:** Solo development, quick iterations, when you trust local testing
+**For:** Team collaboration, code review, safe deployments
 
 ```
-Local → Production
+Feature Branch → Pull Request → Merge to Main → Auto Deploy
 ```
 
 ### Steps:
+
+#### 1. Create Feature Branch
 ```bash
-# 1. Work on feature branch
-git checkout -b feature/xxx
-# ... code & test locally with .\dev.bat ...
-
-# 2. When ready, merge to main and deploy
 git checkout main
-git merge feature/xxx
-npm run sync-version  # optional
-
-git add -A && git commit -m "chore: bump version"
-git push origin main
-
-# 3. Tag for release (triggers production deploy)
-git tag -a v1.5.0 -m "Release v1.5.0"
-git push origin v1.5.0
+git pull origin main
+git checkout -b feature/your-feature
 ```
 
-**Or even simpler - work directly on main:**
+#### 2. Make Changes & Commit
 ```bash
-git checkout main
-# ... code & test locally ...
-git add . && git commit -m "feat: xxx"
-git push origin main
-git tag -a v1.5.0 -m "Release v1.5.0"
-git push origin v1.5.0
+# ... make changes ...
+git add .
+git commit -m "feat: your feature"
+git push origin feature/your-feature
+```
+
+#### 3. Create Pull Request
+```bash
+# Go to GitHub and create PR:
+# https://github.com/kittypunkz/magicbox/pull/new/feature/your-feature
+
+# Or use GitHub CLI:
+gh pr create --title "feat: your feature" --body "Description"
+```
+
+#### 4. Code Review (Self or Team)
+- Review changes on GitHub
+- Run tests if available
+- Request changes or approve
+
+#### 5. Merge PR
+```bash
+# On GitHub, click "Merge pull request"
+# This triggers auto-deployment to production!
 ```
 
 ---
 
-## 🎯 Option 2: Safe Workflow (With Dev Environment)
+## 🎯 Option 2: Direct Push (Solo/Speed)
 
-**For:** Larger features, when you want a staging URL, team collaboration
+**For:** Solo development, quick hotfixes
 
 ```
-Local → Dev Environment → Production
+Local → Test → Push to Main → Auto Deploy
 ```
 
 ### Steps:
 ```bash
-# 1. Work on feature branch
-git checkout develop
-git checkout -b feature/xxx
-# ... code & test locally with .\dev.bat ...
-
-# 2. Deploy to Dev environment
-git checkout develop
-git merge feature/xxx
-git push origin develop
-# Wait 2-3 min, test at: https://develop.magicbox-app.pages.dev
-
-# 3. When satisfied, deploy to Production
 git checkout main
-git merge develop
-git tag -a v1.5.0 -m "Release v1.5.0"
-git push origin v1.5.0
+git pull origin main
+
+# Make changes
+# Test locally with .\dev.bat
+
+git add .
+git commit -m "feat: your feature"
+git push origin main
+
+# Auto-deploys to production!
 ```
 
 ---
 
-## 🎯 Option 3: Manual Production Deploy
+## 🎯 Option 3: With Dev Environment
 
-**For:** When you want full control, no auto-deployment
+**For:** Testing before production
 
-Disable auto-deployment on `main` and only deploy manually via GitHub Actions UI.
+```
+Feature Branch → PR → Merge to Develop → Test → PR to Main → Deploy
+```
+
+---
+
+## 📋 PR-Based Workflow (Detailed)
+
+### Setting Up Branch Protection
+
+1. Go to: https://github.com/kittypunkz/magicbox/settings/branches
+2. Click "Add rule" for `main` branch
+3. Enable:
+   - ✅ **Require pull request reviews before merging**
+   - ✅ **Require status checks to pass** (optional)
+   - ✅ **Restrict pushes that create files larger than 100MB**
+
+### Creating a Pull Request
+
+```bash
+# 1. Create and switch to feature branch
+git checkout -b feature/amazing-feature
+
+# 2. Make changes
+vim src/components/Sidebar.tsx
+
+# 3. Commit
+git add src/components/Sidebar.tsx
+git commit -m "feat: add amazing feature to sidebar"
+
+# 4. Push branch
+git push -u origin feature/amazing-feature
+
+# 5. Create PR (opens browser)
+gh pr create --title "feat: add amazing feature" \
+  --body "This PR adds an amazing feature to the sidebar."
+
+# 6. View PR
+gh pr view --web
+```
+
+### Merging a Pull Request
+
+```bash
+# Option A: Merge on GitHub (recommended)
+# Go to PR page, click "Merge pull request"
+
+# Option B: Merge via CLI
+gh pr merge --squash --delete-branch
+
+# This triggers auto-deployment!
+```
+
+---
+
+## 🔀 Complete PR Workflow Example
+
+```bash
+# Start fresh
+git checkout main
+git pull origin main
+
+# Create feature branch
+git checkout -b feature/dark-mode
+
+# Work on feature
+# ... edit files ...
+# Test locally: .\dev.bat
+
+# Commit and push
+git add .
+git commit -m "feat: add dark mode toggle"
+git push origin feature/dark-mode
+
+# Create PR
+gh pr create --title "feat: add dark mode" --fill
+
+# View PR, review changes
+gh pr view --web
+
+# Merge PR (when ready)
+gh pr merge --squash --delete-branch
+
+# Deployed automatically! 🚀
+```
+
+---
+
+## 🛡️ Branch Protection (Recommended Setup)
+
+Protect your `main` branch:
+
+1. **Require PR reviews**
+   - Require 1 approval before merging
+   - Dismiss stale PR approvals when new commits are pushed
+
+2. **Require status checks**
+   - Require branches to be up to date before merging
+   - Status checks: build, typecheck, test
+
+3. **Restrict who can push**
+   - Only allow specific people/teams to push to main
+   - Force all changes through PR
+
+4. **Require linear history**
+   - Prevent merge commits
+   - Use squash or rebase merging
 
 ---
 
 ## 📊 Comparison
 
-| Workflow | Speed | Safety | Best For |
-|----------|-------|--------|----------|
-| **Quick (skip dev)** | ⚡ Fastest | ⚠️ Local testing only | Solo dev, small changes |
-| **Safe (with dev)** | 🐢 Slower | ✅ Staging URL | Large features, team |
-| **Manual only** | 🐢 Slowest | ✅ Full control | Production-critical apps |
-
----
-
-## 💡 My Recommendation
-
-Since you're working solo:
-
-**Use Option 1 (Quick) for:**
-- Small UI tweaks
-- Bug fixes
-- Features you're confident about
-
-**Use Option 2 (Safe) for:**
-- Major features
-- Database schema changes
-- When you want to test on a real URL before production
-
----
-
-## 🔧 How to Disable Dev Environment (Optional)
-
-If you never want to use Dev environment:
-
-1. Go to GitHub → Settings → Branches
-2. Delete `develop` branch protection (if any)
-3. Or just ignore the `develop` branch - it won't auto-deploy anything you don't push to it
-
-**The `develop` branch is harmless** - it only deploys when YOU push to it.
+| Feature | PR-Based | Direct Push |
+|---------|----------|-------------|
+| Code Review | ✅ Required | ❌ None |
+| Safety | ⭐⭐⭐ High | ⭐⭐ Medium |
+| Speed | 🐢 Slower | ⚡ Fastest |
+| Team Use | ✅ Perfect | ❌ Risky |
+| Solo Use | ✅ Good | ✅ Good |
+| Rollback | ✅ Easy | ✅ Easy |
 
 ---
 
 ## 🚀 Quick Reference
 
-### Deploy to Production Only:
+### GitHub CLI Commands
 ```bash
-# Work on main
-git checkout main
-git pull origin main
+# Install GitHub CLI: https://cli.github.com/
 
-# Make changes
-# ... edit files ...
+gh pr create          # Create PR
+ghe pr list           # List PRs
+gh pr view            # View PR details
+gh pr checkout 123    # Checkout PR #123
+gh pr merge           # Merge PR
+gh pr close           # Close PR
+```
 
-# Test locally
-.\dev.bat
-
-# Deploy
-git add . && git commit -m "feat: your feature"
-git push origin main
-git tag -a v1.5.0 -m "Release v1.5.0"
-git push origin v1.5.0
+### Git Commands
+```bash
+git checkout -b feature/xxx    # Create branch
+git push -u origin feature/xxx # Push branch
+git branch -d feature/xxx      # Delete local branch
 ```
 
 ---
 
-## ✅ Current Setup
+## 💡 Best Practices
 
-Your setup supports ALL workflows:
-- `main` branch → Production (manual trigger or tag)
-- `develop` branch → Dev environment (auto-deploy)
-- Local → Your machine (`localhost:3000`)
+1. **Use descriptive branch names**
+   - `feature/dark-mode`
+   - `fix/login-bug`
+   - `docs/update-readme`
 
-**You choose which one to use!**
+2. **Write good commit messages**
+   - `feat: add user profile page`
+   - `fix: resolve login timeout issue`
+   - `docs: update API documentation`
+
+3. **Keep PRs small and focused**
+   - One feature per PR
+   - Easier to review
+   - Easier to rollback
+
+4. **Self-review before requesting review**
+   - Check your own PR first
+   - Catch obvious mistakes
+
+5. **Use draft PRs for WIP**
+   - Create as draft while working
+   - Mark ready for review when done
+
+---
+
+## 🔗 Useful Links
+
+- **Pull Requests**: https://github.com/kittypunkz/magicbox/pulls
+- **Branch Protection**: https://github.com/kittypunkz/magicbox/settings/branches
+- **Actions**: https://github.com/kittypunkz/magicbox/actions
