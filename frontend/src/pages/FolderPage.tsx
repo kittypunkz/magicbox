@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Folder, FileText, Clock, Trash2 } from 'lucide-react';
 import { useFolder } from '../hooks/useFolders';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { SkeletonCard } from '../components/Skeleton';
 import { notesAPI } from '../api/client';
 import type { Note } from '../types';
 
@@ -61,9 +62,26 @@ export function FolderPage({ folderId, onSelectNote }: FolderPageProps) {
     return (
       <div 
         data-area-id="folderpage"
-        className="folderpage flex items-center justify-center h-full"
+        className={`folderpage h-full overflow-y-auto ${c.bg}`}
       >
-        <div className="folderpage-loading animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        {/* Skeleton Header */}
+        <div className={`sticky top-0 bg-[#202020] border-b ${c.border} px-8 py-6 z-10`}>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#2a2a2a] rounded-xl animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-6 w-48 bg-[#2a2a2a] rounded animate-pulse" />
+              <div className="h-4 w-24 bg-[#2a2a2a] rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        {/* Skeleton Notes Grid */}
+        <div className="px-8 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

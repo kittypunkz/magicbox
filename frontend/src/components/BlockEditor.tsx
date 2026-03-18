@@ -161,8 +161,24 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-[#191919]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      <div className="flex flex-col h-full bg-[#191919]">
+        {/* Skeleton Header */}
+        <div className={`flex items-center justify-between px-6 py-3 border-b ${c.border} bg-[#202020]`}>
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8 bg-[#2a2a2a] rounded-lg animate-pulse" />
+            <div className="h-5 w-48 bg-[#2a2a2a] rounded animate-pulse" />
+          </div>
+          <div className="w-8 h-8 bg-[#2a2a2a] rounded-lg animate-pulse" />
+        </div>
+        {/* Skeleton Content */}
+        <div className="flex-1 p-8 space-y-4">
+          <div className="h-8 w-3/4 bg-[#2a2a2a] rounded animate-pulse" />
+          <div className="h-4 w-full bg-[#2a2a2a] rounded animate-pulse" />
+          <div className="h-4 w-5/6 bg-[#2a2a2a] rounded animate-pulse" />
+          <div className="h-4 w-4/5 bg-[#2a2a2a] rounded animate-pulse" />
+          <div className="h-4 w-full bg-[#2a2a2a] rounded animate-pulse" />
+          <div className="h-4 w-3/4 bg-[#2a2a2a] rounded animate-pulse" />
+        </div>
       </div>
     );
   }

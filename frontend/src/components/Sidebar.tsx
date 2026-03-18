@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Folder, Plus, Trash2, Edit2, Check, X, Inbox, Github, FileText } from 'lucide-react';
 import { RecentNotes } from './RecentNotes';
 import { CreateNoteModal } from './CreateNoteModal';
+import { SkeletonFolderItem } from './Skeleton';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -154,7 +155,11 @@ export function Sidebar({
 
         {/* Folder List */}
         {loading ? (
-          <div className={`sidebar-folder-list-loading px-4 py-2 text-sm ${c.gray}`}>Loading...</div>
+          <div className="sidebar-folder-list-loading px-2 py-1 space-y-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonFolderItem key={i} />
+            ))}
+          </div>
         ) : (
           <div className="sidebar-folder-list">
             {folders.map((folder) => (

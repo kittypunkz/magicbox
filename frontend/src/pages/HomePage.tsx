@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Sparkles, FileText, Folder, Trash2, Plus } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useNotes } from '../hooks/useNotes';
+import { SkeletonNoteItem, SkeletonStat } from '../components/Skeleton';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -35,7 +36,7 @@ function getUnusedNotes(notes: Note[]): Note[] {
 }
 
 export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps) {
-  const { notes, refetch: refetchNotes, deleteNote } = useNotes();
+  const { notes, loading: notesLoading, refetch: refetchNotes, deleteNote } = useNotes();
   const [showDeleteUnusedModal, setShowDeleteUnusedModal] = useState(false);
   const [isDeletingUnused, setIsDeletingUnused] = useState(false);
   const [deleteResult, setDeleteResult] = useState<{ success: number; failed: number } | null>(null);
@@ -147,7 +148,22 @@ export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps)
       </div>
 
       {/* Recent Notes */}
-      {recentNotes.length > 0 ? (
+      {notesLoading ? (
+        <div 
+          data-area-id="homepage-recent-section"
+          className="homepage-recent-section max-w-4xl mx-auto w-full px-8 pb-16"
+        >
+          <h2 className={`homepage-recent-title text-lg font-semibold ${c.text} mb-4 flex items-center gap-2`}>
+            <FileText size={20} />
+            Recent Notes
+          </h2>
+          <div className="homepage-recent-grid grid grid-cols-1 md:grid-cols-2 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonNoteItem key={i} />
+            ))}
+          </div>
+        </div>
+      ) : recentNotes.length > 0 ? (
         <div 
           data-area-id="homepage-recent-section"
           className="homepage-recent-section max-w-4xl mx-auto w-full px-8 pb-16"
@@ -226,50 +242,62 @@ export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps)
         className={`homepage-stats border-t ${c.border} bg-[#202020]`}
       >
         <div className="homepage-stats-content max-w-4xl mx-auto px-8 py-6 flex items-center justify-center gap-12">
-          <div 
-            data-area-id="homepage-stats-notes"
-            className="homepage-stats-notes text-center"
-          >
-            <p className={`homepage-stats-notes-count text-2xl font-bold ${c.text}`}>{notes.length}</p>
-            <p className={`homepage-stats-notes-label text-sm ${c.gray} flex items-center gap-1 justify-center`}>
-              <FileText size={14} />
-              Notes
-            </p>
-          </div>
-          <div className={`homepage-stats-divider w-px h-10 ${c.border}`} />
-          <div 
-            data-area-id="homepage-stats-folders"
-            className="homepage-stats-folders text-center"
-          >
-            <p className={`homepage-stats-folders-count text-2xl font-bold ${c.text}`}>{folders.length}</p>
-            <p className={`homepage-stats-folders-label text-sm ${c.gray} flex items-center gap-1 justify-center`}>
-              <Folder size={14} />
-              Folders
-            </p>
-          </div>
-          <div className={`homepage-stats-divider w-px h-10 ${c.border}`} />
-          <div 
-            data-area-id="homepage-stats-unused"
-            className="homepage-stats-unused text-center"
-          >
-            <p className={`homepage-stats-unused-count text-2xl font-bold ${hasUnusedNotes ? 'text-red-500' : c.text}`}>
-              {unusedNotes.length}
-            </p>
-            <button
-              data-area-id="homepage-stats-unused-btn"
-              onClick={() => setShowDeleteUnusedModal(true)}
-              disabled={!hasUnusedNotes}
-              className={`homepage-stats-unused-btn text-sm flex items-center gap-1 justify-center transition-colors ${
-                hasUnusedNotes 
-                  ? 'text-red-500 hover:text-red-400' 
-                  : c.gray
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={hasUnusedNotes ? `Delete notes not updated in ${UNUSED_DAYS} days` : 'No unused notes'}
-            >
-              <Trash2 size={14} />
-              Unused
-            </button>
-          </div>
+          {notesLoading ? (
+            <>
+              <SkeletonStat />
+              <div className={`w-px h-10 ${c.border}`} />
+              <SkeletonStat />
+              <div className={`w-px h-10 ${c.border}`} />
+              <SkeletonStat />
+            </>
+          ) : (
+            <>
+              <div 
+                data-area-id="homepage-stats-notes"
+                className="homepage-stats-notes text-center"
+              >
+                <p className={`homepage-stats-notes-count text-2xl font-bold ${c.text}`}>{notes.length}</p>
+                <p className={`homepage-stats-notes-label text-sm ${c.gray} flex items-center gap-1 justify-center`}>
+                  <FileText size={14} />
+                  Notes
+                </p>
+              </div>
+              <div className={`homepage-stats-divider w-px h-10 ${c.border}`} />
+              <div 
+                data-area-id="homepage-stats-folders"
+                className="homepage-stats-folders text-center"
+              >
+                <p className={`homepage-stats-folders-count text-2xl font-bold ${c.text}`}>{folders.length}</p>
+                <p className={`homepage-stats-folders-label text-sm ${c.gray} flex items-center gap-1 justify-center`}>
+                  <Folder size={14} />
+                  Folders
+                </p>
+              </div>
+              <div className={`homepage-stats-divider w-px h-10 ${c.border}`} />
+              <div 
+                data-area-id="homepage-stats-unused"
+                className="homepage-stats-unused text-center"
+              >
+                <p className={`homepage-stats-unused-count text-2xl font-bold ${hasUnusedNotes ? 'text-red-500' : c.text}`}>
+                  {unusedNotes.length}
+                </p>
+                <button
+                  data-area-id="homepage-stats-unused-btn"
+                  onClick={() => setShowDeleteUnusedModal(true)}
+                  disabled={!hasUnusedNotes}
+                  className={`homepage-stats-unused-btn text-sm flex items-center gap-1 justify-center transition-colors ${
+                    hasUnusedNotes 
+                      ? 'text-red-500 hover:text-red-400' 
+                      : c.gray
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  title={hasUnusedNotes ? `Delete notes not updated in ${UNUSED_DAYS} days` : 'No unused notes'}
+                >
+                  <Trash2 size={14} />
+                  Unused
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
