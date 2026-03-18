@@ -162,7 +162,11 @@ function App() {
             />
           )}
           {view === 'folder' && selectedFolderId && (
-            <FolderPage folderId={selectedFolderId} onSelectNote={handleSelectNote} />
+            <FolderPage 
+              folderId={selectedFolderId} 
+              onSelectNote={handleSelectNote}
+              onCreateNote={handleCreateNote}
+            />
           )}
           {view === 'note' && selectedNoteId && (
             <BlockEditor
