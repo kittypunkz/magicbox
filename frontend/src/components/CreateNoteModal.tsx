@@ -105,7 +105,8 @@ export function CreateNoteModal({
     if (match) {
       const before = currentText.slice(0, match.index);
       const after = currentText.slice(pos);
-      const newText = `${before}#${folder.name}${after}`;
+      // Add space after folder name so user can continue typing
+      const newText = `${before}#${folder.name} ${after}`;
       
       if (activeInput === 'title') {
         setTitle(newText);
@@ -113,14 +114,15 @@ export function CreateNoteModal({
         setContent(newText);
       }
       
-      // Focus back and set cursor position
+      // Focus back and set cursor position (after the space)
       setTimeout(() => {
         inputRef.current?.focus();
-        const newPos = (match.index || 0) + folder.name.length + 1;
+        const newPos = (match.index || 0) + folder.name.length + 2; // +2 for # and space
         inputRef.current?.setSelectionRange(newPos, newPos);
       }, 0);
     }
     
+    // Reset to hide dropdown
     setHighlightedIndex(0);
   };
 
