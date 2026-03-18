@@ -142,6 +142,16 @@ export function CreateNoteModal({
         setHighlightedIndex(prev => prev > 0 ? prev - 1 : 0);
         break;
       case 'Tab':
+        e.preventDefault();
+        // Tab always selects the first matching folder or creates new if exact match
+        if (filteredFolders.length > 0) {
+          // If there's an exact match with search term, use that
+          const exactMatch = filteredFolders.find(f => 
+            f.name.toLowerCase() === searchTerm.toLowerCase()
+          );
+          handleFolderSelect(exactMatch || filteredFolders[0]);
+        }
+        break;
       case 'Enter':
         e.preventDefault();
         if (filteredFolders[highlightedIndex]) {
