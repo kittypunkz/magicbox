@@ -1,8 +1,8 @@
-name: Deploy MagicBox to Cloudflare
+name: Deploy to Production
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -12,8 +12,9 @@ env:
 
 jobs:
   deploy-backend:
-    name: Deploy Backend
+    name: Deploy Backend to Production
     runs-on: ubuntu-latest
+    environment: production
     defaults:
       run:
         working-directory: ./backend
@@ -33,13 +34,14 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      - name: Deploy to Cloudflare Workers
+      - name: Deploy to Cloudflare Workers (Production)
         run: wrangler deploy --config wrangler.toml
 
   deploy-frontend:
-    name: Deploy Frontend
+    name: Deploy Frontend to Production
     runs-on: ubuntu-latest
     needs: deploy-backend
+    environment: production
     if: always() && (needs.deploy-backend.result == 'success' || needs.deploy-backend.result == 'skipped')
     defaults:
       run:
@@ -65,7 +67,7 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Pages (Production)
         run: wrangler pages deploy dist --project-name=magicbox-app
 
   notify:
@@ -77,10 +79,10 @@ jobs:
     steps:
       - name: Deployment Status
         run: |
-          echo "🚀 Deployment Status:"
+          echo "🚀 PRODUCTION Deployment Status:"
           echo "  Backend: ${{ needs.deploy-backend.result }}"
           echo "  Frontend: ${{ needs.deploy-frontend.result }}"
           echo ""
-          echo "🔗 URLs:"
+          echo "🔗 PRODUCTION URLs:"
           echo "  Web App: https://magicbox.bankapirak.com"
           echo "  API: https://api.magicbox.bankapirak.com"

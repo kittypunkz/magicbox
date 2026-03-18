@@ -1,52 +1,77 @@
-# 🎯 MagicBox Deployment
+# 🌍 Deployment Guide
 
-## Deployment Method
+MagicBox uses a **3-environment workflow** for safe deployments.
 
-MagicBox uses **automatic deployment** via GitHub Actions when pushing to the `main` branch.
+---
 
-### How to Deploy
+## 📊 Environments
 
-Simply push to the `main` branch:
+| Environment | Branch | URL | Deploy Trigger |
+|-------------|--------|-----|----------------|
+| **Local** | Any | `http://localhost:3000` | Run `dev.bat` |
+| **Dev** | `develop` | `https://dev.magicbox.bankapirak.com` | Push to `develop` |
+| **Production** | `main` | `https://magicbox.bankapirak.com` | Manual (you control) |
 
+---
+
+## 🔄 Recommended Workflow
+
+### 1. Local Development
 ```bash
-# Commit your changes
-git add .
-git commit -m "feat: your feature description"
+# Work on feature branch
+git checkout -b feature/my-feature
 
-# Push to main branch (triggers deployment)
-git push origin main
+# Test locally
+.\dev.bat
 ```
 
-GitHub Actions will automatically:
-- ✅ Deploy backend to Cloudflare Workers
-- ✅ Build and deploy frontend to Cloudflare Pages
+### 2. Deploy to Dev (Automatic)
+```bash
+# Merge to develop branch
+git checkout develop
+git merge feature/my-feature
+git push origin develop
 
-### Workflow File
+# Auto-deploys to: https://dev.magicbox.bankapirak.com
+```
 
-The deployment workflow is defined in:
-- `.github/workflows/deploy.yml` - "Deploy MagicBox to Cloudflare"
+### 3. Deploy to Production (You Decide)
+```bash
+# When ready, tag and release
+git checkout main
+git merge develop
+npm run sync-version  # Update version
 
-### Required Secrets
+git add -A
+git commit -m "chore: bump version to X.X.X"
+git push origin main
 
-Configure these secrets in GitHub repository settings:
+git tag -a vX.X.X -m "Release vX.X.X"
+git push origin vX.X.X
+```
 
-| Secret Name | Value | How to Get |
-|-------------|-------|------------|
-| `CLOUDFLARE_API_TOKEN` | API Token | https://dash.cloudflare.com/profile/api-tokens |
-| `CLOUDFLARE_ACCOUNT_ID` | `49b16ed3ff0d8209f2a3da300341283b` | From wrangler.toml |
-| `VITE_API_URL` | `https://api.magicbox.bankapirak.com` | Your API URL |
+Or manually trigger:
+https://github.com/kittypunkz/magicbox/actions/workflows/deploy-production.yml
 
-### Monitoring Deployments
+---
 
-- **GitHub Actions**: https://github.com/kittypunkz/magicbox/actions
-- **Live App**: https://magicbox.bankapirak.com
-- **API**: https://api.magicbox.bankapirak.com
+## 🔐 Environment Protection
 
-### Live URLs
+Production deployments can require **your approval** via GitHub Environment Protection:
 
-| Component | URL |
-|-----------|-----|
-| 🌐 Web App | https://magicbox.bankapirak.com |
-| 🔌 API | https://api.magicbox.bankapirak.com |
-| 📁 Folders | https://api.magicbox.bankapirak.com/folders |
-| 📝 Notes | https://api.magicbox.bankapirak.com/notes |
+1. Go to: `Settings → Environments → production`
+2. Add yourself as required reviewer
+3. Now all production deployments wait for your approval
+
+---
+
+## 📁 Workflow Files
+
+- `.github/workflows/deploy-develop.yml` - Dev environment
+- `.github/workflows/deploy-production.yml` - Production environment
+
+---
+
+## 🆘 Full Documentation
+
+See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for complete setup guide.
