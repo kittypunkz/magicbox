@@ -1,41 +1,20 @@
 # 🎯 MagicBox Deployment Cheat Sheet
 
-Quick reference for all deployment triggers!
+Quick reference for deployment!
 
 ---
 
 ## ⚡ One-Liners
 
 ```bash
-# Local (fastest)
+# Local deployment (direct)
 update.bat                              # Deploy everything
 update.bat backend                      # API only
 update.bat frontend                     # Web only
 
-# GitHub Actions (remote trigger)
-node trigger-deploy.js                  # Deploy everything
-node trigger-deploy.js backend          # API only
-
-# Git (automatic)
+# Git (automatic - recommended)
 git push origin main                    # Auto-deploy on push
-git tag v1.0.0 && git push origin v1.0.0  # Release + deploy
-
-# GitHub (web)
-# Go to: Actions → "🚀 Manual Deploy" → Run workflow
 ```
-
----
-
-## 💬 Comment Commands (on PR/Issue)
-
-| Comment | Effect |
-|---------|--------|
-| `@deploy` | Deploy everything |
-| `@deploy backend` | Deploy API only |
-| `@deploy frontend` | Deploy web app only |
-| `@deploy database` | Run DB migrations |
-| `@magicbox deploy` | Alternative syntax |
-| `/deploy` | Alternative syntax |
 
 ---
 
@@ -62,8 +41,9 @@ git tag v1.0.0 && git push origin v1.0.0  # Release + deploy
 ## 🚨 Emergency Commands
 
 ```bash
-# Quick hotfix (skip tests)
-node trigger-deploy.js full --skip-tests
+# Quick hotfix (direct deploy)
+cd backend && npx wrangler deploy
+cd frontend && npm run build && npx wrangler pages deploy dist --project-name=magicbox-app
 
 # Rollback backend
 cd backend
