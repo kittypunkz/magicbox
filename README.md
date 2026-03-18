@@ -57,37 +57,45 @@ This starts:
 - Frontend at http://localhost:3000
 - Agentation enabled for visual annotations
 
-### 5. Deployment Environments
+### 5. Deploy to Production
 
-MagicBox uses a **3-environment workflow**:
+**You control when to deploy.** Two workflow options:
 
-| Environment | Branch | URL | Deploy Trigger |
-|-------------|--------|-----|----------------|
-| **Local** | Any | `localhost:3000` | Run `dev.bat` |
-| **Dev** | `develop` | `develop.magicbox-app.pages.dev` | Push to `develop` |
-| **Production** | `main` | `magicbox.bankapirak.com` | **You decide** |
-
-**Workflow:**
-1. Develop locally on feature branches
-2. Push to `develop` → Auto-deploys to Dev environment
-3. Test on Dev, then **you control** when to deploy to Production
-
-📖 See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for detailed setup.
-
-### 6. Deploy to Production
-
-**You control production deployments:**
+#### Option A: Quick Deploy (Skip Dev)
+Test locally, then deploy directly to production:
 
 ```bash
-# Option 1: Create a release tag
+# 1. Work on main branch
+git checkout main
+
+# 2. Code & test locally
+.\dev.bat
+
+# 3. Deploy to production
+git add . && git commit -m "feat: your feature"
+git push origin main
+git tag -a v1.5.0 -m "Release v1.5.0"
+git push origin v1.5.0
+```
+
+#### Option B: With Dev Environment
+Test on a real URL before production:
+
+```bash
+# 1. Push to develop → Auto-deploys to Dev
+#    https://develop.magicbox-app.pages.dev
+git checkout develop
+git merge feature/xxx
+git push origin develop
+
+# 2. When satisfied, deploy to production
 git checkout main
 git merge develop
 git tag -a v1.5.0 -m "Release v1.5.0"
 git push origin v1.5.0
-
-# Option 2: Manual trigger via GitHub UI
-# https://github.com/kittypunkz/magicbox/actions/workflows/deploy-production.yml
 ```
+
+📖 See [WORKFLOW.md](./WORKFLOW.md) for complete workflow options.
 
 ## Project Structure
 
