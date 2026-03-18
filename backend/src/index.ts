@@ -9,13 +9,16 @@ const app = new Hono<{ Bindings: Env }>();
 
 // CORS - Allow magicbox subdomain and local dev
 app.use('*', cors({
-  origin: [
-    'https://magicbox.bankapirak.com',
-    'https://api.magicbox.bankapirak.com',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:8787'
-  ],
+  origin: (origin) => {
+    if (!origin) return 'http://localhost:3000';
+    if (
+      origin.includes('localhost') || 
+      origin.includes('magicbox.bankapirak.com')
+    ) {
+      return origin;
+    }
+    return 'http://localhost:3000';
+  },
   allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type'],
   credentials: true,
@@ -25,7 +28,7 @@ app.use('*', cors({
 app.get('/', (c) => {
   return c.json({ 
     name: 'MagicBox API',
-    version: '1.0.0',
+    version: '1.2.0',
     status: 'running',
     domain: 'magicbox.bankapirak.com'
   });

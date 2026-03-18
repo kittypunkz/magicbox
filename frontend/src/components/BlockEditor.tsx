@@ -87,6 +87,7 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
 
   // Debounced save
   const triggerSave = useCallback(() => {
+    setSaving(true);
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -192,6 +193,7 @@ export function BlockEditor({ noteId, onBack, onUpdate, onDelete }: BlockEditorP
             <button
               onClick={() => setShowFolderMenu(!showFolderMenu)}
               className={`text-sm ${c.gray} hover:text-[#e6e6e6] transition-colors`}
+              data-area-id="editor-save-status"
             >
               {currentFolder?.name || 'Inbox'}
               {saving && <span className="ml-2 text-xs opacity-50">• saving</span>}

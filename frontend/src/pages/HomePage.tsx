@@ -3,7 +3,7 @@ import { Sparkles, FileText, Folder, Trash2 } from 'lucide-react';
 import { CentralInput } from '../components/CentralInput';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useNotes } from '../hooks/useNotes';
-import { notesAPI } from '../api/client';
+import { notesAPI, foldersAPI } from '../api/client';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -21,6 +21,7 @@ interface HomePageProps {
   folders: FolderType[];
   addFolderLocally: (folder: FolderType) => void;
   onSelectNote: (note: Note) => void;
+  showToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 // Days to consider a note as "unused"
@@ -36,7 +37,7 @@ function getUnusedNotes(notes: Note[]): Note[] {
   });
 }
 
-export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePageProps) {
+export function HomePage({ folders, addFolderLocally, onSelectNote, showToast }: HomePageProps) {
   const { notes, refetch: refetchNotes, deleteNote } = useNotes();
   const [creating, setCreating] = useState(false);
   const [showDeleteUnusedModal, setShowDeleteUnusedModal] = useState(false);
@@ -53,40 +54,57 @@ export function HomePage({ folders, addFolderLocally, onSelectNote }: HomePagePr
   const handleCreateNote = async (title: string, content: string, folderId: number) => {
     if (creating) return;
     
+    console.log('Creating note:', { title, content, folderId });
     setCreating(true);
     try {
       // Check if folder exists, if not create it
       let targetFolderId = folderId;
-      const hashTag = content.match(/#(\w+)/);
+      const hashTag = content.match(/#([\w.-]+)/);
       
       if (hashTag) {
         const folderName = hashTag[1];
+        console.log('Hashtag folder detected:', folderName);
         const existingFolder = folders.find(
           (f) => f.name.toLowerCase() === folderName.toLowerCase()
         );
         
         if (!existingFolder) {
-          const response = await fetch('/api/folders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: folderName }),
-          });
-          const newFolder = await response.json();
+          console.log('Creating new folder:', folderName);
+          const newFolder = await foldersAPI.create(folderName);
           targetFolderId = newFolder.id;
           addFolderLocally(newFolder);
         } else {
+          console.log('Using existing folder:', existingFolder.name, 'ID:', existingFolder.id);
           targetFolderId = existingFolder.id;
         }
       }
 
-      const note = await notesAPI.create({
-        folder_id: targetFolderId,
-        title: title,
-        content: content.replace(/#\w+/g, '').trim(), // Remove hashtags from content
-      });
+      console.log('Sending note creation request with folderId:', targetFolderId);
+      const cleanedContent = content.replace(/#[\w.-]+/g, '').trim();
+      
+      if (cleanedContent) {
+        const note = await notesAPI.create({
+          folder_id: targetFolderId,
+          title: title,
+          content: cleanedContent,
+        });
 
-      refetchNotes();
-      onSelectNote(note);
+        console.log('Note created successfully:', note);
+        const folderName = content.match(/#([\w.-]+)/)?.[1];
+        if (folderName) {
+          showToast?.(`Note added to '#${folderName}'`, 'success');
+        }
+        refetchNotes();
+        onSelectNote(note);
+      } else {
+        console.log('No content provided, only folder ensured/created.');
+        const folderName = content.match(/#([\w.-]+)/)?.[1] || 'folder';
+        showToast?.(`Folder '#${folderName}' is ready`, 'success');
+        // If it was a new folder, it's already added to sidebar via addFolderLocally
+        refetchNotes(); // Refresh stats
+      }
+    } catch (err) {
+      console.error('Error in handleCreateNote:', err);
     } finally {
       setCreating(false);
     }

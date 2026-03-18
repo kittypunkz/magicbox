@@ -33,20 +33,29 @@ folders.get('/:id', async (c) => {
 
 // Create folder
 folders.post('/', async (c) => {
-  const body = await c.req.json<CreateFolderRequest>();
-  
-  if (!body.name?.trim()) {
-    return c.json({ error: 'Folder name is required' }, 400);
+  const { name } = await c.req.json<CreateFolderRequest>();
+
+  if (!name?.trim()) {
+    return c.json({ error: 'Name is required' }, 400);
   }
-  
+
+  const folderName = name.trim();
+
   try {
-    const result = await c.env.DB.prepare(
-      'INSERT INTO folders (name) VALUES (?) RETURNING *'
-    ).bind(body.name.trim()).first<Folder>();
-    
-    return c.json(result, 201);
-  } catch (e) {
-    return c.json({ error: 'Folder name already exists' }, 409);
+    // Try to insert the folder. Use INSERT OR IGNORE to handle existing folders gracefully.
+    await c.env.DB.prepare(
+      'INSERT OR IGNORE INTO folders (name) VALUES (?)'
+    ).bind(folderName).run();
+
+    // Fetch the folder (whether it was just created or already existed)
+    const folder = await c.env.DB.prepare(
+      'SELECT * FROM folders WHERE name = ?'
+    ).bind(folderName).first<Folder>();
+
+    return c.json(folder, 201);
+  } catch (err) {
+    console.error('Database error in folders.post:', err);
+    return c.json({ error: 'Database error' }, 500);
   }
 });
 

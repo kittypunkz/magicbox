@@ -25,9 +25,20 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
   const [cursorPosition, setCursorPosition] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const hashtagMatch = input.slice(0, cursorPosition).match(/#([\w]*)$/);
+  // Refined matching: find if cursor is immediately after a hashtag being typed
+  const getHashtagAtCursor = () => {
+    const textBeforeCursor = input.slice(0, cursorPosition);
+    // Matches # followed by word characters, hyphens, underscores, or dots AT THE END of textBeforeCursor
+    const match = textBeforeCursor.match(/#([\w.-]*)$/);
+    return match;
+  };
+
+  const hashtagMatch = getHashtagAtCursor();
   const searchTerm = hashtagMatch ? hashtagMatch[1].toLowerCase() : '';
   
+  // Only show suggestions if we are actually typing a hashtag (cursor is at the end of a #word)
+  const isSuggesting = showSuggestions && !!hashtagMatch;
+
   const filteredFolders = searchTerm
     ? folders.filter((f) => f.name.toLowerCase().includes(searchTerm))
     : folders;
@@ -41,7 +52,14 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     if (!inputEl) return;
 
     const handleSelectionChange = () => {
-      setCursorPosition(inputEl.selectionStart || 0);
+      const pos = inputEl.selectionStart || 0;
+      setCursorPosition(pos);
+      
+      // Auto-hide suggestions if cursor moves away from hashtag
+      const textBefore = inputRef.current?.value.slice(0, pos) || '';
+      if (!textBefore.match(/#([\w.-]*)$/)) {
+        setShowSuggestions(false);
+      }
     };
 
     inputEl.addEventListener('keyup', handleSelectionChange);
@@ -58,13 +76,17 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     const pos = e.target.selectionStart || 0;
     setInput(value);
     setCursorPosition(pos);
-    setShowSuggestions(value.includes('#'));
+    
+    // Show suggestions only if cursor is at a hashtag
+    const match = value.slice(0, pos).match(/#([\w.-]*)$/);
+    setShowSuggestions(!!match);
   };
 
   const handleFolderSelect = (folder: Folder) => {
-    if (!hashtagMatch) return;
+    const match = getHashtagAtCursor();
+    if (!match) return;
     
-    const before = input.slice(0, hashtagMatch.index);
+    const before = input.slice(0, match.index);
     const after = input.slice(cursorPosition);
     const newInput = `${before}#${folder.name} ${after}`;
     setInput(newInput);
@@ -76,12 +98,13 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
       inputRef.current?.focus();
       const newPos = before.length + folder.name.length + 2;
       inputRef.current?.setSelectionRange(newPos, newPos);
+      setCursorPosition(newPos);
     }, 0);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!showSuggestions || filteredFolders.length === 0) {
-      // Allow Enter to submit when no suggestions
+    // If not suggesting or no folders match, Enter/Tab should submit
+    if (!isSuggesting || filteredFolders.length === 0) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSubmit();
@@ -90,13 +113,14 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
     }
 
     switch (e.key) {
-      case 'Tab':
+      case 'Tab': {
         e.preventDefault();
         const selectedFolder = filteredFolders[highlightedIndex];
         if (selectedFolder) {
           handleFolderSelect(selectedFolder);
         }
         break;
+      }
       
       case 'ArrowDown':
         e.preventDefault();
@@ -115,20 +139,25 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
         setHighlightedIndex(0);
         break;
       
-      case 'Enter':
+      case 'Enter': {
         e.preventDefault();
-        handleSubmit();
+        const selectedFolder = filteredFolders[highlightedIndex];
+        if (selectedFolder) {
+          handleFolderSelect(selectedFolder);
+        } else {
+          handleSubmit();
+        }
         break;
+      }
     }
   };
 
   const handleSubmit = () => {
     if (!input.trim()) return;
 
-    // Extract folder hashtag
-    const hashTag = input.match(/#(\w+)/);
+    // Extract folder hashtag - supporting hyphens, underscores, and dots
+    const hashTag = input.match(/#([\w.-]+)/);
     let targetFolderId = selectedFolderId;
-    let cleanContent = input;
     
     if (hashTag) {
       const folderName = hashTag[1];
@@ -138,22 +167,21 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
       if (existingFolder) {
         targetFolderId = existingFolder.id;
       }
-      // Remove hashtag from content
-      cleanContent = input.replace(/#\w+/g, '').trim();
     }
 
     // Auto-generate title from first line (first 50 chars)
-    const firstLine = cleanContent.split('\n')[0].slice(0, 50);
+    const cleanForTitle = input.replace(/#[\w.-]+/g, '').trim();
+    const firstLine = cleanForTitle.split('\n')[0].slice(0, 50);
     const title = firstLine || 'Untitled';
 
-    onCreateNote(title, cleanContent, targetFolderId);
+    onCreateNote(title, input, targetFolderId);
     setInput('');
     setSelectedFolderId(1);
     setHighlightedIndex(0);
   };
 
   const beforeCursor = input.slice(0, cursorPosition);
-  const afterHash = beforeCursor.match(/#([\w]*)$/);
+  const afterHash = beforeCursor.match(/#([\w.-]*)$/);
 
   return (
     <div 
@@ -200,7 +228,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
             className={`central-input-suggestions absolute top-full left-0 right-0 mt-2 ${c.input} border ${c.border} rounded-xl shadow-lg z-50 overflow-hidden`}
           >
             <div className={`central-input-suggestions-header px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
-              Select folder (Tab to select, ↑↓ to navigate, Enter to create)
+              Select folder (Enter or Tab to select, ↑↓ to navigate)
             </div>
             {filteredFolders.map((folder, index) => (
               <button
@@ -218,7 +246,10 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
                   <span className={`ml-auto text-xs ${c.gray}`}>default</span>
                 )}
                 {index === highlightedIndex && (
-                  <span className="ml-auto text-xs text-blue-400 font-medium">Tab</span>
+                  <div className="ml-auto flex gap-2">
+                    <span className="text-xs text-blue-400 font-medium">Tab</span>
+                    <span className="text-xs text-blue-400 font-medium">Enter</span>
+                  </div>
                 )}
               </button>
             ))}

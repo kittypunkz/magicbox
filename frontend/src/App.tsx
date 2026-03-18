@@ -6,6 +6,7 @@ import { HomePage } from './pages/HomePage';
 import { FolderPage } from './pages/FolderPage';
 import { useFolders } from './hooks/useFolders';
 import { useNotes } from './hooks/useNotes';
+import { Toast, type ToastType } from './components/Toast';
 import type { Note } from './types';
 
 type ViewType = 'home' | 'folder' | 'note';
@@ -25,6 +26,13 @@ function App() {
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+
+  const showToast = useCallback((message: string, type: ToastType = 'success') => {
+    setToast({ message, type });
+  }, []);
+
   // Shared folders state for both Sidebar and HomePage
   const { 
     folders, 
@@ -140,7 +148,8 @@ function App() {
             <HomePage 
               folders={folders}
               addFolderLocally={addFolderLocally}
-              onSelectNote={handleSelectNote} 
+              onSelectNote={handleSelectNote}
+              showToast={showToast}
             />
           )}
           {view === 'folder' && selectedFolderId && (
@@ -158,6 +167,15 @@ function App() {
           )}
         </main>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

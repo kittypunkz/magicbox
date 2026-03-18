@@ -1,24 +1,34 @@
 import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult } from '../types';
 
-// API Base URL - Uses relative path in dev, custom subdomain in production
-const API_BASE = 'https://api.magicbox.bankapirak.com';
+// API Base URL - Uses environment variable or localhost:8787 for development
+const isDev = import.meta.env.DEV;
+const API_BASE = import.meta.env.VITE_API_URL || (isDev ? 'http://localhost:8787' : '/api');
 
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`;
+  console.log(`API Request: ${options?.method || 'GET'} ${url}`, options?.body ? JSON.parse(options.body as string) : '');
   
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    ...options,
-  });
-  
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      ...options,
+    });
+    
+    console.log(`API Response: ${response.status} ${url}`);
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error(`API Error Details:`, error);
+      throw new Error(error.error || `HTTP ${response.status}`);
+    }
+    
+    return response.json();
+  } catch (err) {
+    console.error(`Fetch error for ${url}:`, err);
+    throw err;
   }
-  
-  return response.json();
 }
 
 export const foldersAPI = {
