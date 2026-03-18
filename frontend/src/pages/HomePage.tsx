@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Sparkles, FileText, Folder, Trash2 } from 'lucide-react';
-import { CentralInput } from '../components/CentralInput';
+import { Sparkles, FileText, Folder, Trash2, Plus } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useNotes } from '../hooks/useNotes';
-import { notesAPI, foldersAPI } from '../api/client';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -19,9 +17,8 @@ const c = {
 
 interface HomePageProps {
   folders: FolderType[];
-  addFolderLocally: (folder: FolderType) => void;
   onSelectNote: (note: Note) => void;
-  showToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
+  onCreateNote?: (title: string, content: string, folderId: number) => void;
 }
 
 // Days to consider a note as "unused"
@@ -37,9 +34,8 @@ function getUnusedNotes(notes: Note[]): Note[] {
   });
 }
 
-export function HomePage({ folders, addFolderLocally, onSelectNote, showToast }: HomePageProps) {
+export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps) {
   const { notes, refetch: refetchNotes, deleteNote } = useNotes();
-  const [creating, setCreating] = useState(false);
   const [showDeleteUnusedModal, setShowDeleteUnusedModal] = useState(false);
   const [isDeletingUnused, setIsDeletingUnused] = useState(false);
   const [deleteResult, setDeleteResult] = useState<{ success: number; failed: number } | null>(null);
@@ -50,65 +46,6 @@ export function HomePage({ folders, addFolderLocally, onSelectNote, showToast }:
 
   const unusedNotes = useMemo(() => getUnusedNotes(notes), [notes]);
   const hasUnusedNotes = unusedNotes.length > 0;
-
-  const handleCreateNote = async (title: string, content: string, folderId: number) => {
-    if (creating) return;
-    
-    console.log('Creating note:', { title, content, folderId });
-    setCreating(true);
-    try {
-      // Check if folder exists, if not create it
-      let targetFolderId = folderId;
-      const hashTag = content.match(/#([\w.-]+)/);
-      
-      if (hashTag) {
-        const folderName = hashTag[1];
-        console.log('Hashtag folder detected:', folderName);
-        const existingFolder = folders.find(
-          (f) => f.name.toLowerCase() === folderName.toLowerCase()
-        );
-        
-        if (!existingFolder) {
-          console.log('Creating new folder:', folderName);
-          const newFolder = await foldersAPI.create(folderName);
-          targetFolderId = newFolder.id;
-          addFolderLocally(newFolder);
-        } else {
-          console.log('Using existing folder:', existingFolder.name, 'ID:', existingFolder.id);
-          targetFolderId = existingFolder.id;
-        }
-      }
-
-      console.log('Sending note creation request with folderId:', targetFolderId);
-      const cleanedContent = content.replace(/#[\w.-]+/g, '').trim();
-      
-      if (cleanedContent) {
-        const note = await notesAPI.create({
-          folder_id: targetFolderId,
-          title: title,
-          content: cleanedContent,
-        });
-
-        console.log('Note created successfully:', note);
-        const folderName = content.match(/#([\w.-]+)/)?.[1];
-        if (folderName) {
-          showToast?.(`Note added to '#${folderName}'`, 'success');
-        }
-        refetchNotes();
-        onSelectNote(note);
-      } else {
-        console.log('No content provided, only folder ensured/created.');
-        const folderName = content.match(/#([\w.-]+)/)?.[1] || 'folder';
-        showToast?.(`Folder '#${folderName}' is ready`, 'success');
-        // If it was a new folder, it's already added to sidebar via addFolderLocally
-        refetchNotes(); // Refresh stats
-      }
-    } catch (err) {
-      console.error('Error in handleCreateNote:', err);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleDeleteUnused = async () => {
     setIsDeletingUnused(true);
@@ -165,12 +102,38 @@ export function HomePage({ folders, addFolderLocally, onSelectNote, showToast }:
       data-area-id="homepage"
       className={`homepage flex flex-col h-full overflow-y-auto ${c.bg}`}
     >
-      {/* Hero Section */}
+      {/* Hero Section with Rainbow Animation */}
       <div 
         data-area-id="homepage-hero"
-        className="homepage-hero flex-1 flex flex-col items-center justify-center px-8 py-16 min-h-[50vh]"
+        className="homepage-hero flex-1 flex flex-col items-center justify-center px-8 py-16 min-h-[50vh] relative overflow-hidden"
       >
-        <div className="homepage-hero-content text-center mb-12">
+        {/* Rainbow Gradient Animation Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{
+              background: 'linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)',
+              backgroundSize: '400% 400%',
+              animation: 'rainbow-shift 15s ease infinite',
+            }}
+          />
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'radial-gradient(ellipse at center, transparent 0%, #191919 70%)',
+            }}
+          />
+        </div>
+        
+        <style>{`
+          @keyframes rainbow-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+        `}</style>
+
+        <div className="homepage-hero-content text-center mb-12 relative z-10">
           <div className="homepage-hero-icon inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-6 shadow-lg">
             <Sparkles size={32} className="text-white" />
           </div>
@@ -181,12 +144,10 @@ export function HomePage({ folders, addFolderLocally, onSelectNote, showToast }:
             Capture your thoughts. Organize with folders.
           </p>
         </div>
-
-        <CentralInput folders={folders} onCreateNote={handleCreateNote} />
       </div>
 
       {/* Recent Notes */}
-      {recentNotes.length > 0 && (
+      {recentNotes.length > 0 ? (
         <div 
           data-area-id="homepage-recent-section"
           className="homepage-recent-section max-w-4xl mx-auto w-full px-8 pb-16"
@@ -233,6 +194,30 @@ export function HomePage({ folders, addFolderLocally, onSelectNote, showToast }:
             ))}
           </div>
         </div>
+      ) : (
+        /* New Note Button when no notes */
+        onCreateNote && (
+          <div 
+            data-area-id="homepage-empty-state"
+            className="homepage-empty-state max-w-4xl mx-auto w-full px-8 pb-16 text-center"
+          >
+            <div className={`p-8 border-2 border-dashed ${c.border} rounded-2xl`}>
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center`}>
+                <FileText size={32} className="text-blue-400" />
+              </div>
+              <h3 className={`text-lg font-semibold ${c.text} mb-2`}>No notes yet</h3>
+              <p className={`${c.gray} mb-6`}>Create your first note to get started</p>
+              <button
+                data-area-id="homepage-create-note-btn"
+                onClick={() => onCreateNote('New Note', '', 1)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              >
+                <Plus size={20} />
+                Create New Note
+              </button>
+            </div>
+          </div>
+        )
       )}
 
       {/* Quick Stats */}

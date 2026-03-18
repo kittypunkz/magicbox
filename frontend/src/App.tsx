@@ -42,8 +42,7 @@ function App() {
     loading, 
     createFolder, 
     updateFolder, 
-    deleteFolder, 
-    addFolderLocally 
+    deleteFolder
   } = useFolders();
   
   // For note creation and deletion
@@ -158,9 +157,8 @@ function App() {
           {view === 'home' && (
             <HomePage 
               folders={folders}
-              addFolderLocally={addFolderLocally}
               onSelectNote={handleSelectNote}
-              showToast={showToast}
+              onCreateNote={handleCreateNote}
             />
           )}
           {view === 'folder' && selectedFolderId && (
