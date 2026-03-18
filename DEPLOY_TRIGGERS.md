@@ -9,7 +9,7 @@ MagicBox uses a **3-environment workflow** for safe deployments.
 | Environment | Branch | URL | Deploy Trigger |
 |-------------|--------|-----|----------------|
 | **Local** | Any | `http://localhost:3000` | Run `dev.bat` |
-| **Dev** | `develop` | `https://dev.magicbox.bankapirak.com` | Push to `develop` |
+| **Dev** | `develop` | `https://develop.magicbox-app.pages.dev` | Push to `develop` |
 | **Production** | `main` | `https://magicbox.bankapirak.com` | Manual (you control) |
 
 ---

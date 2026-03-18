@@ -35,7 +35,7 @@ jobs:
         run: npm install -g wrangler
 
       - name: Deploy to Cloudflare Workers (Dev)
-        run: wrangler deploy --config wrangler.toml --env dev
+        run: wrangler deploy --config wrangler.toml
 
   deploy-frontend:
     name: Deploy Frontend to Dev
@@ -67,7 +67,7 @@ jobs:
         run: npm install -g wrangler
 
       - name: Deploy to Cloudflare Pages (Dev)
-        run: wrangler pages deploy dist --project-name=magicbox-app-dev
+        run: wrangler pages deploy dist --project-name=magicbox-app --branch=develop
 
   notify:
     name: Notify Deployment
@@ -83,5 +83,5 @@ jobs:
           echo "  Frontend: ${{ needs.deploy-frontend.result }}"
           echo ""
           echo "🔗 DEV URLs:"
-          echo "  Web App: https://dev.magicbox.bankapirak.com"
-          echo "  API: https://api-dev.magicbox.bankapirak.com"
+          echo "  Web App: https://develop.magicbox-app.pages.dev (Preview)"
+          echo "  API: https://magicbox-api.apirak-aka1.workers.dev (Shared)"

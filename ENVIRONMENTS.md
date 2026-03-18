@@ -9,7 +9,7 @@ MagicBox uses a **3-environment workflow** for safe, controlled deployments.
 | Environment | Branch | URL | Purpose | Auto Deploy |
 |-------------|--------|-----|---------|-------------|
 | **Local** | Any local branch | `http://localhost:3000` | Development on your machine | ❌ Manual |
-| **Dev** | `develop` | `https://dev.magicbox.bankapirak.com` | Testing & QA | ✅ Yes |
+| **Dev** | `develop` | `https://develop.magicbox-app.pages.dev` | Testing & QA | ✅ Yes |
 | **Production** | `main` | `https://magicbox.bankapirak.com` | Live users | ⚠️ Manual trigger |
 
 ---
@@ -17,14 +17,15 @@ MagicBox uses a **3-environment workflow** for safe, controlled deployments.
 ## 🔄 Workflow Diagram
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   LOCAL     │────▶│     DEV     │────▶│ PRODUCTION  │
-│  (develop)  │     │  (develop)  │     │    (main)   │
-└─────────────┘     └─────────────┘     └─────────────┘
-      │                    │                    │
-      │                    │                    │
-   Code & Test       Auto-deploy on      YOU decide when
-   on localhost      push to develop     to deploy
+┌─────────────┐     ┌─────────────────────────┐     ┌─────────────┐
+│   LOCAL     │────▶│          DEV            │────▶│ PRODUCTION  │
+│  (develop)  │     │  (develop branch)       │     │    (main)   │
+│             │     │  Pages Preview URL      │     │             │
+└─────────────┘     └─────────────────────────┘     └─────────────┘
+      │                    │                              │
+      │                    │                              │
+   Code & Test       Auto-deploy on                YOU decide when
+   on localhost      push to develop               to deploy
 ```
 
 ---
@@ -65,8 +66,8 @@ git push origin develop
 ```
 
 **URL:**
-- Web: `https://dev.magicbox.bankapirak.com`
-- API: `https://api-dev.magicbox.bankapirak.com`
+- Web: `https://develop.magicbox-app.pages.dev` (Pages Preview)
+- API: `https://magicbox-api.apirak-aka1.workers.dev` (Shared with production for now)
 
 **GitHub Actions:**
 - File: `.github/workflows/deploy-develop.yml`

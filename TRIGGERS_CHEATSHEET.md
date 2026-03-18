@@ -5,7 +5,7 @@
 | Environment | Branch | URL | How to Deploy |
 |-------------|--------|-----|---------------|
 | **Local** | Any local | `localhost:3000` | Run `.\dev.bat` |
-| **Dev** | `develop` | `dev.magicbox.bankapirak.com` | Push to `develop` |
+| **Dev** | `develop` | `develop.magicbox-app.pages.dev` | Push to `develop` |
 | **Production** | `main` | `magicbox.bankapirak.com` | Tag release or manual |
 
 ---
@@ -53,7 +53,7 @@ GitHub Secrets required:
 | Environment | Web App | API |
 |-------------|---------|-----|
 | Local | http://localhost:3000 | http://localhost:8787 |
-| Dev | https://dev.magicbox.bankapirak.com | https://api-dev.magicbox.bankapirak.com |
+| Dev | https://develop.magicbox-app.pages.dev | https://magicbox-api.apirak-aka1.workers.dev |
 | Production | https://magicbox.bankapirak.com | https://api.magicbox.bankapirak.com |
 
 ---
