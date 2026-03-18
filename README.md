@@ -45,28 +45,48 @@ npx wrangler d1 migrations create magicbox-db init
 npx wrangler d1 migrations apply magicbox-db
 ```
 
-### 4. Start Development
+### 4. Start Local Development
 
 ```bash
 # From root directory
-npm run dev
+.\dev.bat
 ```
 
 This starts:
 - Backend API at http://localhost:8787
 - Frontend at http://localhost:3000
+- Agentation enabled for visual annotations
 
-### 5. Deploy to Production
+### 5. Deployment Environments
+
+MagicBox uses a **3-environment workflow**:
+
+| Environment | Branch | URL | Deploy Trigger |
+|-------------|--------|-----|----------------|
+| **Local** | Any | `localhost:3000` | Run `dev.bat` |
+| **Dev** | `develop` | `dev.magicbox.bankapirak.com` | Push to `develop` |
+| **Production** | `main` | `magicbox.bankapirak.com` | **You decide** |
+
+**Workflow:**
+1. Develop locally on feature branches
+2. Push to `develop` → Auto-deploys to Dev environment
+3. Test on Dev, then **you control** when to deploy to Production
+
+📖 See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for detailed setup.
+
+### 6. Deploy to Production
+
+**You control production deployments:**
 
 ```bash
-# Deploy API
-cd backend
-npx wrangler deploy
+# Option 1: Create a release tag
+git checkout main
+git merge develop
+git tag -a v1.5.0 -m "Release v1.5.0"
+git push origin v1.5.0
 
-# Deploy Frontend
-cd ../frontend
-npm run build
-npx wrangler pages deploy dist
+# Option 2: Manual trigger via GitHub UI
+# https://github.com/kittypunkz/magicbox/actions/workflows/deploy-production.yml
 ```
 
 ## Project Structure
