@@ -4,6 +4,7 @@ import { RecentNotes } from './RecentNotes';
 import { CreateNoteModal } from './CreateNoteModal';
 import { SkeletonFolderItem } from './Skeleton';
 import { useMinLoading } from '../hooks/useMinLoading';
+import { foldersAPI } from '../api/client';
 import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
@@ -26,7 +27,7 @@ interface SidebarProps {
   onCreateFolder: (name: string) => Promise<FolderType>;
   onUpdateFolder: (id: number, name: string) => Promise<void>;
   onDeleteFolder: (id: number) => Promise<void>;
-  onCreateNote?: (title: string, content: string, folderId: number) => void;
+  onCreateNote?: (title: string, content: string, folderId: number) => Promise<void> | void;
 }
 
 export function Sidebar({ 
@@ -51,6 +52,31 @@ export function Sidebar({
   
   // Minimum 500ms loading time for skeleton
   const showLoading = useMinLoading(loading, 500);
+
+  const handleCreateNote = async (title: string, content: string, folderName: string | null) => {
+    if (!onCreateNote) return;
+    
+    // Default to folder ID 1 if no folder specified
+    let targetFolderId = selectedFolderId || 1;
+    
+    // If folder name provided, find or create it
+    if (folderName) {
+      const existingFolder = folders.find(
+        (f) => f.name.toLowerCase() === folderName.toLowerCase()
+      );
+      
+      if (existingFolder) {
+        targetFolderId = existingFolder.id;
+      } else {
+        // Create new folder
+        const newFolder = await foldersAPI.create(folderName);
+        targetFolderId = newFolder.id;
+        // Refresh folders list will happen via parent
+      }
+    }
+    
+    await onCreateNote(title, content, targetFolderId);
+  };
 
   const handleCreate = async () => {
     if (!newFolderName.trim()) return;
@@ -275,9 +301,7 @@ export function Sidebar({
         <CreateNoteModal
           isOpen={isNoteModalOpen}
           onClose={() => setIsNoteModalOpen(false)}
-          folders={folders}
-          onCreateNote={onCreateNote}
-          initialFolderId={selectedFolderId}
+          onCreateNote={handleCreateNote}
         />
       )}
     </aside>

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square } from 'lucide-react';
-import { useFolder } from '../hooks/useFolders';
+import { useFolder, useFolders } from '../hooks/useFolders';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { CreateNoteModal } from '../components/CreateNoteModal';
 import { SkeletonCard } from '../components/Skeleton';
 import { useMinLoading } from '../hooks/useMinLoading';
-import { notesAPI } from '../api/client';
+import { notesAPI, foldersAPI } from '../api/client';
 import type { Note, Folder as FolderType } from '../types';
 
 // Dark mode colors
@@ -23,7 +23,7 @@ interface FolderPageProps {
   folderId: number;
   folders: FolderType[];
   onSelectNote: (note: Note) => void;
-  onCreateNote?: (title: string, content: string, folderId: number) => void;
+  onCreateNote?: (title: string, content: string, folderId: number) => Promise<void> | void;
 }
 
 function formatDate(dateStr: string) {
@@ -34,8 +34,9 @@ function formatDate(dateStr: string) {
   });
 }
 
-export function FolderPage({ folderId, folders, onSelectNote, onCreateNote }: FolderPageProps) {
+export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCreateNote }: FolderPageProps) {
   const { folder, loading, error, refetch } = useFolder(folderId);
+  const { refetch: refetchFolders } = useFolders();
   // Minimum 500ms loading time for skeleton
   const showLoading = useMinLoading(loading, 500);
   
@@ -129,10 +130,32 @@ export function FolderPage({ folderId, folders, onSelectNote, onCreateNote }: Fo
     setShowBulkDeleteConfirm(false);
   };
 
-  const handleCreateNote = (title: string, content: string, targetFolderId: number) => {
-    if (onCreateNote) {
-      onCreateNote(title, content, targetFolderId);
+  const handleCreateNote = async (title: string, content: string, folderName: string | null) => {
+    if (!onCreateNote) return;
+    
+    // Default to current folder
+    let targetFolderId = folderId;
+    
+    // If folder name provided and different from current, find or create it
+    if (folderName && folderName.toLowerCase() !== folder?.name.toLowerCase()) {
+      const existingFolder = propFolders.find(
+        (f) => f.name.toLowerCase() === folderName.toLowerCase()
+      );
+      
+      if (existingFolder) {
+        targetFolderId = existingFolder.id;
+      } else {
+        // Create new folder
+        const newFolder = await foldersAPI.create(folderName);
+        targetFolderId = newFolder.id;
+        // Refresh folders list
+        await refetchFolders();
+      }
     }
+    
+    await onCreateNote(title, content, targetFolderId);
+    // Refresh folder to show new note
+    await refetch();
   };
 
   if (showLoading) {
@@ -389,9 +412,8 @@ export function FolderPage({ folderId, folders, onSelectNote, onCreateNote }: Fo
         <CreateNoteModal
           isOpen={isNoteModalOpen}
           onClose={() => setIsNoteModalOpen(false)}
-          folders={folders}
           onCreateNote={handleCreateNote}
-          initialFolderId={folderId}
+          defaultFolderName={folder?.name}
         />
       )}
     </div>

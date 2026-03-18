@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, FileText, Hash } from 'lucide-react';
-import type { Folder } from '../types';
 
 // Dark mode colors
 const c = {
@@ -18,21 +17,18 @@ const c = {
 interface CreateNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  folders: Folder[];
-  onCreateNote: (title: string, content: string, folderId: number) => void;
-  initialFolderId?: number | null;
+  onCreateNote: (title: string, content: string, folderName: string | null) => void;
+  defaultFolderName?: string;
 }
 
 export function CreateNoteModal({ 
   isOpen, 
   onClose, 
-  folders, 
   onCreateNote,
-  initialFolderId 
+  defaultFolderName 
 }: CreateNoteModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [selectedFolderId, setSelectedFolderId] = useState<number>(initialFolderId || 1);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   // Reset form when modal opens
@@ -40,11 +36,10 @@ export function CreateNoteModal({
     if (isOpen) {
       setTitle('');
       setContent('');
-      setSelectedFolderId(initialFolderId || 1);
       // Focus title input after modal opens
       setTimeout(() => titleInputRef.current?.focus(), 100);
     }
-  }, [isOpen, initialFolderId]);
+  }, [isOpen]);
 
   // Handle escape key
   useEffect(() => {
@@ -57,12 +52,34 @@ export function CreateNoteModal({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  // Extract hashtag from text
+  const extractFolderName = (text: string): { folderName: string | null; cleanText: string } => {
+    const hashMatch = text.match(/#([\w.-]+)/);
+    if (hashMatch) {
+      const folderName = hashMatch[1];
+      // Remove the hashtag from text
+      const cleanText = text.replace(/#[\w.-]+/, '').trim();
+      return { folderName, cleanText };
+    }
+    return { folderName: null, cleanText: text };
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() && !content.trim()) return;
     
-    const noteTitle = title.trim() || 'Untitled';
-    onCreateNote(noteTitle, content.trim(), selectedFolderId);
+    // Try to extract folder from title first, then content
+    const titleResult = extractFolderName(title);
+    const contentResult = extractFolderName(content);
+    
+    // Use folder from title if found, otherwise from content, otherwise default
+    const folderName = titleResult.folderName || contentResult.folderName || defaultFolderName || null;
+    
+    // Use cleaned text
+    const cleanTitle = titleResult.cleanText || 'Untitled';
+    const cleanContent = titleResult.folderName ? content : contentResult.cleanText;
+    
+    onCreateNote(cleanTitle, cleanContent, folderName);
     onClose();
   };
 
@@ -107,14 +124,19 @@ export function CreateNoteModal({
           {/* Title Input */}
           <div>
             <label className={`block text-sm font-medium ${c.gray} mb-2`}>
-              Title
+              <span className="flex items-center gap-2">
+                Title
+                <span className={`text-xs ${c.gray} font-normal`}>
+                  (use #foldername to organize)
+                </span>
+              </span>
             </label>
             <input
               ref={titleInputRef}
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Note title..."
+              placeholder="Note title... #work"
               className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
             />
           </div>
@@ -122,53 +144,29 @@ export function CreateNoteModal({
           {/* Content Input */}
           <div>
             <label className={`block text-sm font-medium ${c.gray} mb-2`}>
-              Content
+              <span className="flex items-center gap-2">
+                Content
+                <span className={`text-xs ${c.gray} font-normal`}>
+                  (or use #foldername here)
+                </span>
+              </span>
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind?"
+              placeholder="What's on your mind? #ideas"
               rows={4}
               className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text} resize-none`}
             />
           </div>
 
-          {/* Folder Selection */}
-          <div>
-            <label className={`block text-sm font-medium ${c.gray} mb-2`}>
-              <span className="flex items-center gap-2">
-                <Hash size={14} />
-                Folder
-              </span>
-            </label>
-            <div className={`max-h-40 overflow-y-auto rounded-lg border ${c.border}`}>
-              {folders.map((folder) => (
-                <button
-                  key={folder.id}
-                  type="button"
-                  onClick={() => setSelectedFolderId(folder.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                    selectedFolderId === folder.id 
-                      ? 'bg-blue-900/30 border-l-2 border-blue-500' 
-                      : c.hover
-                  }`}
-                >
-                  <div className={`w-4 h-4 rounded border ${selectedFolderId === folder.id ? 'bg-blue-500 border-blue-500' : `border-[#6b6b6b]`} flex items-center justify-center`}>
-                    {selectedFolderId === folder.id && (
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <span className={`text-sm ${selectedFolderId === folder.id ? c.text : c.gray}`}>
-                    {folder.name}
-                  </span>
-                  {folder.id === 1 && (
-                    <span className={`ml-auto text-xs ${c.gray}`}>default</span>
-                  )}
-                </button>
-              ))}
-            </div>
+          {/* Folder Hint */}
+          <div className={`flex items-center gap-2 text-xs ${c.gray} bg-[#2a2a2a] px-3 py-2 rounded-lg`}>
+            <Hash size={12} className="text-blue-500" />
+            <span>
+              Type <code className="text-blue-400">#foldername</code> in title or content to organize. 
+              If folder doesn't exist, it will be created automatically.
+            </span>
           </div>
 
           {/* Actions */}
