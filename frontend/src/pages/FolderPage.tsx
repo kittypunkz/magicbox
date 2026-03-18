@@ -377,6 +377,21 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                 </div>
               </div>
             ))}
+            
+            {/* Add New Note Card */}
+            {!isBulkDeleteMode && onCreateNote && (
+              <button
+                data-area-id="folderpage-add-note-card"
+                onClick={() => setIsNoteModalOpen(true)}
+                className={`folderpage-add-note-card group relative flex flex-col items-center justify-center p-5 border-2 border-dashed ${c.border} rounded-xl hover:border-blue-500 hover:bg-blue-500/5 transition-all cursor-pointer min-h-[180px]`}
+              >
+                <div className={`w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mb-3 group-hover:bg-blue-500/20 transition-colors`}>
+                  <Plus size={24} className="text-blue-500" />
+                </div>
+                <span className={`text-sm font-medium ${c.text}`}>Add New Note</span>
+                <span className={`text-xs ${c.gray} mt-1`}>Click to create</span>
+              </button>
+            )}
           </div>
         )}
       </div>
