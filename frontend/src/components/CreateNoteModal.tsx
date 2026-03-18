@@ -34,6 +34,7 @@ export function CreateNoteModal({
   const [content, setContent] = useState('');
   const [activeInput, setActiveInput] = useState<'title' | 'content'>('title');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [justSelected, setJustSelected] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const contentInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -43,6 +44,7 @@ export function CreateNoteModal({
       setTitle('');
       setContent('');
       setHighlightedIndex(0);
+      setJustSelected(false);
       setActiveInput('title');
       // Focus title input after modal opens
       setTimeout(() => titleInputRef.current?.focus(), 100);
@@ -90,7 +92,7 @@ export function CreateNoteModal({
   }, [hashtagMatch, searchTerm, folders]);
 
   // Check if we should show suggestions
-  const showSuggestions = hashtagMatch !== null;
+  const showSuggestions = hashtagMatch !== null && !justSelected;
 
   // Handle folder selection
   const handleFolderSelect = (folder: Folder) => {
@@ -122,8 +124,12 @@ export function CreateNoteModal({
       }, 0);
     }
     
-    // Reset to hide dropdown
+    // Reset to hide dropdown immediately
     setHighlightedIndex(0);
+    setJustSelected(true);
+    
+    // Re-enable suggestions after a short delay
+    setTimeout(() => setJustSelected(false), 100);
   };
 
   // Handle keyboard navigation for suggestions
