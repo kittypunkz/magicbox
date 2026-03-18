@@ -1,7 +1,7 @@
 {
   "name": "magicbox-frontend",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.6.1",
   "type": "module",
   "scripts": {
     "dev": "cross-env VITE_API_URL=http://localhost:8787 vite",
