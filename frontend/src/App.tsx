@@ -9,6 +9,9 @@ import { useNotes } from './hooks/useNotes';
 import { Toast, type ToastType } from './components/Toast';
 import type { Note } from './types';
 
+// Agentation - Visual annotation tool for AI agents (dev only)
+import { Agentation } from 'agentation';
+
 type ViewType = 'home' | 'folder' | 'note';
 
 // Dark mode colors
@@ -176,6 +179,9 @@ function App() {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Agentation - Visual annotation tool (dev only) */}
+      {import.meta.env.DEV && <Agentation />}
     </div>
   );
 }
