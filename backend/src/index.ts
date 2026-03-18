@@ -28,7 +28,7 @@ app.use('*', cors({
 app.get('/', (c) => {
   return c.json({ 
     name: 'MagicBox API',
-    version: '1.3.1',
+    version: '1.4.0',
     status: 'running',
     domain: 'magicbox.bankapirak.com'
   });

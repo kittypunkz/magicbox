@@ -1,6 +1,6 @@
 {
   "name": "magicbox",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "A markdown-based note taking app like Notion",
   "scripts": {
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
