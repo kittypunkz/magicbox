@@ -15,6 +15,7 @@ import type { Note, Folder } from './types';
 import { useMinLoading } from './hooks/useMinLoading';
 import { Search, ArrowLeft, MoreVertical, LogOut, Shield, Plus } from 'lucide-react';
 import './App.css';
+import { Agentation } from 'agentation';
 
 type ViewType = 'home' | 'folder' | 'note';
 
@@ -579,9 +580,12 @@ function AppRoutes() {
 }
 
 function App() {
+  const isDev = import.meta.env.DEV;
+  
   return (
     <AuthProvider>
       <AppRoutes />
+      {isDev && <Agentation />}
     </AuthProvider>
   );
 }
