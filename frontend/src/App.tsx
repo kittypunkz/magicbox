@@ -1,26 +1,196 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
-
 import { CreateNoteModal } from './components/CreateNoteModal';
-
 import { MobileNav } from './components/MobileNav';
 import { FolderPage } from './pages/FolderPage';
 import { NoteEditor } from './components/NoteEditor';
 import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { SetupPage } from './pages/SetupPage';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
+import { useAuth, AuthProvider } from './contexts/AuthContext';
 import type { Note, Folder } from './types';
 import { useMinLoading } from './hooks/useMinLoading';
-import { Search, ArrowLeft, MoreVertical } from 'lucide-react';
+import { Search, ArrowLeft, MoreVertical, LogOut, Shield, Plus } from 'lucide-react';
 import './App.css';
 
 type ViewType = 'home' | 'folder' | 'note';
+
+// Protected Route wrapper
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#191919] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Auth redirect - if already logged in, redirect to home
+function AuthRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#191919] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+// Setup redirect - if already set up, redirect to login
+function SetupRoute({ children }: { children: React.ReactNode }) {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#191919] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { credentials, addDevice, removeCredential, refreshCredentials, logout } = useAuth();
+  const [isAddingDevice, setIsAddingDevice] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      refreshCredentials();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleAddDevice = async () => {
+    setIsAddingDevice(true);
+    setError(null);
+    try {
+      await addDevice();
+      await refreshCredentials();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add device');
+    } finally {
+      setIsAddingDevice(false);
+    }
+  };
+
+  const handleRemove = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this device?')) return;
+    try {
+      await removeCredential(id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove device');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-[#202020] border border-[#2f2f2f] rounded-xl w-full max-w-md max-h-[80vh] overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-[#2f2f2f]">
+          <h2 className="text-lg font-semibold text-[#e6e6e6]">Settings</h2>
+          <button
+            onClick={onClose}
+            className="text-[#6b6b6b] hover:text-[#e6e6e6] transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="p-4 overflow-y-auto max-h-[60vh]">
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-[#6b6b6b] mb-3 uppercase tracking-wider">
+              Passkeys ({credentials.length})
+            </h3>
+            
+            {credentials.map((cred) => (
+              <div
+                key={cred.id}
+                className="flex items-center justify-between p-3 bg-[#191919] rounded-lg mb-2"
+              >
+                <div>
+                  <p className="text-sm text-[#e6e6e6] font-mono">
+                    {cred.id.slice(0, 16)}...
+                  </p>
+                  <p className="text-xs text-[#6b6b6b]">
+                    Added: {new Date(cred.created_at).toLocaleDateString()}
+                    {cred.last_used_at && ` • Last used: ${new Date(cred.last_used_at).toLocaleDateString()}`}
+                  </p>
+                </div>
+                {credentials.length > 1 && (
+                  <button
+                    onClick={() => handleRemove(cred.id)}
+                    className="text-red-400 hover:text-red-300 text-sm px-2 py-1"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <button
+              onClick={handleAddDevice}
+              disabled={isAddingDevice}
+              className="w-full flex items-center justify-center gap-2 p-3 border border-dashed border-[#2f2f2f] rounded-lg text-[#6b6b6b] hover:text-[#e6e6e6] hover:border-[#6b6b6b] transition-colors"
+            >
+              {isAddingDevice ? (
+                <span>Adding...</span>
+              ) : (
+                <>
+                  <Plus size={16} />
+                  <span>Add New Device</span>
+                </>
+              )}
+            </button>
+
+            {error && (
+              <p className="text-sm text-red-400 mt-2">{error}</p>
+            )}
+          </div>
+
+          <div className="border-t border-[#2f2f2f] pt-4">
+            <button
+              onClick={logout}
+              className="w-full flex items-center justify-center gap-2 p-3 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+            >
+              <LogOut size={16} />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { folderId, noteId } = useParams<{ folderId?: string; noteId?: string }>();
+  // Logout is available via useAuth in SettingsModal
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // View state
   const [view, setView] = useState<ViewType>('home');
@@ -118,8 +288,6 @@ function AppContent() {
     updateURL('note', selectedFolderId, noteId);
   }, [selectedFolderId, updateURL]);
 
-
-
   const handleNoteClick = useCallback((note: Note) => {
     showNote(note.id);
   }, [showNote]);
@@ -130,8 +298,6 @@ function AppContent() {
       showAllNotes();
     }
   }, [deleteNote, selectedNoteId, showAllNotes]);
-
-
 
   // Folder handlers
   const handleCreateFolder = useCallback(async (name: string) => {
@@ -159,15 +325,9 @@ function AppContent() {
     setIsCreateModalOpen(true);
   }, []);
 
-
-
-
-
   const handleCloseModal = useCallback(() => {
     setIsCreateModalOpen(false);
   }, []);
-  
-
 
   const handleBack = useCallback(() => {
     if (selectedFolderId) {
@@ -176,10 +336,6 @@ function AppContent() {
       showAllNotes();
     }
   }, [selectedFolderId, showFolder, showAllNotes]);
-
-
-
-
 
   const getFolderName = useCallback((folderId: number | null) => {
     if (!folderId) return 'All Notes';
@@ -275,6 +431,15 @@ function AppContent() {
           <div className="flex-1" />
           
           <SearchBar />
+
+          {/* Settings Button */}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all"
+            aria-label="Settings"
+          >
+            <Shield size={20} />
+          </button>
           
           {view === 'note' && selectedNote && (
             <div className="relative">
@@ -308,7 +473,6 @@ function AppContent() {
               folders={folders}
               onSelectNote={handleNoteClick}
               onCreateNote={() => {
-                // TODO: Create note with provided details
                 setIsCreateModalOpen(true);
               }}
             />
@@ -320,7 +484,6 @@ function AppContent() {
               folders={folders}
               onSelectNote={handleNoteClick}
               onCreateNote={() => {
-                // TODO: Create note with provided details
                 setIsCreateModalOpen(true);
               }}
             />
@@ -355,24 +518,56 @@ function AppContent() {
         folders={folders}
         onClose={handleCloseModal}
         onCreateNote={() => {
-          // TODO: Implement note creation
           handleCloseModal();
         }}
         defaultFolderName={selectedFolderId ? folders.find(f => f.id === selectedFolderId)?.name : undefined}
       />
 
-
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </div>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={
+        <AuthRoute>
+          <LoginPage />
+        </AuthRoute>
+      } />
+      <Route path="/setup" element={
+        <SetupRoute>
+          <SetupPage />
+        </SetupRoute>
+      } />
+      <Route path="/" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+      <Route path="/folder/:folderId" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+      <Route path="/note/:noteId" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+    </Routes>
   );
 }
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<AppContent />} />
-      <Route path="/folder/:folderId" element={<AppContent />} />
-      <Route path="/note/:noteId" element={<AppContent />} />
-    </Routes>
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }
 

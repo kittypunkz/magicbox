@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import folders from './routes/folders';
 import notes from './routes/notes';
 import search from './routes/search';
+import auth from './routes/auth';
 import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -20,7 +21,8 @@ app.use('*', cors({
     return 'http://localhost:3000';
   },
   allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type'],
+  allowHeaders: ['Content-Type', 'Cookie'],
+  exposeHeaders: ['Set-Cookie'],
   credentials: true,
 }));
 
@@ -35,6 +37,7 @@ app.get('/', (c) => {
 });
 
 // Routes
+app.route('/auth', auth);
 app.route('/folders', folders);
 app.route('/notes', notes);
 app.route('/search', search);

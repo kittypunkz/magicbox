@@ -6,13 +6,14 @@ const search = new Hono<{ Bindings: Env }>();
 // Search notes and folders
 search.get('/', async (c) => {
   const q = c.req.query('q')?.trim();
+  const db = c.env.DB as D1Database;
   
   if (!q) {
     return c.json({ notes: [], folders: [] });
   }
   
   // Search notes using FTS
-  const { results: notes } = await c.env.DB.prepare(`
+  const { results: notes } = await db.prepare(`
     SELECT n.*, f.name as folder_name 
     FROM notes_fts fts
     JOIN notes n ON fts.rowid = n.id
@@ -23,7 +24,7 @@ search.get('/', async (c) => {
   `).bind(q).all();
   
   // Search folders (partial match)
-  const { results: folders } = await c.env.DB.prepare(`
+  const { results: folders } = await db.prepare(`
     SELECT * FROM folders 
     WHERE name LIKE ?
     ORDER BY name
@@ -31,8 +32,8 @@ search.get('/', async (c) => {
   `).bind(`%${q}%`).all();
   
   const result: SearchResult = {
-    notes: notes || [],
-    folders: folders || []
+    notes: (notes || []) as unknown as SearchResult['notes'],
+    folders: (folders || []) as unknown as SearchResult['folders']
   };
   
   return c.json(result);

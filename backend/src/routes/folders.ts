@@ -5,7 +5,8 @@ const folders = new Hono<{ Bindings: Env }>();
 
 // Get all folders
 folders.get('/', async (c) => {
-  const { results } = await c.env.DB.prepare(
+  const db = c.env.DB as D1Database;
+  const { results } = await db.prepare(
     'SELECT * FROM folders ORDER BY name'
   ).all<Folder>();
   
@@ -15,8 +16,9 @@ folders.get('/', async (c) => {
 // Get folder by ID with notes count
 folders.get('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
+  const db = c.env.DB as D1Database;
   
-  const folder = await c.env.DB.prepare(
+  const folder = await db.prepare(
     'SELECT * FROM folders WHERE id = ?'
   ).bind(id).first<Folder>();
   
@@ -24,7 +26,7 @@ folders.get('/:id', async (c) => {
     return c.json({ error: 'Folder not found' }, 404);
   }
   
-  const { results: notes } = await c.env.DB.prepare(
+  const { results: notes } = await db.prepare(
     'SELECT id, title, created_at, updated_at FROM notes WHERE folder_id = ? ORDER BY updated_at DESC'
   ).bind(id).all();
   
@@ -34,6 +36,7 @@ folders.get('/:id', async (c) => {
 // Create folder
 folders.post('/', async (c) => {
   const { name } = await c.req.json<CreateFolderRequest>();
+  const db = c.env.DB as D1Database;
 
   if (!name?.trim()) {
     return c.json({ error: 'Name is required' }, 400);
@@ -43,12 +46,12 @@ folders.post('/', async (c) => {
 
   try {
     // Try to insert the folder. Use INSERT OR IGNORE to handle existing folders gracefully.
-    await c.env.DB.prepare(
+    await db.prepare(
       'INSERT OR IGNORE INTO folders (name) VALUES (?)'
     ).bind(folderName).run();
 
     // Fetch the folder (whether it was just created or already existed)
-    const folder = await c.env.DB.prepare(
+    const folder = await db.prepare(
       'SELECT * FROM folders WHERE name = ?'
     ).bind(folderName).first<Folder>();
 
@@ -63,13 +66,14 @@ folders.post('/', async (c) => {
 folders.patch('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   const body = await c.req.json<Partial<CreateFolderRequest>>();
+  const db = c.env.DB as D1Database;
   
   if (!body.name?.trim()) {
     return c.json({ error: 'Folder name is required' }, 400);
   }
   
   try {
-    const result = await c.env.DB.prepare(
+    const result = await db.prepare(
       'UPDATE folders SET name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? RETURNING *'
     ).bind(body.name.trim(), id).first<Folder>();
     
@@ -86,13 +90,14 @@ folders.patch('/:id', async (c) => {
 // Delete folder
 folders.delete('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
+  const db = c.env.DB as D1Database;
   
   // Don't allow deleting the default Inbox folder
   if (id === 1) {
     return c.json({ error: 'Cannot delete default Inbox folder' }, 400);
   }
   
-  const result = await c.env.DB.prepare(
+  const result = await db.prepare(
     'DELETE FROM folders WHERE id = ? RETURNING *'
   ).bind(id).first();
   

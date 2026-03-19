@@ -6,6 +6,7 @@ const notes = new Hono<{ Bindings: Env }>();
 // Get all notes (with optional folder filter)
 notes.get('/', async (c) => {
   const folderId = c.req.query('folder_id');
+  const db = c.env.DB as D1Database;
   
   let query = `
     SELECT n.*, f.name as folder_name 
@@ -20,8 +21,8 @@ notes.get('/', async (c) => {
   query += ' ORDER BY n.updated_at DESC';
   
   const stmt = folderId 
-    ? c.env.DB.prepare(query).bind(parseInt(folderId))
-    : c.env.DB.prepare(query);
+    ? db.prepare(query).bind(parseInt(folderId))
+    : db.prepare(query);
   
   const { results } = await stmt.all<NoteWithFolder>();
   
@@ -31,8 +32,9 @@ notes.get('/', async (c) => {
 // Get note by ID
 notes.get('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
+  const db = c.env.DB as D1Database;
   
-  const note = await c.env.DB.prepare(`
+  const note = await db.prepare(`
     SELECT n.*, f.name as folder_name 
     FROM notes n 
     JOIN folders f ON n.folder_id = f.id 
@@ -49,6 +51,7 @@ notes.get('/:id', async (c) => {
 // Create note
 notes.post('/', async (c) => {
   const body = await c.req.json<CreateNoteRequest>();
+  const db = c.env.DB as D1Database;
   
   if (!body.title?.trim()) {
     return c.json({ error: 'Title is required' }, 400);
@@ -57,7 +60,7 @@ notes.post('/', async (c) => {
   const folderId = body.folder_id || 1; // Default to Inbox
   
   // Verify folder exists
-  const folder = await c.env.DB.prepare(
+  const folder = await db.prepare(
     'SELECT id FROM folders WHERE id = ?'
   ).bind(folderId).first();
   
@@ -65,7 +68,7 @@ notes.post('/', async (c) => {
     return c.json({ error: 'Folder not found' }, 404);
   }
   
-  const result = await c.env.DB.prepare(
+  const result = await db.prepare(
     'INSERT INTO notes (folder_id, title, content) VALUES (?, ?, ?) RETURNING *'
   ).bind(folderId, body.title.trim(), body.content || '').first<Note>();
   
@@ -76,6 +79,7 @@ notes.post('/', async (c) => {
 notes.patch('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   const body = await c.req.json<UpdateNoteRequest>();
+  const db = c.env.DB as D1Database;
   
   // Build dynamic update query
   const updates: string[] = [];
@@ -103,7 +107,7 @@ notes.patch('/:id', async (c) => {
   updates.push('updated_at = CURRENT_TIMESTAMP');
   values.push(id);
   
-  const result = await c.env.DB.prepare(
+  const result = await db.prepare(
     `UPDATE notes SET ${updates.join(', ')} WHERE id = ? RETURNING *`
   ).bind(...values).first<Note>();
   
@@ -117,8 +121,9 @@ notes.patch('/:id', async (c) => {
 // Delete note
 notes.delete('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
+  const db = c.env.DB as D1Database;
   
-  const result = await c.env.DB.prepare(
+  const result = await db.prepare(
     'DELETE FROM notes WHERE id = ? RETURNING *'
   ).bind(id).first();
   
