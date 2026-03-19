@@ -51,27 +51,28 @@ gh pr create --title "feat: your feature" --body "Description"
 
 ---
 
-## 🎯 Option 2: Direct Push (Solo/Speed)
+## 🎯 Option 2: Manual Deployment (Emergency Only)
 
-**For:** Solo development, quick hotfixes
+**⚠️ WARNING:** Direct push to main is NO LONGER auto-deployed!
 
-```
-Local → Test → Push to Main → Auto Deploy
-```
+Use GitHub Actions "Run workflow" button instead:
 
-### Steps:
+1. Go to: https://github.com/kittypunkz/magicbox/actions/workflows/deploy-production.yml
+2. Click "Run workflow" button
+3. Select branch: `main`
+4. Click "Run workflow"
+5. Wait for approval and deployment
+
+**OR use PR workflow (recommended):**
 ```bash
 git checkout main
 git pull origin main
-
+git checkout -b hotfix/urgent-fix
 # Make changes
-# Test locally with .\dev.bat
-
 git add .
-git commit -m "feat: your feature"
-git push origin main
-
-# Auto-deploys to production!
+git commit -m "hotfix: urgent fix"
+git push origin hotfix/urgent-fix
+# Create PR on GitHub and merge to deploy
 ```
 
 ---
