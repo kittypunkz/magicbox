@@ -184,6 +184,48 @@ export function CreateNoteModal({
     return { folderName: null, cleanText: text };
   };
 
+  // Replace !today with current date (YYYY-MM-DD format) using LOCAL timezone
+  const replaceToday = (text: string): { text: string; replaced: boolean } => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
+    
+    const replaced = text.includes('!today');
+    return { text: text.replace(/!today/g, today), replaced };
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { text: newValue, replaced } = replaceToday(e.target.value);
+    const cursorPos = e.target.selectionStart || 0;
+    
+    setTitle(newValue);
+    
+    if (replaced) {
+      // Place cursor after the replaced date
+      setTimeout(() => {
+        const newPos = cursorPos + 4; // 10 - 6 = 4 characters added
+        titleInputRef.current?.setSelectionRange(newPos, newPos);
+      }, 0);
+    }
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { text: newValue, replaced } = replaceToday(e.target.value);
+    const cursorPos = e.target.selectionStart || 0;
+    
+    setContent(newValue);
+    
+    if (replaced) {
+      // Place cursor after the replaced date
+      setTimeout(() => {
+        const newPos = cursorPos + 4; // 10 - 6 = 4 characters added
+        contentInputRef.current?.setSelectionRange(newPos, newPos);
+      }, 0);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() && !content.trim()) return;
@@ -244,22 +286,17 @@ export function CreateNoteModal({
           {/* Title Input */}
           <div className="relative">
             <label className={`block text-sm font-medium ${c.gray} mb-2`}>
-              <span className="flex items-center gap-2">
-                Title
-                <span className={`text-xs ${c.gray} font-normal`}>
-                  (use #foldername to organize)
-                </span>
-              </span>
+              Title
             </label>
             <input
               ref={titleInputRef}
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={handleTitleChange}
               onKeyDown={(e) => handleKeyDown(e, 'title')}
               onFocus={() => setActiveInput('title')}
 
-              placeholder="Note title... #work"
+              placeholder="Note title... #work !today"
               className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
             />
           </div>
@@ -267,21 +304,16 @@ export function CreateNoteModal({
           {/* Content Input */}
           <div className="relative">
             <label className={`block text-sm font-medium ${c.gray} mb-2`}>
-              <span className="flex items-center gap-2">
-                Content
-                <span className={`text-xs ${c.gray} font-normal`}>
-                  (or use #foldername here)
-                </span>
-              </span>
+              Content
             </label>
             <textarea
               ref={contentInputRef}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={handleContentChange}
               onKeyDown={(e) => handleKeyDown(e, 'content')}
               onFocus={() => setActiveInput('content')}
 
-              placeholder="What's on your mind? #ideas"
+              placeholder="What's on your mind? #ideas !today"
               rows={4}
               className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text} resize-none`}
             />
