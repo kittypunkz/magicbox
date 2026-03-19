@@ -207,7 +207,7 @@ function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  const { notes, deleteNote, loading: notesLoading } = useNotes();
+  const { notes, deleteNote, createNote, refetch: refetchNotes, loading: notesLoading } = useNotes();
   const { folders, createFolder, updateFolder, deleteFolder, loading: foldersLoading } = useFolders();
 
   const loading = notesLoading || foldersLoading;
@@ -517,8 +517,23 @@ function AppContent() {
         isOpen={isCreateModalOpen}
         folders={folders}
         onClose={handleCloseModal}
-        onCreateNote={() => {
+        onCreateNote={async (title, content, folderName) => {
+          // Find or create folder
+          let folder = folders.find(f => f.name === folderName);
+          if (!folder && folderName) {
+            folder = await createFolder(folderName);
+          }
+          const folderId = folder?.id || 1;
+          
+          // Create note
+          const newNote = await createNote({ title, content, folder_id: folderId });
+          await refetchNotes();
           handleCloseModal();
+          
+          // Redirect to the new note
+          if (newNote?.id) {
+            showNote(newNote.id);
+          }
         }}
         defaultFolderName={selectedFolderId ? folders.find(f => f.id === selectedFolderId)?.name : undefined}
       />

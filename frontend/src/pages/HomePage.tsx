@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
-import { Sparkles, FileText, Folder, Trash2, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Sparkles, FileText, Trash2, Plus } from 'lucide-react';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useNotes } from '../hooks/useNotes';
-import { SkeletonNoteItem, SkeletonStat } from '../components/Skeleton';
+import { SkeletonNoteItem } from '../components/Skeleton';
 import { useMinLoading } from '../hooks/useMinLoading';
 import type { Folder as FolderType, Note } from '../types';
 
@@ -23,57 +23,14 @@ interface HomePageProps {
   onCreateNote?: (title: string, content: string, folderId: number) => void;
 }
 
-// Days to consider a note as "unused"
-const UNUSED_DAYS = 30;
-
-function getUnusedNotes(notes: Note[]): Note[] {
-  const now = new Date().getTime();
-  const unusedThreshold = UNUSED_DAYS * 24 * 60 * 60 * 1000; // 30 days in ms
-  
-  return notes.filter((note) => {
-    const updatedAt = new Date(note.updated_at).getTime();
-    return now - updatedAt > unusedThreshold;
-  });
-}
-
-export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps) {
+export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: HomePageProps) {
   const { notes, loading: notesLoading, refetch: refetchNotes, deleteNote } = useNotes();
   // Minimum 500ms loading time for skeleton
   const showLoading = useMinLoading(notesLoading, 500);
-  const [showDeleteUnusedModal, setShowDeleteUnusedModal] = useState(false);
-  const [isDeletingUnused, setIsDeletingUnused] = useState(false);
-  const [deleteResult, setDeleteResult] = useState<{ success: number; failed: number } | null>(null);
   
   // State for single note delete
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
   const [isDeletingNote, setIsDeletingNote] = useState(false);
-
-  const unusedNotes = useMemo(() => getUnusedNotes(notes), [notes]);
-  const hasUnusedNotes = unusedNotes.length > 0;
-
-  const handleDeleteUnused = async () => {
-    setIsDeletingUnused(true);
-    let success = 0;
-    let failed = 0;
-
-    for (const note of unusedNotes) {
-      try {
-        await deleteNote(note.id);
-        success++;
-      } catch {
-        failed++;
-      }
-    }
-
-    setIsDeletingUnused(false);
-    setDeleteResult({ success, failed });
-    refetchNotes();
-  };
-
-  const handleCloseResultModal = () => {
-    setDeleteResult(null);
-    setShowDeleteUnusedModal(false);
-  };
 
   // Single note delete handlers
   const handleDeleteClick = (e: React.MouseEvent, note: Note) => {
@@ -109,7 +66,7 @@ export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps)
       {/* Hero Section with Rainbow Animation */}
       <div 
         data-area-id="homepage-hero"
-        className="homepage-hero flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-12 sm:py-16 min-h-[40vh] sm:min-h-[50vh] relative overflow-hidden"
+        className="homepage-hero flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-6 sm:py-8 min-h-[20vh] sm:min-h-[25vh] relative overflow-hidden"
       >
         {/* Rainbow Gradient Animation Background */}
         <div className="absolute inset-0 pointer-events-none">
@@ -242,74 +199,6 @@ export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps)
         )
       )}
 
-      {/* Quick Stats */}
-      <div 
-        data-area-id="homepage-stats"
-        className={`homepage-stats border-t ${c.border} bg-[#202020]`}
-      >
-        <div className="homepage-stats-content max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-center gap-6 sm:gap-12">
-          {showLoading ? (
-            <>
-              <SkeletonStat />
-              <div className={`w-px h-10 ${c.border}`} />
-              <SkeletonStat />
-              <div className={`w-px h-10 ${c.border}`} />
-              <SkeletonStat />
-            </>
-          ) : (
-            <>
-              <div 
-                data-area-id="homepage-stats-notes"
-                className="homepage-stats-notes text-center"
-              >
-                <p className={`homepage-stats-notes-count text-xl sm:text-2xl font-bold ${c.text}`}>{notes.length}</p>
-                <p className={`homepage-stats-notes-label text-xs sm:text-sm ${c.gray} flex items-center gap-1 justify-center`}>
-                  <FileText size={12} className="sm:hidden" />
-                  <FileText size={14} className="hidden sm:block" />
-                  Notes
-                </p>
-              </div>
-              <div className={`homepage-stats-divider w-px h-8 sm:h-10 ${c.border}`} />
-              <div 
-                data-area-id="homepage-stats-folders"
-                className="homepage-stats-folders text-center"
-              >
-                <p className={`homepage-stats-folders-count text-xl sm:text-2xl font-bold ${c.text}`}>{folders.length}</p>
-                <p className={`homepage-stats-folders-label text-xs sm:text-sm ${c.gray} flex items-center gap-1 justify-center`}>
-                  <Folder size={12} className="sm:hidden" />
-                  <Folder size={14} className="hidden sm:block" />
-                  Folders
-                </p>
-              </div>
-              <div className={`homepage-stats-divider w-px h-8 sm:h-10 ${c.border}`} />
-              <div 
-                data-area-id="homepage-stats-unused"
-                className="homepage-stats-unused text-center"
-              >
-                <p className={`homepage-stats-unused-count text-xl sm:text-2xl font-bold ${hasUnusedNotes ? 'text-red-500' : c.text}`}>
-                  {unusedNotes.length}
-                </p>
-                <button
-                  data-area-id="homepage-stats-unused-btn"
-                  onClick={() => setShowDeleteUnusedModal(true)}
-                  disabled={!hasUnusedNotes}
-                  className={`homepage-stats-unused-btn text-xs sm:text-sm flex items-center gap-1 justify-center transition-colors ${
-                    hasUnusedNotes 
-                      ? 'text-red-500 hover:text-red-400' 
-                      : c.gray
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  title={hasUnusedNotes ? `Delete notes not updated in ${UNUSED_DAYS} days` : 'No unused notes'}
-                >
-                  <Trash2 size={12} className="sm:hidden" />
-                  <Trash2 size={14} className="hidden sm:block" />
-                  Unused
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Single Note Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={noteToDelete !== null}
@@ -323,34 +212,6 @@ export function HomePage({ folders, onSelectNote, onCreateNote }: HomePageProps)
         variant="danger"
       />
 
-      {/* Delete Unused Notes Confirmation Modal */}
-      <ConfirmModal
-        isOpen={showDeleteUnusedModal && deleteResult === null}
-        onClose={() => setShowDeleteUnusedModal(false)}
-        onConfirm={handleDeleteUnused}
-        title="Delete Unused Notes"
-        message={`You have ${unusedNotes.length} note${unusedNotes.length !== 1 ? 's' : ''} that haven't been updated in ${UNUSED_DAYS} days. Are you sure you want to delete them? This action cannot be undone.`}
-        confirmText={`Delete ${unusedNotes.length} Note${unusedNotes.length !== 1 ? 's' : ''}`}
-        cancelText="Cancel"
-        isLoading={isDeletingUnused}
-        variant="warning"
-      />
-
-      {/* Delete Result Modal */}
-      <ConfirmModal
-        isOpen={deleteResult !== null}
-        onClose={handleCloseResultModal}
-        onConfirm={handleCloseResultModal}
-        title="Deletion Complete"
-        message={
-          deleteResult?.failed === 0
-            ? `Successfully deleted ${deleteResult?.success} note${deleteResult?.success !== 1 ? 's' : ''}.`
-            : `Deleted ${deleteResult?.success} note${deleteResult?.success !== 1 ? 's' : ''}. ${deleteResult?.failed} failed.`
-        }
-        confirmText="OK"
-        cancelText=""
-        variant={deleteResult?.failed === 0 ? 'info' : 'warning'}
-      />
     </div>
   );
 }
