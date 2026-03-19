@@ -2,6 +2,9 @@
 
 A markdown-based note taking app inspired by Notion, built for Cloudflare.
 
+> ⚠️ **Deployment Notice**: Pushing to `main` does NOT auto-deploy anymore.  
+> Deployments require manual approval via GitHub Actions or PR merge.
+
 ## Features
 
 - 📝 **Markdown Editor** - Full-featured markdown editing with live preview

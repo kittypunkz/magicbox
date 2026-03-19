@@ -1,8 +1,11 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches: [main]
+  # DISABLED: Auto-deploy on push to prevent accidental production deployments
+  # push:
+  #   branches: [main]
+  
+  # Manual trigger only - requires confirmation
   workflow_dispatch:
 
 env:
