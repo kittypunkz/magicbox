@@ -65,7 +65,7 @@ User Request
    Complete
 ```
 
-### Deployment Flow
+### Deployment Flow (⚠️ NO STAGING - Direct to Production)
 ```
 Feature Complete (Kaji)
      ↓
@@ -73,15 +73,13 @@ Feature Complete (Kaji)
      ↓
 CI Checks (GitHub Actions)
      ↓
+Local Verification (Kaji + Vera)
+     ↓
 Merge to Main
      ↓
-  [Arun] — Deploy to Staging
+  [Mana] — Approve Production Deploy
      ↓
-  [Vera] — QA on Staging
-     ↓
-  [Mana] — Approve Production
-     ↓
-  [Arun] — Deploy to Production
+  [Arun] — Deploy to Production (databases + code)
      ↓
   [Vera] — Smoke test Production
      ↓

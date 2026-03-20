@@ -4,9 +4,13 @@
 
 ## Overview
 
-Every deployment follows **Staging → Production** flow with full team verification.
+**⚠️ NO STAGING ENVIRONMENT** - Only Local → Production.
+
+Deployments go directly to production after local verification and Mana's approval.
 
 ## Deployment Flow
+
+**⚠️ NO STAGING - Direct to Production after Local Verification**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -20,7 +24,6 @@ Every deployment follows **Staging → Production** flow with full team verifica
 │  • TypeScript check (frontend)                              │
 │  • TypeScript check (backend)                               │
 │  • Database migration test                                  │
-│  • Linting (if configured)                                  │
 └──────────────────┬──────────────────────────────────────────┘
                    │ All checks pass
                    ▼
@@ -33,34 +36,23 @@ Every deployment follows **Staging → Production** flow with full team verifica
                    │ Approved
                    ▼
 ┌─────────────────────────────────────────────────────────────┐
+│  LOCAL VERIFICATION                                          │
+│  Kaji: Test locally with production DB (if possible)        │
+│  Vera: Full QA on local environment                         │
+└──────────────────┬──────────────────────────────────────────┘
+                   │ Verified locally
+                   ▼
+┌─────────────────────────────────────────────────────────────┐
 │  MERGE TO MAIN                                               │
-│  PR merged, triggers staging deployment                     │
+│  PR merged to main branch                                   │
 └──────────────────┬──────────────────────────────────────────┘
-                   │ Auto-trigger
-                   ▼
-┌─────────────────────────────────────────────────────────────┐
-│  STAGING DEPLOYMENT                                          │
-│  Arun: Deploy backend to staging                            │
-│  Arun: Apply D1 migrations to staging DB                    │
-│  Arun: Deploy frontend to staging                           │
-│  Arun: Health check verification                            │
-└──────────────────┬──────────────────────────────────────────┘
-                   │ Deployed
-                   ▼
-┌─────────────────────────────────────────────────────────────┐
-│  STAGING QA (Vera)                                           │
-│  • Smoke tests                                              │
-│  • Feature verification                                     │
-│  • Cross-browser testing                                    │
-│  • Mobile responsiveness                                    │
-└──────────────────┬──────────────────────────────────────────┘
-                   │ QA Passed
+                   │ Ready for deploy
                    ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  PRODUCTION APPROVAL (Mana)                                  │
 │  Mana reviews:                                              │
-│  • All checks green?                                        │
-│  • Vera signed off?                                         │
+│  • All CI checks green?                                     │
+│  • Local verification passed?                               │
 │  • Known risks acceptable?                                  │
 └──────────────────┬──────────────────────────────────────────┘
                    │ Approved
@@ -68,8 +60,8 @@ Every deployment follows **Staging → Production** flow with full team verifica
 ┌─────────────────────────────────────────────────────────────┐
 │  PRODUCTION DEPLOYMENT                                       │
 │  Arun: Manual trigger with confirmation                     │
+│  Arun: Apply D1 migrations (tested locally first!)          │
 │  Arun: Deploy backend to production                         │
-│  Arun: Apply D1 migrations to production DB                 │
 │  Arun: Deploy frontend to production                        │
 │  Arun: Health check verification                            │
 └──────────────────┬──────────────────────────────────────────┘
@@ -99,11 +91,11 @@ Every deployment follows **Staging → Production** flow with full team verifica
 **Arun (migrations complete):**
 > "Migrations applied ✅. Deploying frontend..."
 
-**Arun (staging ready):**
-> "Staging deployed: [URL]. Vera, ready for QA."
+**Kaji (local ready):**
+> "Feature ready for QA. Tested locally ✅"
 
-**Vera (QA complete):**
-> "Staging QA passed ✅. [X] tests run, [Y] passed, [Z] skipped."
+**Vera (local QA complete):**
+> "Local QA passed ✅. Ready for production deploy."
 
 **Mana (approval):**
 > "Approved for production. Arun, proceed when ready."
@@ -142,21 +134,24 @@ wrangler rollback --env production
 | Environment | Branch | URL | Purpose |
 |-------------|--------|-----|---------|
 | Local | any | localhost:3000/8787 | Development |
-| Staging | main (after merge) | *.workers.dev | Pre-production |
+| ~~Staging~~ | ~~develop~~ | ~~*.workers.dev~~ | ~~NOT AVAILABLE~~ |
 | Production | main (after approval) | *.workers.dev | Live users |
 
 ## Checklists
 
-### Pre-Deploy (Arun)
+### Pre-Deploy (Arun) - NO STAGING!
 - [ ] CI checks passing
-- [ ] Database migrations tested locally
+- [ ] Database migrations tested locally (CRITICAL!)
 - [ ] Secrets configured
 - [ ] Rollback plan ready
+- [ ] Team aware: direct to production
 
-### Pre-Deploy (Mana)
+### Pre-Deploy (Mana) - NO STAGING!
 - [ ] Feature complete
+- [ ] Local verification passed
 - [ ] No critical known bugs
 - [ ] Team availability confirmed
+- [ ] Risk of no staging environment accepted
 
 ### Post-Deploy (Vera)
 - [ ] Smoke tests pass
