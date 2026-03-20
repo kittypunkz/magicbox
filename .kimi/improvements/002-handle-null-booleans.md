@@ -41,4 +41,4 @@ Apply same pattern to folder notes query.
 - [ ] Update Dev skill: Include null handling pattern
 
 ## Status
-⚠️ Pending fix
+✅ Fixed - Applied COALESCE to notes.ts and folders.ts queries during CodeRabbit review fixes
