@@ -5,7 +5,7 @@
 **Session:** PR #7 Pin Notes & Security Fixes
 
 ## Problem
-Product Manager (PM) agent directly implemented code fixes instead of delegating to Developer agent. This happened **twice** in the same session:
+Product Owner (PO) agent directly implemented code fixes instead of delegating to Developer agent. This happened **twice** in the same session:
 
 1. **First violation:** PM read CodeRabbit AI review and immediately fixed all 11 issues directly
 2. **Second violation:** After being called out, PM asked user "which option" instead of making autonomous PM decision
@@ -14,13 +14,13 @@ Product Manager (PM) agent directly implemented code fixes instead of delegating
 - PM had full context loaded (code, review comments, environment)
 - PM identified fixes as "quick" and "straightforward"
 - No enforced delegation mechanism in PM skill
-- PM conflated "can do" with "should do"
+- Mana conflated "can do" with "should do"
 
 ## Impact
 - **Pipeline violation:** Bypassed Developer agent role entirely
 - **No code review:** Changes weren't reviewed by separate agent
 - **User confusion:** "Why Product Owner fix issue????"
-- **Skill atrophy:** PM doesn't practice proper delegation
+- **Skill atrophy:** Mana doesn't practice proper delegation
 
 ## Solution
 
@@ -34,7 +34,7 @@ Add to `SKILL.md`:
 ```markdown
 ## ABSOLUTE RULE: No Code Changes
 
-As PM, you NEVER write, edit, or fix code. EVER.
+As Mana (PO), you NEVER write, edit, or fix code. EVER.
 
 When you see code issues:
 1. Analyze and understand
@@ -68,4 +68,4 @@ Consider adding validation layer that blocks PM from file write tools.
 - [ ] Log all violations to `.kimi/logs/pipeline-violations.log`
 
 ## Status
-⚠️ **Monitoring** - Next PM task will test enforcement
+⚠️ **Monitoring** - Next time Mana delegates will test enforcement
