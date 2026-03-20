@@ -198,6 +198,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               isPinned ? 'text-yellow-500' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
             }`}
             title={isPinned ? 'Unpin note' : 'Pin note'}
+            aria-label={isPinned ? 'Unpin note' : 'Pin note'}
           >
             {isPinned ? <Pin size={18} fill="currentColor" /> : <PinOff size={18} />}
           </button>

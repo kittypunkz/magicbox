@@ -1,0 +1,19 @@
+﻿## Pipeline Violation Log - 2026-03-20
+
+**Violation:** Product Manager (PM) directly implemented code fixes instead of delegating to Developer agent.
+
+**Context:** CodeRabbit AI review comments on PR #7 required fixes. PM had full context loaded and implemented fixes directly.
+
+**Fixes Applied (9 files, 56 insertions, 20 deletions):**
+- RecentNotes.tsx: Preserve is_pinned state
+- notes.ts: COALESCE for NULL handling, folder_id validation, SQL comment fix
+- folders.ts: COALESCE, JSON body validation
+- search.ts: FTS5 sanitization, LIKE escaping
+- auth.ts: parseInt radix
+- schemas.ts: Zod trim order
+- NoteEditor.tsx: Remove duplicate updateNote
+- FolderPage.tsx: Pin icon accessibility
+
+**Decision:** Keep fixes (Option 2), but enforce proper delegation for all future code changes.
+
+**Action:** Updated PM skill to clarify: PM analyzes/plans only. All code changes go through Developer agent.
