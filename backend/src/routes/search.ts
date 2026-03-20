@@ -21,6 +21,9 @@ search.get('/', async (c) => {
   const db = c.env.DB;
   const offset = (page - 1) * limit;
   
+  // Sanitize FTS5 query: escape double quotes and wrap in quotes
+  const sanitizedQ = `"${q.replace(/"/g, '""')}"`;
+  
   // Search notes using FTS with pagination
   const { results: notes } = await db.prepare(`
     SELECT n.*, f.name as folder_name 
@@ -30,22 +33,25 @@ search.get('/', async (c) => {
     WHERE notes_fts MATCH ?1
     ORDER BY rank
     LIMIT ?2 OFFSET ?3
-  `).bind(q, limit, offset).all<NoteWithFolder>();
+  `).bind(sanitizedQ, limit, offset).all<NoteWithFolder>();
   
   // Get total count for pagination
   const countResult = await db.prepare(`
     SELECT COUNT(*) as total 
     FROM notes_fts fts
     WHERE notes_fts MATCH ?1
-  `).bind(q).first<{ total: number }>();
+  `).bind(sanitizedQ).first<{ total: number }>();
+  
+  // Escape LIKE special characters (%, _, \)
+  const escapedQ = q.replace(/[\\%_]/g, '\\$&');
   
   // Search folders (partial match)
   const { results: folders } = await db.prepare(`
     SELECT * FROM folders 
-    WHERE name LIKE ?1
+    WHERE name LIKE ?1 ESCAPE '\\'
     ORDER BY name
     LIMIT 10
-  `).bind(`%${q}%`).all<Folder>();
+  `).bind(`%${escapedQ}%`).all<Folder>();
   
   const response: PaginatedResponse<NoteWithFolder> & { folders: Folder[] } = {
     data: notes || [],

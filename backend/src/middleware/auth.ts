@@ -28,7 +28,7 @@ export const authMiddleware = createMiddleware<{
     }
     
     c.set('user', {
-      userId: parseInt(payload.sub),
+      userId: parseInt(payload.sub, 10),
       username: payload.username,
     });
     

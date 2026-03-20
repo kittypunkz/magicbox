@@ -41,7 +41,7 @@ notes.get('/', async (c) => {
     FROM notes n 
     JOIN folders f ON n.folder_id = f.id
     ${whereClause}
-    ORDER BY n.is_pinned DESC, n.updated_at DESC  // CHANGED
+    ORDER BY COALESCE(n.is_pinned, 0) DESC, n.updated_at DESC
     LIMIT ?${bindings.length + 1} OFFSET ?${bindings.length + 2}
   `;
   
@@ -139,6 +139,17 @@ notes.patch('/:id', async (c) => {
   
   const data = parsed.data;
   const db = c.env.DB;
+  
+  // Validate folder_id if provided
+  if (data.folder_id !== undefined) {
+    const folder = await db.prepare('SELECT id FROM folders WHERE id = ?1')
+      .bind(data.folder_id)
+      .first();
+    
+    if (!folder) {
+      return c.json({ success: false, error: 'Folder not found' }, 404);
+    }
+  }
   
   // Build update query safely using column whitelist
   const updates: string[] = [];

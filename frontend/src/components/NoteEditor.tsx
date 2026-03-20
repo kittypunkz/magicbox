@@ -192,7 +192,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
             onClick={() => {
               const newPinned = !isPinned;
               setIsPinned(newPinned);
-              updateNote({ is_pinned: newPinned });
+              // Let debounced auto-save handle the update - no direct call here
             }}
             className={`p-2 rounded-lg transition-colors ${
               isPinned ? 'text-yellow-500' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'

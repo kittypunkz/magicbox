@@ -34,10 +34,10 @@ folders.get('/:id', async (c) => {
   }
   
   const { results: notes } = await db.prepare(`
-    SELECT id, title, is_pinned, created_at, updated_at 
+    SELECT id, title, COALESCE(is_pinned, 0) as is_pinned, created_at, updated_at 
     FROM notes 
     WHERE folder_id = ?1 
-    ORDER BY is_pinned DESC, updated_at DESC
+    ORDER BY COALESCE(is_pinned, 0) DESC, updated_at DESC
   `).bind(id).all();
   
   return c.json({ 
@@ -51,7 +51,12 @@ folders.get('/:id', async (c) => {
 
 // Create folder (TODO: Add authMiddleware when frontend has auth)
 folders.post('/', async (c) => {
-  const body = await c.req.json();
+  let body;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ success: false, error: 'Invalid JSON' }, 400);
+  }
   const parsed = CreateFolderSchema.safeParse(body);
   
   if (!parsed.success) {
@@ -87,7 +92,12 @@ folders.patch('/:id', async (c) => {
     return c.json({ success: false, error: 'Invalid folder ID' }, 400);
   }
   
-  const body = await c.req.json();
+  let body;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ success: false, error: 'Invalid JSON' }, 400);
+  }
   const parsed = UpdateFolderSchema.safeParse(body);
   
   if (!parsed.success) {

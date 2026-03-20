@@ -388,7 +388,15 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                     {note.title}
                   </h3>
                   {note.is_pinned === 1 && (
-                    <Pin size={14} className="text-yellow-500 flex-shrink-0" fill="currentColor" />
+                    <>
+                      <Pin 
+                        size={14} 
+                        className="text-yellow-500 flex-shrink-0" 
+                        fill="currentColor" 
+                        aria-hidden="true"
+                      />
+                      <span className="sr-only">Pinned note</span>
+                    </>
                   )}
                 </div>
                 <p className={`folderpage-note-preview text-sm ${c.gray} line-clamp-3 flex-1`}>

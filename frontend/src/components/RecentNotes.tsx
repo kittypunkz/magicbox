@@ -23,6 +23,7 @@ interface RecentNote {
   title: string;
   folder_id: number;
   folder_name: string;
+  is_pinned?: number;
   viewedAt: string;
 }
 
@@ -53,7 +54,7 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
       folder_id: recentNote.folder_id,
       folder_name: recentNote.folder_name,
       content: '',
-      is_pinned: 0,  // Default to not pinned for recent notes
+      is_pinned: recentNote.is_pinned ?? 0,
       created_at: recentNote.viewedAt,
       updated_at: recentNote.viewedAt,
     };
