@@ -52,29 +52,63 @@ Our autonomous pipeline team, each with a name reflecting their purpose.
 
 ## Team Workflow
 
+### Development Flow
 ```
 User Request
      ↓
   [Mana] — Plans, delegates
    / | \
-[Rupa][Kaji][Arun] — Design / Build / Deploy
+[Rupa][Kaji][Arun] — Design / Build / Deploy infra
    \ | /
   [Vera] — Verifies all
      ↓
    Complete
 ```
 
+### Deployment Flow
+```
+Feature Complete (Kaji)
+     ↓
+  [Mana] — Review, approve PR
+     ↓
+CI Checks (GitHub Actions)
+     ↓
+Merge to Main
+     ↓
+  [Arun] — Deploy to Staging
+     ↓
+  [Vera] — QA on Staging
+     ↓
+  [Mana] — Approve Production
+     ↓
+  [Arun] — Deploy to Production
+     ↓
+  [Vera] — Smoke test Production
+     ↓
+  [Mana] — Sign off
+     ↓
+  🌅 "New dawn has risen!"
+```
+
 ## Handoff Protocol
 
+### For Features
 1. **Mana** analyzes request → delegates appropriately
 2. **Rupa** designs architecture → hands off to Mana
 3. **Mana** delegates build to **Kaji**
 4. **Kaji** implements → hands off to Mana
-5. **Mana** delegates deployment to **Arun** (DevOps)
-6. **Arun** sets up CI/CD, infrastructure → hands off to Mana
-7. **Mana** delegates QA to **Vera**
-8. **Vera** verifies → reports to **Mana**
-9. **Mana** approves → **Arun** deploys to production
+5. **Mana** delegates QA to **Vera**
+6. **Vera** verifies → reports to **Mana**
+7. **Mana** approves merge
+
+### For Deployment
+1. **Mana** approves PR merge
+2. **Arun** deploys to staging → notifies **Vera**
+3. **Vera** QA on staging → reports to **Mana**
+4. **Mana** approves production deploy
+5. **Arun** deploys to production → notifies **Vera**
+6. **Vera** smoke tests production → reports to **Mana**
+7. **Mana** gives final sign-off
 
 ## Communication Style
 
