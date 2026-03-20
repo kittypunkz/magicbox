@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@passwordless-id/webauthn": "^2.3.5",
-    "hono": "^3.12.0"
+    "@tsndr/cloudflare-worker-jwt": "^2.5.3",
+    "hono": "^3.12.0",
+    "zod": "^3.22.3"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",

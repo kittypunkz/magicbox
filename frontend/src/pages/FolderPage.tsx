@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square } from 'lucide-react';
+import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square, Pin } from 'lucide-react';
 import { useFolder, useFolders } from '../hooks/useFolders';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { CreateNoteModal } from '../components/CreateNoteModal';
@@ -380,12 +380,17 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                   </div>
                 )}
 
-                <h3 
-                  data-area-id={`folderpage-note-title-${note.id}`}
-                  className={`folderpage-note-title font-semibold ${c.text} truncate mb-2 ${isBulkDeleteMode ? 'pl-7 sm:pl-8' : 'pr-8'}`}
-                >
-                  {note.title}
-                </h3>
+                <div className={`flex items-center gap-2 mb-2 ${isBulkDeleteMode ? 'pl-7 sm:pl-8' : 'pr-8'}`}>
+                  <h3 
+                    data-area-id={`folderpage-note-title-${note.id}`}
+                    className={`folderpage-note-title font-semibold ${c.text} truncate`}
+                  >
+                    {note.title}
+                  </h3>
+                  {note.is_pinned === 1 && (
+                    <Pin size={14} className="text-yellow-500 flex-shrink-0" fill="currentColor" />
+                  )}
+                </div>
                 <p className={`folderpage-note-preview text-sm ${c.gray} line-clamp-3 flex-1`}>
                   Click to open this note
                 </p>

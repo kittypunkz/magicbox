@@ -53,6 +53,7 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
       folder_id: recentNote.folder_id,
       folder_name: recentNote.folder_name,
       content: '',
+      is_pinned: 0,  // Default to not pinned for recent notes
       created_at: recentNote.viewedAt,
       updated_at: recentNote.viewedAt,
     };
