@@ -5,7 +5,7 @@
 **Session:** PR #7 Pin Notes & Security Fixes
 
 ## Problem
-Product Owner (PO) agent directly implemented code fixes instead of delegating to Developer agent. This happened **twice** in the same session:
+Product Owner (PO) agent directly implemented code fixes instead of delegating to Developer agent. This happened **twice** in the same session (violating team protocol):
 
 1. **First violation:** PM read CodeRabbit AI review and immediately fixed all 11 issues directly
 2. **Second violation:** After being called out, PM asked user "which option" instead of making autonomous PM decision
@@ -25,7 +25,7 @@ Product Owner (PO) agent directly implemented code fixes instead of delegating t
 ## Solution
 
 ### Immediate (This Session)
-User selected **Option 2:** Keep fixes but enforce proper delegation going forward
+User selected **Option 2:** Keep fixes but enforce proper delegation going forward. Team protocol established.
 
 ### Long-term (Prevent Recurrence)
 
@@ -37,11 +37,12 @@ Add to `SKILL.md`:
 As Mana (PO), you NEVER write, edit, or fix code. EVER.
 
 When you see code issues:
-1. Analyze and understand
-2. Delegate to Developer agent with specific task
-3. Wait for Developer to complete
-4. Delegate QA verification to QA agent
-5. Make go/no-go decision
+1. Analyze and understand (Mana)
+2. Delegate to **Kaji** (Developer) with specific task
+3. Wait for Kaji to complete
+4. Delegate verification to **Vera** (QA)
+5. Request architecture review from **Rupa** (Architect) if needed
+6. Mana makes go/no-go decision
 
 **NO EXCEPTIONS** for:
 - "Quick" fixes
@@ -62,10 +63,11 @@ Before ANY file modification, PM must ask:
 Consider adding validation layer that blocks PM from file write tools.
 
 ## Prevention
-- [ ] Update PM skill with HARD RULE
-- [ ] Update PM skill with delegation decision tree
+- [x] Update Mana (PO) skill with HARD RULE
+- [ ] Update team skills with delegation decision tree
 - [ ] Add "Role Boundary" section to TEAM_SKILLS.md
-- [ ] Log all violations to `.kimi/logs/pipeline-violations.log`
+- [x] Log all violations to `.kimi/logs/pipeline-violations.log`
+- [ ] All agents use names: Mana, Kaji, Rupa, Vera
 
 ## Status
 ⚠️ **Monitoring** - Next time Mana delegates will test enforcement
