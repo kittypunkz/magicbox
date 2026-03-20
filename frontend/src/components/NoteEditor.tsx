@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2 } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff } from 'lucide-react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
@@ -39,6 +39,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [showFolderMenu, setShowFolderMenu] = useState(false);
   const [showNoteMenu, setShowNoteMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
 
   // Load note data
   useEffect(() => {
@@ -46,6 +47,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
       setTitle(note.title);
       setContent(note.content || '');
       setFolderId(note.folder_id);
+      setIsPinned(note.is_pinned === 1);
       addRecentNote(note);
     }
   }, [note, addRecentNote]);
@@ -54,10 +56,11 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const save = useCallback(async () => {
     if (!note) return;
     
-    const updates: { title?: string; content?: string; folder_id?: number } = {};
+    const updates: { title?: string; content?: string; folder_id?: number; is_pinned?: boolean } = {};
     if (title !== note.title) updates.title = title;
     if (content !== note.content) updates.content = content;
     if (folderId !== note.folder_id) updates.folder_id = folderId;
+    if (isPinned !== (note.is_pinned === 1)) updates.is_pinned = isPinned;
     
     if (Object.keys(updates).length === 0) return;
     
@@ -68,7 +71,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
     if (updated) {
       onUpdate?.(updated);
     }
-  }, [note, title, content, folderId, updateNote, onUpdate]);
+  }, [note, title, content, folderId, isPinned, updateNote, onUpdate]);
 
   // Debounced auto-save
   useEffect(() => {
@@ -183,6 +186,22 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               </>
             )}
           </div>
+
+          {/* Pin Toggle Button */}
+          <button
+            onClick={() => {
+              const newPinned = !isPinned;
+              setIsPinned(newPinned);
+              // Let debounced auto-save handle the update - no direct call here
+            }}
+            className={`p-2 rounded-lg transition-colors ${
+              isPinned ? 'text-yellow-500' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
+            }`}
+            title={isPinned ? 'Unpin note' : 'Pin note'}
+            aria-label={isPinned ? 'Unpin note' : 'Pin note'}
+          >
+            {isPinned ? <Pin size={18} fill="currentColor" /> : <PinOff size={18} />}
+          </button>
         </div>
 
         {/* Note Menu */}

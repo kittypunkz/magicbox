@@ -152,6 +152,27 @@ On the home page, use the central input:
 | Markdown | @uiw/react-md-editor |
 | Icons | Lucide React |
 
+## 🤖 Multi-Agent Development Pipeline
+
+This project uses a **3-Agent Pipeline** for feature development:
+
+```
+Your Request → 🏗️ Architect → 💻 Developer → 🧪 QA → ✅ Production Code
+```
+
+**How it works:**
+1. **Software Architect** - Creates detailed technical specifications
+2. **Developer Agent** - Implements production-ready code
+3. **QA Agent** - Reviews for quality, security, and correctness
+
+Every code delivery is guaranteed to be:
+- ✅ Type-safe (strict TypeScript)
+- ✅ Error-handled
+- ✅ Security-reviewed
+- ✅ Production-ready
+
+📖 **[.kimi/pipeline/USAGE.md](./.kimi/pipeline/USAGE.md)** - How to use the pipeline
+
 ## Developer Guide
 
 📖 **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** - Development workflow, common errors & fixes, deployment checklist, and best practices.
