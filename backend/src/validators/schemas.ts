@@ -11,6 +11,7 @@ export const CreateNoteSchema = z.object({
   folder_id: z.number().int().positive().default(1),
   title: z.string().trim().min(1).max(500),
   content: z.string().trim().max(100000).optional(),
+  bookmark_url: z.string().url().max(2048).optional(),
 });
 
 export const UpdateNoteSchema = z.object({
@@ -18,6 +19,7 @@ export const UpdateNoteSchema = z.object({
   content: z.string().trim().max(100000).optional(),
   folder_id: z.number().int().positive().optional(),
   is_pinned: z.boolean().optional(),  // NEW
+  bookmark_url: z.string().url().max(2048).nullish(),
 }).refine(data => Object.keys(data).length > 0, {
   message: 'At least one field must be provided',
 });

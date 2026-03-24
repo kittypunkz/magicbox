@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink } from 'lucide-react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
@@ -254,19 +254,55 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
             className={`noteeditor-title w-full text-4xl font-bold bg-transparent outline-none ${c.placeholder} ${c.text} mb-6`}
           />
           
-          {/* Content Textarea - Simple, clean */}
-          <TextareaAutosize
-            data-area-id="noteeditor-textarea"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Start writing..."
-            minRows={10}
-            className={`noteeditor-textarea w-full resize-none outline-none text-base leading-relaxed ${c.placeholder} ${c.text}`}
-            style={{
-              background: 'transparent',
-              fontFamily: 'inherit',
-            }}
-          />
+          {/* Bookmark View or Content Textarea */}
+          {note?.bookmark_url ? (
+            <div className="noteeditor-bookmark flex flex-col items-center gap-4 py-8">
+              <div className="flex items-center gap-3 px-6 py-4 bg-[#1a1a2e] rounded-xl border border-emerald-800/30 w-full max-w-lg">
+                <img
+                  src={`https://www.google.com/s2/favicons?domain=${(() => { try { return new URL(note.bookmark_url).hostname; } catch { return ''; } })()}&sz=64`}
+                  alt=""
+                  className="w-8 h-8 rounded"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-[#6b6b6b] mb-1">Bookmark</div>
+                  <a
+                    href={note.bookmark_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-400 hover:text-emerald-300 truncate block"
+                  >
+                    {(() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
+                  </a>
+                </div>
+              </div>
+              <a
+                href={note.bookmark_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="noteeditor-bookmark-open inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open Link
+              </a>
+              <p className={`text-sm ${c.gray} mt-2`}>
+                This is a bookmark. You can edit the title and folder above.
+              </p>
+            </div>
+          ) : (
+            <TextareaAutosize
+              data-area-id="noteeditor-textarea"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Start writing..."
+              minRows={10}
+              className={`noteeditor-textarea w-full resize-none outline-none text-base leading-relaxed ${c.placeholder} ${c.text}`}
+              style={{
+                background: 'transparent',
+                fontFamily: 'inherit',
+              }}
+            />
+          )}
         </div>
       </div>
 

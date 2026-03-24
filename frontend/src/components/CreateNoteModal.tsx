@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { X, FileText, Hash } from 'lucide-react';
+import { X, FileText, Hash, Link as LinkIcon, Globe } from 'lucide-react';
 import type { Folder } from '../types';
+import { isURL } from '../utils/isURL';
 
 // Dark mode colors
 const c = {
@@ -19,7 +20,7 @@ interface CreateNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   folders: Folder[];
-  onCreateNote: (title: string, content: string, folderName: string | null) => void;
+  onCreateNote: (title: string, content: string, folderName: string | null, bookmarkUrl?: string) => void;
   defaultFolderName?: string;
 }
 
@@ -61,6 +62,9 @@ export function CreateNoteModal({
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
+
+  // Check if title is a URL → bookmark mode
+  const isBookmark = isURL(title);
 
   // Get hashtag at cursor position
   const getHashtagAtCursor = (text: string, pos: number): { match: RegExpMatchArray | null; searchTerm: string } => {
@@ -241,7 +245,10 @@ export function CreateNoteModal({
     const cleanTitle = titleResult.cleanText || 'Untitled';
     const cleanContent = titleResult.folderName ? content : contentResult.cleanText;
     
-    onCreateNote(cleanTitle, cleanContent, folderName);
+    // If bookmark, pass the URL
+    const bookmarkUrl = isBookmark ? title.trim() : undefined;
+    
+    onCreateNote(cleanTitle, bookmarkUrl ? '' : cleanContent, folderName, bookmarkUrl);
     onClose();
   };
 
@@ -269,8 +276,14 @@ export function CreateNoteModal({
           className={`create-note-modal-header flex items-center justify-between px-6 py-4 border-b ${c.border}`}
         >
           <div className="flex items-center gap-3">
-            <FileText size={20} className="text-blue-500" />
-            <h2 className={`text-lg font-semibold ${c.text}`}>Create New Note</h2>
+            {isBookmark ? (
+              <LinkIcon size={20} className="text-emerald-500" />
+            ) : (
+              <FileText size={20} className="text-blue-500" />
+            )}
+            <h2 className={`text-lg font-semibold ${c.text}`}>
+              {isBookmark ? 'Save Bookmark' : 'Create New Note'}
+            </h2>
           </div>
           <button
             data-area-id="create-note-modal-close"
@@ -301,7 +314,16 @@ export function CreateNoteModal({
             />
           </div>
 
+          {/* Bookmark Indicator */}
+          {isBookmark && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-900/20 border border-emerald-800/30 rounded-lg">
+              <Globe size={14} className="text-emerald-500" />
+              <span className="text-xs text-emerald-400">URL detected — will be saved as a bookmark</span>
+            </div>
+          )}
+
           {/* Content Input */}
+          {!isBookmark && (
           <div className="relative">
             <label className={`block text-sm font-medium ${c.gray} mb-2`}>
               Content
@@ -318,6 +340,7 @@ export function CreateNoteModal({
               className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text} resize-none`}
             />
           </div>
+          )}
 
           {/* Folder Suggestions Dropdown */}
           {showSuggestions && filteredFolders.length > 0 && (
@@ -384,9 +407,9 @@ export function CreateNoteModal({
             <button
               type="submit"
               disabled={!title.trim() && !content.trim()}
-              className={`px-4 py-2 text-sm font-medium text-white ${c.primary} rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`px-4 py-2 text-sm font-medium text-white ${isBookmark ? 'bg-emerald-600 hover:bg-emerald-700' : c.primary} rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              Create Note
+              {isBookmark ? 'Save Bookmark' : 'Create Note'}
             </button>
           </div>
         </form>

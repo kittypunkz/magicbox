@@ -12,6 +12,7 @@ export interface FolderWithNotes extends Folder {
 export interface NoteSummary {
   id: number;
   title: string;
+  bookmark_url?: string | null;
   is_pinned: number;  // NEW
   created_at: string;
   updated_at: string;
@@ -22,6 +23,7 @@ export interface Note {
   folder_id: number;
   title: string;
   content: string;
+  bookmark_url: string | null;
   is_pinned: number;  // NEW
   created_at: string;
   updated_at: string;
@@ -36,6 +38,7 @@ export interface CreateNoteRequest {
   folder_id: number;
   title: string;
   content?: string;
+  bookmark_url?: string;
 }
 
 export interface UpdateNoteRequest {
@@ -43,6 +46,7 @@ export interface UpdateNoteRequest {
   content?: string;
   folder_id?: number;
   is_pinned?: boolean;  // NEW
+  bookmark_url?: string | null;
 }
 
 export interface SearchResult {
