@@ -14,7 +14,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', cors({
   origin: (origin) => {
     if (!origin) return 'http://localhost:3000';
-    if (origin.includes('localhost') || origin.includes('magicbox.bankapirak.com')) {
+    if (origin.includes('localhost') || origin.includes('magicbox.bankapirak.com') || origin.includes('magicbox-app.pages.dev')) {
       return origin;
     }
     return 'http://localhost:3000';
