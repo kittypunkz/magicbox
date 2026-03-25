@@ -19,13 +19,13 @@ const httpUrlSchema = z.string().url().max(2048).refine(url => {
 export const CreateNoteSchema = z.object({
   folder_id: z.number().int().positive().default(1),
   title: z.string().trim().min(1).max(500),
-  content: z.string().trim().max(100000).optional(),
+  content: z.string().max(100000).optional(),
   bookmark_url: httpUrlSchema.optional(),
 });
 
 export const UpdateNoteSchema = z.object({
   title: z.string().trim().min(1).max(500).optional(),
-  content: z.string().trim().max(100000).optional(),
+  content: z.string().max(100000).optional(),
   folder_id: z.number().int().positive().optional(),
   is_pinned: z.boolean().optional(),  // NEW
   bookmark_url: httpUrlSchema.nullish(),
