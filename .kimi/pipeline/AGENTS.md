@@ -187,11 +187,48 @@ Provide a QA report with APPROVE or REJECT verdict.
 pipeline:
   max_iterations: 3  # Max Dev→QA loops
   parallel: true     # Run backend/frontend in parallel
+  auto_chain: true   # No waiting between phases
+  auto_deploy: true  # Deploy after merge
   
 qa:
   strictness: normal  # normal | strict | lenient
+  auto_fix: true      # Auto-fix rejections (max 3)
+  
+timeouts:
+  architect: 300s
+  developer: 600s
+  qa: 300s
   
 notification:
+  on_complete: true
+  on_reject: false    # Don't notify on reject (auto-fix instead)
+```
+
+---
+
+## Agent Spawning Best Practices (v2.1)
+
+### Context Pre-compilation (Critical)
+Always pass relevant code in the task prompt. Don't make agents read files.
+
+### Auto-chaining
+Spawn next agent immediately after previous completes. No user prompts.
+
+### Auto-fix Loop
+If QA rejects, auto-fix and retry (max 3 times).
+
+### Finish Incomplete Work
+If agent times out, orchestrator completes remaining work silently.
+
+### Timeout Guidelines
+
+| Agent | Timeout | Rationale |
+|-------|---------|-----------|
+| PO | 180s | Planning is quick with context |
+| Architect | 300s | Needs to write detailed spec |
+| Backend Dev | 600s | Code implementation |
+| Frontend Dev | 600s | Code implementation |
+| QA | 300s | Review is faster than writing |
   on_complete: true
   on_reject: true
 ```
