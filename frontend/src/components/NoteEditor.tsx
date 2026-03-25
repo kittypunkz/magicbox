@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink } from 'lucide-react';
-import TextareaAutosize from 'react-textarea-autosize';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
+import { BlockNoteEditor } from './BlockNoteEditor';
 import type { Note } from '../types';
 
 // Dark mode colors - Obsidian style
@@ -293,17 +293,9 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               </p>
             </div>
           ) : (
-            <TextareaAutosize
-              data-area-id="noteeditor-textarea"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Start writing..."
-              minRows={10}
-              className={`noteeditor-textarea w-full resize-none outline-none text-base leading-relaxed ${c.placeholder} ${c.text}`}
-              style={{
-                background: 'transparent',
-                fontFamily: 'inherit',
-              }}
+            <BlockNoteEditor
+              initialContent={content}
+              onChange={setContent}
             />
           )}
         </div>

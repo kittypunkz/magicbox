@@ -14,9 +14,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@blocknote/core": "^0.47.1",
-    "@blocknote/mantine": "^0.47.1",
-    "@blocknote/react": "^0.47.1",
+    "@blocknote/core": "^0.47.2",
+    "@blocknote/mantine": "^0.47.2",
+    "@blocknote/react": "^0.47.2",
     "@passwordless-id/webauthn": "^2.3.5",
     "clsx": "^2.1.1",
     "lucide-react": "^0.309.0",
