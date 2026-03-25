@@ -3,8 +3,17 @@ main = "src/index.ts"
 compatibility_date = "2024-01-01"
 account_id = "49b16ed3ff0d8209f2a3da300341283b"
 
-# D1 Database binding
+# Production D1 Database
 [[d1_databases]]
 binding = "DB"
 database_name = "magicbox-db"
 database_id = "846b28b9-2aac-49a5-a3fa-8ad7cf925d9f"
+
+# Dev environment
+[env.dev]
+name = "magicbox-api-dev"
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "magicbox-db-dev"
+database_id = "006e7b29-1c9b-471f-9605-5162838b1292"
