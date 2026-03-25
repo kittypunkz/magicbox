@@ -9,33 +9,22 @@ interface BlockNoteEditorProps {
 }
 
 export function BlockNoteEditor({ initialContent, onChange }: BlockNoteEditorProps) {
-  const initialized = useRef(false);
-  // Only skip the first onChange if we actually loaded initial content
-  const skipNext = useRef(!!initialContent.trim());
-
   const editor = useCreateBlockNote();
+  const loaded = useRef(false);
 
-  // Load initial content synchronously
-  if (!initialized.current) {
-    initialized.current = true;
-    if (initialContent.trim()) {
-      try {
-        const blocks = editor.tryParseMarkdownToBlocks(initialContent);
-        editor.replaceBlocks(editor.document, blocks);
-      } catch {
-        editor.replaceBlocks(editor.document, [
-          { type: "paragraph", content: initialContent }
-        ]);
-      }
+  // Load initial content on first render
+  if (!loaded.current && initialContent.trim()) {
+    loaded.current = true;
+    try {
+      const blocks = editor.tryParseMarkdownToBlocks(initialContent);
+      editor.replaceBlocks(editor.document, blocks);
+    } catch {
+      // If parsing fails, insert as plain text paragraph
     }
   }
 
-  // Fire onChange whenever blocks change
+  // Always fire onChange — parent handles dedup
   const handleChange = useCallback(() => {
-    if (skipNext.current) {
-      skipNext.current = false;
-      return;
-    }
     const markdown = editor.blocksToMarkdownLossy(editor.document);
     onChange(markdown);
   }, [editor, onChange]);
