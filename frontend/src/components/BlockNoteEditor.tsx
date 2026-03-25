@@ -9,41 +9,39 @@ interface BlockNoteEditorProps {
 }
 
 export function BlockNoteEditor({ initialContent, onChange }: BlockNoteEditorProps) {
-  const contentRef = useRef(initialContent);
-  const lastMarkdown = useRef(initialContent);
   const initialized = useRef(false);
+  // Only skip the first onChange if we actually loaded initial content
+  const skipNext = useRef(!!initialContent.trim());
 
   const editor = useCreateBlockNote();
 
-  // Load initial content synchronously after first render
+  // Load initial content synchronously
   if (!initialized.current) {
     initialized.current = true;
-    if (contentRef.current.trim()) {
+    if (initialContent.trim()) {
       try {
-        const blocks = editor.tryParseMarkdownToBlocks(contentRef.current);
+        const blocks = editor.tryParseMarkdownToBlocks(initialContent);
         editor.replaceBlocks(editor.document, blocks);
       } catch {
         editor.replaceBlocks(editor.document, [
-          { type: "paragraph", content: contentRef.current }
+          { type: "paragraph", content: initialContent }
         ]);
       }
     }
   }
 
-  // Convert blocks to markdown on change — only fire if content actually changed
+  // Fire onChange whenever blocks change
   const handleChange = useCallback(() => {
-    const markdown = editor.blocksToMarkdownLossy(editor.document);
-    if (markdown !== lastMarkdown.current) {
-      lastMarkdown.current = markdown;
-      onChange(markdown);
+    if (skipNext.current) {
+      skipNext.current = false;
+      return;
     }
+    const markdown = editor.blocksToMarkdownLossy(editor.document);
+    onChange(markdown);
   }, [editor, onChange]);
 
   return (
-    <div
-      className="blocknote-editor-wrapper"
-      style={{ minHeight: "200px" }}
-    >
+    <div className="blocknote-editor-wrapper" style={{ minHeight: "200px" }}>
       <BlockNoteView
         editor={editor}
         onChange={handleChange}

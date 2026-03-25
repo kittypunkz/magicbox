@@ -22,7 +22,13 @@ type ViewType = 'home' | 'folder' | 'note';
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-
+  
+  // Test mode bypass — skip auth for E2E tests
+  const isTestMode = import.meta.env.VITE_TEST_MODE === 'true';
+  if (isTestMode) {
+    return <>{children}</>;
+  }
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#191919] flex items-center justify-center">
@@ -125,7 +131,7 @@ function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             <h3 className="text-sm font-medium text-[#6b6b6b] mb-3 uppercase tracking-wider">
               Passkeys ({credentials.length})
             </h3>
-            
+
             {credentials.map((cred) => (
               <div
                 key={cred.id}
@@ -370,14 +376,14 @@ function AppContent() {
     <div className="flex h-screen bg-[#191919] overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div 
+      <div
         className={`
           ${isMobile ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300' : 'relative'}
           ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}
@@ -421,7 +427,7 @@ function AppContent() {
               </svg>
             </button>
           )}
-          
+
           {view === 'note' && (
             <button
               onClick={handleBack}
@@ -431,15 +437,15 @@ function AppContent() {
               <ArrowLeft size={20} />
             </button>
           )}
-          
+
           <h1 className="text-lg font-semibold text-[#e6e6e6] truncate">
             {view === 'home' && 'All Notes'}
             {view === 'folder' && getFolderName(selectedFolderId)}
             {view === 'note' && (selectedNote?.title || 'Untitled')}
           </h1>
-          
+
           <div className="flex-1" />
-          
+
           <SearchBar />
 
           {/* Settings Button */}
@@ -450,7 +456,7 @@ function AppContent() {
           >
             <Shield size={20} />
           </button>
-          
+
           {view === 'note' && selectedNote && (
             <div className="relative">
               <button
@@ -487,7 +493,7 @@ function AppContent() {
               }}
             />
           )}
-          
+
           {view === 'folder' && selectedFolderId && (
             <FolderPage
               folderId={selectedFolderId}
@@ -496,7 +502,7 @@ function AppContent() {
               onCreateNote={handleCreateNoteSubmit}
             />
           )}
-          
+
           {view === 'note' && selectedNoteId && (
             <NoteEditor
               noteId={selectedNoteId}
@@ -532,12 +538,12 @@ function AppContent() {
             folder = await createFolder(folderName);
           }
           const folderId = folder?.id || 1;
-          
+
           // Create note (with optional bookmark_url)
           const newNote = await createNote({ title, content: content || '', folder_id: folderId, bookmark_url: bookmarkUrl });
           await refetchNotes();
           handleCloseModal();
-          
+
           // Redirect to the new note
           if (newNote?.id) {
             showNote(newNote.id);
@@ -588,7 +594,7 @@ function AppRoutes() {
 
 function App() {
   const isDev = import.meta.env.VITE_AGENTATION === 'true';
-  
+
   return (
     <AuthProvider>
       <AppRoutes />
