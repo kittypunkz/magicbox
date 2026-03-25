@@ -326,6 +326,15 @@ function AppContent() {
     setIsCreateModalOpen(true);
   }, []);
 
+  const handleCreateNoteSubmit = useCallback(async (title: string, content: string, folderId: number, bookmarkUrl?: string) => {
+    const newNote = await createNote({ title, content: content || '', folder_id: folderId, bookmark_url: bookmarkUrl });
+    await refetchNotes();
+    setIsCreateModalOpen(false);
+    if (newNote?.id) {
+      showNote(newNote.id);
+    }
+  }, [createNote, refetchNotes, showNote]);
+
   const handleCloseModal = useCallback(() => {
     setIsCreateModalOpen(false);
   }, []);
@@ -484,9 +493,7 @@ function AppContent() {
               folderId={selectedFolderId}
               folders={folders}
               onSelectNote={handleNoteClick}
-              onCreateNote={() => {
-                setIsCreateModalOpen(true);
-              }}
+              onCreateNote={handleCreateNoteSubmit}
             />
           )}
           
@@ -518,7 +525,7 @@ function AppContent() {
         isOpen={isCreateModalOpen}
         folders={folders}
         onClose={handleCloseModal}
-        onCreateNote={async (title, content, folderName) => {
+        onCreateNote={async (title, content, folderName, bookmarkUrl) => {
           // Find or create folder
           let folder = folders.find(f => f.name === folderName);
           if (!folder && folderName) {
@@ -526,8 +533,8 @@ function AppContent() {
           }
           const folderId = folder?.id || 1;
           
-          // Create note
-          const newNote = await createNote({ title, content, folder_id: folderId });
+          // Create note (with optional bookmark_url)
+          const newNote = await createNote({ title, content: content || '', folder_id: folderId, bookmark_url: bookmarkUrl });
           await refetchNotes();
           handleCloseModal();
           

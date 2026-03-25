@@ -139,7 +139,9 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
                 key={note.id}
                 data-area-id={`homepage-recent-${note.id}`}
                 onClick={() => onSelectNote(note)}
-                className={`homepage-recent-card group relative flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md hover:border-blue-700 transition-all cursor-pointer touch-manipulation active:scale-[0.98]`}
+                className={`homepage-recent-card group relative flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md transition-all cursor-pointer touch-manipulation active:scale-[0.98] ${
+                  note.bookmark_url ? 'border-l-4 border-l-emerald-500 hover:border-emerald-700' : 'hover:border-blue-700'
+                }`}
               >
                 {/* Delete button - appears on hover for desktop, always visible on touch */}
                 <div 
@@ -157,12 +159,27 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
                   </button>
                 </div>
 
-                <FileText size={20} className={`${c.gray} flex-shrink-0`} />
+                {note.bookmark_url ? (
+                  <img
+                    src={`https://www.google.com/s2/favicons?domain=${(() => { try { return new URL(note.bookmark_url).hostname; } catch { return ''; } })()}&sz=32`}
+                    alt=""
+                    className="w-5 h-5 flex-shrink-0 mt-0.5"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                ) : (
+                  <FileText size={20} className={`${c.gray} flex-shrink-0`} />
+                )}
                 <div className="homepage-recent-card-content flex-1 min-w-0 pr-10 sm:pr-8">
                   <h3 className={`homepage-recent-card-title font-medium ${c.text} truncate`}>{note.title}</h3>
-                  <p className={`homepage-recent-card-preview text-sm ${c.gray} line-clamp-2 mt-1`}>
-                    {note.content?.replace(/[#*_`]/g, '').slice(0, 100) || 'No content'}
-                  </p>
+                  {note.bookmark_url ? (
+                    <p className={`text-xs text-emerald-400 mt-1 truncate`}>
+                      {(() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
+                    </p>
+                  ) : (
+                    <p className={`homepage-recent-card-preview text-sm ${c.gray} line-clamp-2 mt-1`}>
+                      {note.content?.replace(/[#*_`]/g, '').slice(0, 100) || 'No content'}
+                    </p>
+                  )}
                   <p className={`homepage-recent-card-date text-xs ${c.gray} mt-2`}>
                     {new Date(note.updated_at).toLocaleDateString()}
                   </p>

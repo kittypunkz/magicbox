@@ -7,7 +7,7 @@ import type { z } from 'zod';
 const notes = new Hono<{ Bindings: Env }>();
 
 // Whitelist of updateable columns
-const UPDATEABLE_COLUMNS = ['title', 'content', 'folder_id', 'is_pinned'] as const;
+const UPDATEABLE_COLUMNS = ['title', 'content', 'folder_id', 'is_pinned', 'bookmark_url'] as const;
 
 // Get all notes with pagination
 notes.get('/', async (c) => {
@@ -113,10 +113,10 @@ notes.post('/', async (c) => {
   }
   
   const result = await db.prepare(`
-    INSERT INTO notes (folder_id, title, content, created_at, updated_at) 
-    VALUES (?1, ?2, ?3, datetime('now'), datetime('now')) 
+    INSERT INTO notes (folder_id, title, content, bookmark_url, created_at, updated_at) 
+    VALUES (?1, ?2, ?3, ?4, datetime('now'), datetime('now')) 
     RETURNING *
-  `).bind(data.folder_id, data.title, data.content || '')
+  `).bind(data.folder_id, data.title, data.bookmark_url ? '' : (data.content || ''), data.bookmark_url || null)
     .first<Note>();
   
   return c.json({ success: true, data: result }, 201);
@@ -153,7 +153,7 @@ notes.patch('/:id', async (c) => {
   
   // Build update query safely using column whitelist
   const updates: string[] = [];
-  const values: (string | number)[] = [];
+  const values: (string | number | null)[] = [];
   let paramIndex = 1;
   
   // Only allow whitelisted columns
@@ -161,7 +161,7 @@ notes.patch('/:id', async (c) => {
     const colValue = data[col as keyof z.infer<typeof UpdateNoteSchema>];
     if (colValue !== undefined) {
       updates.push(`${col} = ?${paramIndex}`);
-      values.push(colValue as string | number);
+      values.push(colValue as string | number | null);
       paramIndex++;
     }
   }

@@ -1,4 +1,4 @@
-import { Clock, FileText, X } from 'lucide-react';
+import { Clock, FileText, X, Link as LinkIcon } from 'lucide-react';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import type { Note } from '../types';
 
@@ -23,6 +23,7 @@ interface RecentNote {
   title: string;
   folder_id: number;
   folder_name: string;
+  bookmark_url?: string | null;
   is_pinned?: number;
   viewedAt: string;
 }
@@ -54,6 +55,7 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
       folder_id: recentNote.folder_id,
       folder_name: recentNote.folder_name,
       content: '',
+      bookmark_url: recentNote.bookmark_url ?? null,
       is_pinned: recentNote.is_pinned ?? 0,
       created_at: recentNote.viewedAt,
       updated_at: recentNote.viewedAt,
@@ -98,7 +100,11 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
               onClick={() => handleNoteClick(note)}
               className={`sidebar-recent-item w-full flex items-center gap-2 px-2 py-1.5 rounded-md ${c.hover} transition-colors text-left group`}
             >
-              <FileText size={14} className={`${c.gray} shrink-0`} />
+              {note.bookmark_url ? (
+                <LinkIcon size={14} className="text-emerald-500 shrink-0" />
+              ) : (
+                <FileText size={14} className={`${c.gray} shrink-0`} />
+              )}
               <div className="sidebar-recent-item-content flex-1 min-w-0">
                 <p className={`sidebar-recent-item-title text-sm ${c.text} truncate`}>
                   {note.title}

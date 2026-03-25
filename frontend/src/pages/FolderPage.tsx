@@ -23,7 +23,7 @@ interface FolderPageProps {
   folderId: number;
   folders: FolderType[];
   onSelectNote: (note: Note) => void;
-  onCreateNote?: (title: string, content: string, folderId: number) => Promise<void> | void;
+  onCreateNote?: (title: string, content: string, folderId: number, bookmarkUrl?: string) => Promise<void> | void;
 }
 
 function formatDate(dateStr: string) {
@@ -130,7 +130,7 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
     setShowBulkDeleteConfirm(false);
   };
 
-  const handleCreateNote = async (title: string, content: string, folderName: string | null) => {
+  const handleCreateNote = async (title: string, content: string, folderName: string | null, bookmarkUrl?: string) => {
     if (!onCreateNote) return;
     
     // Default to current folder
@@ -153,7 +153,7 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
       }
     }
     
-    await onCreateNote(title, content, targetFolderId);
+    await onCreateNote(title, content, targetFolderId, bookmarkUrl);
     // Refresh folder to show new note
     await refetch();
   };
@@ -336,8 +336,10 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                 className={`folderpage-note-card group relative flex flex-col p-4 sm:p-5 ${c.input} border ${c.border} rounded-xl transition-all ${
                   isBulkDeleteMode 
                     ? 'cursor-default' 
-                    : 'hover:shadow-md hover:border-blue-700 cursor-pointer touch-manipulation active:scale-[0.98]'
-                } ${selectedNotes.has(note.id) ? 'ring-2 ring-blue-500 border-blue-500' : ''}`}
+                    : 'hover:shadow-md cursor-pointer touch-manipulation active:scale-[0.98]'
+                } ${selectedNotes.has(note.id) ? 'ring-2 ring-blue-500 border-blue-500' : ''} ${
+                  note.bookmark_url ? 'border-l-4 border-l-emerald-500 hover:border-emerald-700' : 'hover:border-blue-700'
+                }`}
               >
                 {/* Checkbox for bulk delete */}
                 {isBulkDeleteMode && (
@@ -400,7 +402,13 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                   )}
                 </div>
                 <p className={`folderpage-note-preview text-sm ${c.gray} line-clamp-3 flex-1`}>
-                  Click to open this note
+                  {note.bookmark_url ? (
+                    <span className="text-emerald-400">
+                      {(() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
+                    </span>
+                  ) : (
+                    'Click to open this note'
+                  )}
                 </p>
                 <div className={`folderpage-note-meta flex items-center gap-2 mt-4 pt-4 border-t ${c.border} text-xs ${c.gray}`}>
                   <Clock size={12} />
