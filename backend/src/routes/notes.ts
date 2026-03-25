@@ -154,14 +154,17 @@ notes.post('/', async (c) => {
   if (data.bookmark_url) {
     bookmarkTitle = await fetchWebsiteTitle(data.bookmark_url);
   }
-  
+
+  // Use fetched title as main title if available, otherwise keep user's title
+  const noteTitle = bookmarkTitle || data.title;
+
   const result = await db.prepare(`
     INSERT INTO notes (folder_id, title, content, bookmark_url, bookmark_title, created_at, updated_at) 
     VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), datetime('now')) 
     RETURNING *
   `).bind(
     data.folder_id,
-    data.title,
+    noteTitle,
     data.bookmark_url ? '' : (data.content || ''),
     data.bookmark_url || null,
     bookmarkTitle
