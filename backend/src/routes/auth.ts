@@ -107,7 +107,7 @@ app.post('/register', async (c) => {
       success: true,
       credentialId: parsed.credential.id 
     }, 200, {
-      'Set-Cookie': `sessionId=${sessionId}; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_DURATION_DAYS * 24 * 60 * 60}; Path=/`
+      'Set-Cookie': `sessionId=${sessionId}; HttpOnly; Secure; SameSite=None; Max-Age=${SESSION_DURATION_DAYS * 24 * 60 * 60}; Path=/`
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -197,7 +197,7 @@ app.post('/login', async (c) => {
     ).bind(sessionId, getSessionExpiry()).run();
     
     return c.json({ success: true }, 200, {
-      'Set-Cookie': `sessionId=${sessionId}; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_DURATION_DAYS * 24 * 60 * 60}; Path=/`
+      'Set-Cookie': `sessionId=${sessionId}; HttpOnly; Secure; SameSite=None; Max-Age=${SESSION_DURATION_DAYS * 24 * 60 * 60}; Path=/`
     });
   } catch (error) {
     console.error('Authentication error:', error);
@@ -215,7 +215,7 @@ app.post('/logout', async (c) => {
   }
   
   return c.json({ success: true }, 200, {
-    'Set-Cookie': `sessionId=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/`
+    'Set-Cookie': `sessionId=; HttpOnly; Secure; SameSite=None; Max-Age=0; Path=/`
   });
 });
 
