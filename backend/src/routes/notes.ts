@@ -7,7 +7,44 @@ import type { z } from 'zod';
 const notes = new Hono<{ Bindings: Env }>();
 
 // Whitelist of updateable columns
-const UPDATEABLE_COLUMNS = ['title', 'content', 'folder_id', 'is_pinned', 'bookmark_url'] as const;
+const UPDATEABLE_COLUMNS = ['title', 'content', 'folder_id', 'is_pinned', 'bookmark_url', 'bookmark_title'] as const;
+
+/**
+ * Fetch the title of a webpage from its URL.
+ * Returns null if fetching fails or title not found.
+ */
+async function fetchWebsiteTitle(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'MagicBox/1.0 (Bookmark Fetcher)' },
+      redirect: 'follow',
+      // @ts-expect-error - Cloudflare Workers specific timeout
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) return null;
+
+    const html = await response.text();
+
+    // Extract <title> content
+    const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+    if (titleMatch?.[1]) {
+      const title = titleMatch[1]
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, ' ')
+        .trim();
+      return title || null;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 // Get all notes with pagination
 notes.get('/', async (c) => {
@@ -112,12 +149,23 @@ notes.post('/', async (c) => {
     return c.json({ success: false, error: 'Folder not found' }, 404);
   }
   
+  // Fetch website title if it's a bookmark
+  let bookmarkTitle: string | null = null;
+  if (data.bookmark_url) {
+    bookmarkTitle = await fetchWebsiteTitle(data.bookmark_url);
+  }
+  
   const result = await db.prepare(`
-    INSERT INTO notes (folder_id, title, content, bookmark_url, created_at, updated_at) 
-    VALUES (?1, ?2, ?3, ?4, datetime('now'), datetime('now')) 
+    INSERT INTO notes (folder_id, title, content, bookmark_url, bookmark_title, created_at, updated_at) 
+    VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), datetime('now')) 
     RETURNING *
-  `).bind(data.folder_id, data.title, data.bookmark_url ? '' : (data.content || ''), data.bookmark_url || null)
-    .first<Note>();
+  `).bind(
+    data.folder_id,
+    data.title,
+    data.bookmark_url ? '' : (data.content || ''),
+    data.bookmark_url || null,
+    bookmarkTitle
+  ).first<Note>();
   
   return c.json({ success: true, data: result }, 201);
 });

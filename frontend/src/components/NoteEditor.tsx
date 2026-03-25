@@ -272,8 +272,11 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                     rel="noopener noreferrer"
                     className="text-emerald-400 hover:text-emerald-300 truncate block"
                   >
-                    {(() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
+                    {note.bookmark_title || (() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
                   </a>
+                  <div className="text-xs text-[#4b5563] mt-0.5 truncate">
+                    {(() => { try { return new URL(note.bookmark_url).hostname; } catch { return ''; } })()}
+                  </div>
                 </div>
               </div>
               <a

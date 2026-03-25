@@ -14,6 +14,7 @@ export interface Note {
   title: string;
   content: string;
   bookmark_url: string | null;
+  bookmark_title: string | null;
   is_pinned: number;  // 0 or 1 (SQLite boolean)
   created_at: string;
   updated_at: string;

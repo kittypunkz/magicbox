@@ -404,7 +404,7 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                 <p className={`folderpage-note-preview text-sm ${c.gray} line-clamp-3 flex-1`}>
                   {note.bookmark_url ? (
                     <span className="text-emerald-400">
-                      {(() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
+                      {note.bookmark_title || (() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
                     </span>
                   ) : (
                     'Click to open this note'

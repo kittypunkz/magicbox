@@ -13,7 +13,8 @@ export interface NoteSummary {
   id: number;
   title: string;
   bookmark_url?: string | null;
-  is_pinned: number;  // NEW
+  bookmark_title?: string | null;
+  is_pinned: number;
   created_at: string;
   updated_at: string;
 }
@@ -24,7 +25,8 @@ export interface Note {
   title: string;
   content: string;
   bookmark_url: string | null;
-  is_pinned: number;  // NEW
+  bookmark_title: string | null;
+  is_pinned: number;
   created_at: string;
   updated_at: string;
   folder_name?: string;

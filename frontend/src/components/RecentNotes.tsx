@@ -24,6 +24,7 @@ interface RecentNote {
   folder_id: number;
   folder_name: string;
   bookmark_url?: string | null;
+  bookmark_title?: string | null;
   is_pinned?: number;
   viewedAt: string;
 }
@@ -56,6 +57,7 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
       folder_name: recentNote.folder_name,
       content: '',
       bookmark_url: recentNote.bookmark_url ?? null,
+      bookmark_title: recentNote.bookmark_title ?? null,
       is_pinned: recentNote.is_pinned ?? 0,
       created_at: recentNote.viewedAt,
       updated_at: recentNote.viewedAt,
@@ -107,7 +109,7 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
               )}
               <div className="sidebar-recent-item-content flex-1 min-w-0">
                 <p className={`sidebar-recent-item-title text-sm ${c.text} truncate`}>
-                  {note.title}
+                  {note.bookmark_title || note.title}
                 </p>
                 <p className={`sidebar-recent-item-time text-[10px] ${c.gray}`}>
                   {formatTimeAgo(note.viewedAt)}

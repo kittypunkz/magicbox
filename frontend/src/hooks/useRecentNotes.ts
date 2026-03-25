@@ -11,6 +11,7 @@ interface RecentNote {
   folder_name: string;
   is_pinned?: number;
   bookmark_url?: string | null;
+  bookmark_title?: string | null;
   viewedAt: string;
 }
 
@@ -47,6 +48,7 @@ export function useRecentNotes() {
         folder_name: note.folder_name || 'Inbox',
         is_pinned: note.is_pinned,
         bookmark_url: note.bookmark_url,
+        bookmark_title: note.bookmark_title,
         viewedAt: new Date().toISOString(),
       };
       

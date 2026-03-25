@@ -173,7 +173,7 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
                   <h3 className={`homepage-recent-card-title font-medium ${c.text} truncate`}>{note.title}</h3>
                   {note.bookmark_url ? (
                     <p className={`text-xs text-emerald-400 mt-1 truncate`}>
-                      {(() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
+                      {note.bookmark_title || (() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
                     </p>
                   ) : (
                     <p className={`homepage-recent-card-preview text-sm ${c.gray} line-clamp-2 mt-1`}>
