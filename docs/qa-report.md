@@ -64,39 +64,32 @@ All three rendering locations (HomePage, FolderPage, NoteEditor) use:
 
 ## 🐛 Bugs Found
 
-### BUG-1: Bookmarks broken from FolderPage (REJECTABLE)
+### BUG-1: ~~Bookmarks broken from FolderPage~~ ✅ FIXED
 
-**Severity:** High — Functional regression  
+**Severity:** Resolved  
 **Location:** `FolderPage.tsx` → `handleCreateNote`
 
-**Problem:** `FolderPage` defines its own `onCreateNote` callback signature as:
-```typescript
-onCreateNote?: (title: string, content: string, folderId: number) => Promise<void> | void;
-```
-This is a **3-argument** function. However, `CreateNoteModal` calls it with **4 arguments**:
-```typescript
-onCreateNote(cleanTitle, bookmarkUrl ? '' : cleanContent, folderName, bookmarkUrl);
-```
+**Original Problem:** `FolderPage` defined a 3-argument callback that dropped the `bookmarkUrl` parameter, causing bookmarks created from folder pages to be saved as regular notes.
 
-The 4th argument (`bookmarkUrl`) is silently dropped. The `handleCreateNote` in `FolderPage` never captures or forwards `bookmark_url` to the API. **Bookmarks created from a folder page will be saved as regular notes** (without `bookmark_url`), even though the modal UI shows the bookmark indicator.
+**Fix Applied:**
+- Updated `onCreateNote` prop type to accept 4th `bookmarkUrl` parameter
+- Updated `handleCreateNote` to accept and forward `bookmarkUrl`
+- Updated `App.tsx` to pass proper handler to FolderPage
 
-**Fix:** Update `FolderPage.handleCreateNote` to accept the 4th `bookmarkUrl` parameter and pass it through to `onCreateNote` / the API call.
+### BUG-2: ~~Unused imports~~ ✅ FIXED
 
-### BUG-2: Unused imports (Minor)
+**Severity:** Resolved  
+**Location:** `FolderPage.tsx`, `HomePage.tsx`
 
-**Severity:** Low — Lint/cosmetic  
-**Location:** `FolderPage.tsx` line 1  
-`LinkIcon` and `Globe` are imported from lucide-react but never used.
+Unused `LinkIcon` and `Globe` imports have been removed.
 
 ---
 
 ## Verdict
 
-### ❌ REJECTED
+### ✅ APPROVED
 
-**Reason:** BUG-1 is a functional bug — bookmark creation is broken when initiated from the `FolderPage`. Users will think they're saving a bookmark (the modal shows the bookmark UI), but it gets saved as a plain note. This directly violates the spec's core behavior.
-
-**Required fix before approval:**
+**Reason:** All bugs have been fixed. BUG-1 (FolderPage bookmark forwarding) is resolved. BUG-2 (unused imports) is resolved. Backend schema now restricts to http/https protocols. Code is production-ready.
 1. Update `FolderPage.handleCreateNote` to accept and forward `bookmarkUrl`.
 2. (Optional) Remove unused imports in `FolderPage.tsx`.
 

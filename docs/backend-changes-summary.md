@@ -25,7 +25,7 @@
 
 ### 1. Run the migration
 ```bash
-wrangler d1 execute magicbox-db --file=migrations/0004_add_bookmarks.sql
+npx wrangler d1 migrations apply magicbox-db
 ```
 
 ### 2. Create a bookmark note

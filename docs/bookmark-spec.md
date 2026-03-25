@@ -46,11 +46,20 @@ bookmark_url?: string | null;
 ### `backend/src/validators/schemas.ts`
 
 ```typescript
+// Only allow http/https URLs for bookmarks
+const httpUrlSchema = z.string().url().max(2048).refine(url => {
+  try {
+    return ['http:', 'https:'].includes(new URL(url).protocol);
+  } catch {
+    return false;
+  }
+}, { message: 'URL must use http or https protocol' });
+
 // Add to CreateNoteSchema
-bookmark_url: z.string().url().max(2048).optional(),
+bookmark_url: httpUrlSchema.optional(),
 
 // Add to UpdateNoteSchema
-bookmark_url: z.string().url().max(2048).nullish(),
+bookmark_url: httpUrlSchema.nullish(),
 ```
 
 ### `backend/src/routes/notes.ts`
@@ -63,7 +72,7 @@ bookmark_url: z.string().url().max(2048).nullish(),
 ```typescript
 const stmt = env.DB.prepare(
   'INSERT INTO notes (folder_id, title, content, bookmark_url) VALUES (?, ?, ?, ?)'
-).bind(body.folder_id, body.title, body.content || '', body.bookmark_url || null);
+).bind(body.folder_id, body.title, body.bookmark_url ? '' : (body.content || ''), body.bookmark_url || null);
 ```
 
 **PATCH /notes/:id changes:**
