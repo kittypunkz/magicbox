@@ -587,7 +587,7 @@ function AppRoutes() {
 }
 
 function App() {
-  const isDev = import.meta.env.DEV;
+  const isDev = import.meta.env.VITE_AGENTATION === 'true';
   
   return (
     <AuthProvider>
