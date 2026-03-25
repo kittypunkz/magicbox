@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { X, FileText, Hash, Link as LinkIcon, Globe } from 'lucide-react';
 import type { Folder } from '../types';
 import { isURL } from '../utils/isURL';
+import { bookmarksAPI } from '../api/client';
 
 // Dark mode colors
 const c = {
@@ -20,7 +21,7 @@ interface CreateNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   folders: Folder[];
-  onCreateNote: (title: string, content: string, folderName: string | null, bookmarkUrl?: string) => void;
+  onCreateNote: (title: string, content: string, folderName: string | null, bookmarkUrl?: string, bookmarkTitle?: string) => void;
   defaultFolderName?: string;
 }
 
@@ -36,6 +37,8 @@ export function CreateNoteModal({
   const [activeInput, setActiveInput] = useState<'title' | 'content'>('title');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [justSelected, setJustSelected] = useState(false);
+  const [bookmarkTitle, setBookmarkTitle] = useState<string | null>(null);
+  const [isFetchingTitle, setIsFetchingTitle] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const contentInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -65,6 +68,34 @@ export function CreateNoteModal({
 
   // Check if title is a URL → bookmark mode
   const isBookmark = isURL(title);
+
+  // Fetch website title when URL is detected
+  useEffect(() => {
+    if (!isBookmark) {
+      setBookmarkTitle(null);
+      setIsFetchingTitle(false);
+      return;
+    }
+
+    const url = title.trim();
+    setIsFetchingTitle(true);
+    setBookmarkTitle(null);
+
+    const timer = setTimeout(() => {
+      bookmarksAPI.getMetadata(url)
+        .then(data => {
+          setBookmarkTitle(data.title);
+        })
+        .catch(() => {
+          setBookmarkTitle(null);
+        })
+        .finally(() => {
+          setIsFetchingTitle(false);
+        });
+    }, 800); // Debounce 800ms
+
+    return () => clearTimeout(timer);
+  }, [title, isBookmark]);
 
   // Get hashtag at cursor position
   const getHashtagAtCursor = (text: string, pos: number): { match: RegExpMatchArray | null; searchTerm: string } => {
@@ -245,10 +276,11 @@ export function CreateNoteModal({
     const cleanTitle = titleResult.cleanText || 'Untitled';
     const cleanContent = titleResult.folderName ? content : contentResult.cleanText;
     
-    // If bookmark, pass the URL
+    // If bookmark, pass the URL and use fetched title
     const bookmarkUrl = isBookmark ? title.trim() : undefined;
+    const finalTitle = bookmarkTitle || cleanTitle;
     
-    onCreateNote(cleanTitle, bookmarkUrl ? '' : cleanContent, folderName, bookmarkUrl);
+    onCreateNote(finalTitle, bookmarkUrl ? '' : cleanContent, folderName, bookmarkUrl, bookmarkTitle || undefined);
     onClose();
   };
 
@@ -316,9 +348,29 @@ export function CreateNoteModal({
 
           {/* Bookmark Indicator */}
           {isBookmark && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-900/20 border border-emerald-800/30 rounded-lg">
-              <Globe size={14} className="text-emerald-500" />
-              <span className="text-xs text-emerald-400">URL detected — will be saved as a bookmark</span>
+            <div className="flex flex-col gap-1.5 px-3 py-2.5 bg-emerald-900/20 border border-emerald-800/30 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Globe size={14} className="text-emerald-500" />
+                <span className="text-xs text-emerald-400">URL detected — will be saved as a bookmark</span>
+              </div>
+              {isFetchingTitle && (
+                <div className="flex items-center gap-2 pl-5">
+                  <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-emerald-500/70">Fetching website title...</span>
+                </div>
+              )}
+              {!isFetchingTitle && bookmarkTitle && (
+                <div className="pl-5 flex items-center gap-2">
+                  <span className="text-xs text-emerald-300 font-medium truncate">
+                    📌 {bookmarkTitle}
+                  </span>
+                </div>
+              )}
+              {!isFetchingTitle && !bookmarkTitle && (
+                <div className="pl-5">
+                  <span className="text-xs text-emerald-500/50">Could not fetch title — URL will be used</span>
+                </div>
+              )}
             </div>
           )}
 

@@ -80,4 +80,11 @@ export const searchAPI = {
     fetchAPI<SearchResult & PaginatedResponse<Note>>(`/search?q=${encodeURIComponent(query)}`),
 };
 
+export const bookmarksAPI = {
+  getMetadata: (url: string) => fetchAPI<{ success: boolean; data: { title: string | null; hostname: string } }>(
+    `/bookmarks/metadata?url=${encodeURIComponent(url)}`,
+    { timeout: 8000 }
+  ).then(r => r.data),
+};
+
 export type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult };
