@@ -92,7 +92,7 @@ export function CreateNoteModal({
         .finally(() => {
           setIsFetchingTitle(false);
         });
-    }, 800); // Debounce 800ms
+    }, 2000); // Debounce 2s — wait for user to finish typing
 
     return () => clearTimeout(timer);
   }, [title, isBookmark]);
