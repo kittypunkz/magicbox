@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
@@ -40,6 +40,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [showNoteMenu, setShowNoteMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [isFullWidth, setIsFullWidth] = useState(false);
 
   // Load note data
   useEffect(() => {
@@ -202,6 +203,18 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
           >
             {isPinned ? <Pin size={18} fill="currentColor" /> : <PinOff size={18} />}
           </button>
+
+          {/* Width Toggle */}
+          <button
+            onClick={() => setIsFullWidth(!isFullWidth)}
+            className={`p-2 rounded-lg transition-colors ${
+              isFullWidth ? 'text-blue-400' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
+            }`}
+            title={isFullWidth ? 'Default width' : 'Full width'}
+            aria-label={isFullWidth ? 'Default width' : 'Full width'}
+          >
+            {isFullWidth ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          </button>
         </div>
 
         {/* Note Menu */}
@@ -243,7 +256,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
         data-area-id="noteeditor-content"
         className="noteeditor-content flex-1 overflow-y-auto"
       >
-        <div className="max-w-3xl mx-auto px-8 py-8">
+        <div className={`${isFullWidth ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-8 py-8 transition-all duration-300`}>
           {/* Title Input */}
           <input
             data-area-id="noteeditor-title"
