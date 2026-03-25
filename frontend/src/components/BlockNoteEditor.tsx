@@ -1,7 +1,7 @@
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 interface BlockNoteEditorProps {
   initialContent: string;  // markdown string
@@ -9,26 +9,21 @@ interface BlockNoteEditorProps {
 }
 
 export function BlockNoteEditor({ initialContent, onChange }: BlockNoteEditorProps) {
-  const editor = useCreateBlockNote({
-    initialContent: initialContent.trim()
-      ? undefined  // Will be set via pasteMarkdown below
-      : [{ type: "paragraph", content: "" }],
-  });
+  const editor = useCreateBlockNote();
+  const skipFirstChange = useRef(true);
 
-  const isInitialLoad = useRef(true);
-
-  // Load initial markdown content
-  const handleEditorReady = useCallback(() => {
-    if (isInitialLoad.current && initialContent.trim()) {
-      isInitialLoad.current = false;
+  // Load initial content on mount
+  useEffect(() => {
+    if (initialContent.trim()) {
       editor.pasteMarkdown(initialContent);
     }
-  }, [editor, initialContent]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Convert blocks to markdown on change
   const handleChange = useCallback(() => {
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
+    // Skip the first change event (triggered by pasteMarkdown)
+    if (skipFirstChange.current) {
+      skipFirstChange.current = false;
       return;
     }
     const markdown = editor.blocksToMarkdownLossy(editor.document);
@@ -38,8 +33,6 @@ export function BlockNoteEditor({ initialContent, onChange }: BlockNoteEditorPro
   return (
     <div
       className="blocknote-editor-wrapper"
-      onClick={handleEditorReady}
-      onFocus={handleEditorReady}
       style={{ minHeight: "200px" }}
     >
       <BlockNoteView
