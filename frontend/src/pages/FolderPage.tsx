@@ -52,6 +52,9 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
   
   // New Note Modal state
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  
+  // View mode toggle
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid');
 
   const handleDeleteClick = (e: React.MouseEvent, note: Note) => {
     e.stopPropagation();
@@ -240,6 +243,24 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
 
           {/* Header Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* View Mode Toggle */}
+            <div className={`flex items-center ${c.input} border ${c.border} rounded-lg overflow-hidden`}>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}`}
+                title="Grid view"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+              </button>
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={`p-2 transition-colors ${viewMode === 'timeline' ? 'bg-blue-600 text-white' : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}`}
+                title="Timeline view"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="3" rx="1"/><rect x="1" y="6" width="14" height="3" rx="1"/><rect x="1" y="11" width="14" height="3" rx="1"/></svg>
+              </button>
+            </div>
+
             {isBulkDeleteMode ? (
               // Bulk Delete Mode Actions
               <>
@@ -323,9 +344,87 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
               </button>
             )}
           </div>
+        ) : viewMode === 'timeline' ? (
+          /* Timeline View */
+          <div className="folderpage-timeline flex flex-col gap-4">
+            {[...folder.notes]
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .map((note) => (
+              <div
+                key={note.id}
+                data-area-id={`folderpage-note-${note.id}`}
+                onClick={() => !isBulkDeleteMode && onSelectNote(note as Note)}
+                className={`folderpage-note-card group relative flex flex-col p-4 sm:p-5 ${c.input} border ${c.border} rounded-xl transition-all ${
+                  isBulkDeleteMode ? 'cursor-default' : 'hover:shadow-md cursor-pointer touch-manipulation active:scale-[0.98]'
+                } ${selectedNotes.has(note.id) ? 'ring-2 ring-blue-500 border-blue-500' : ''} ${
+                  note.bookmark_url ? 'border-l-4 border-l-emerald-500' : ''
+                }`}
+              >
+                {/* Delete button */}
+                {!isBulkDeleteMode && (
+                  <button
+                    onClick={(e) => handleDeleteClick(e, note as Note)}
+                    disabled={isDeleting}
+                    className={`absolute top-3 right-3 p-2 ${c.gray} hover:text-red-500 hover:bg-red-500/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100`}
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+
+                {/* Title + Date */}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <h3 className={`text-lg font-semibold ${c.text} flex items-center gap-2`}>
+                    {note.is_pinned === 1 && <Pin size={14} className="text-yellow-500" fill="currentColor" />}
+                    {note.title}
+                  </h3>
+                  <span className={`text-xs ${c.gray} flex-shrink-0 flex items-center gap-1`}>
+                    <Clock size={12} />
+                    {formatDate(note.created_at)}
+                  </span>
+                </div>
+
+                {/* Folder badge */}
+                {note.folder_name && (
+                  <div className={`inline-flex items-center gap-1 text-xs ${c.gray} mb-3 px-2 py-0.5 bg-[#2a2a2a] rounded`}>
+                    <Folder size={10} />
+                    {note.folder_name}
+                  </div>
+                )}
+
+                {/* Content */}
+                {note.bookmark_url ? (
+                  <a
+                    href={note.bookmark_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-400 hover:text-emerald-300 text-sm break-all"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    🔗 {note.bookmark_title || note.bookmark_url}
+                  </a>
+                ) : (
+                  <p className={`text-sm ${c.text} whitespace-pre-wrap leading-relaxed`}>
+                    {note.content || <span className={c.gray}>No content</span>}
+                  </p>
+                )}
+              </div>
+            ))}
+
+            {/* Add New Note */}
+            {!isBulkDeleteMode && onCreateNote && (
+              <button
+                onClick={() => setIsNoteModalOpen(true)}
+                className={`flex items-center justify-center gap-2 p-4 border-2 border-dashed ${c.border} rounded-xl ${c.gray} hover:border-blue-500 hover:text-blue-400 transition-colors`}
+              >
+                <Plus size={18} />
+                Add Note
+              </button>
+            )}
+          </div>
         ) : (
-          <div 
-            data-area-id="folderpage-notes-grid"
+          /* Grid View (default) */
+          <div
             className="folderpage-notes-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {folder.notes.map((note) => (

@@ -12,8 +12,10 @@ export interface FolderWithNotes extends Folder {
 export interface NoteSummary {
   id: number;
   title: string;
+  content?: string;
   bookmark_url?: string | null;
   bookmark_title?: string | null;
+  folder_name?: string;
   is_pinned: number;
   created_at: string;
   updated_at: string;
