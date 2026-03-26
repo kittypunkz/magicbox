@@ -34,7 +34,7 @@ folders.get('/:id', async (c) => {
   }
   
   const { results: notes } = await db.prepare(`
-    SELECT id, title, COALESCE(is_pinned, 0) as is_pinned, created_at, updated_at 
+    SELECT id, title, content, bookmark_url, bookmark_title, COALESCE(is_pinned, 0) as is_pinned, created_at, updated_at 
     FROM notes 
     WHERE folder_id = ?1 
     ORDER BY COALESCE(is_pinned, 0) DESC, updated_at DESC
