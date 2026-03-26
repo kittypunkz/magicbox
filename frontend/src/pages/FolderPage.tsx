@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square, Pin } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useFolder, useFolders } from '../hooks/useFolders';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { CreateNoteModal } from '../components/CreateNoteModal';
@@ -53,8 +54,17 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
   // New Note Modal state
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   
-  // View mode toggle
-  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid');
+  // View mode toggle — remember preference per folder
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>(() => {
+    const saved = localStorage.getItem(`folder-view-${folderId}`);
+    return (saved === 'timeline' || saved === 'grid') ? saved : 'grid';
+  });
+
+  // Save view preference when changed
+  const handleViewModeChange = (mode: 'grid' | 'timeline') => {
+    setViewMode(mode);
+    localStorage.setItem(`folder-view-${folderId}`, mode);
+  };
 
   const handleDeleteClick = (e: React.MouseEvent, note: Note) => {
     e.stopPropagation();
@@ -246,14 +256,14 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
             {/* View Mode Toggle */}
             <div className={`flex items-center ${c.input} border ${c.border} rounded-lg overflow-hidden`}>
               <button
-                onClick={() => setViewMode('grid')}
+                onClick={() => handleViewModeChange("grid")}
                 className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}`}
                 title="Grid view"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
               </button>
               <button
-                onClick={() => setViewMode('timeline')}
+                onClick={() => handleViewModeChange("timeline")}
                 className={`p-2 transition-colors ${viewMode === 'timeline' ? 'bg-blue-600 text-white' : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}`}
                 title="Timeline view"
               >
@@ -404,9 +414,9 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                     🔗 {note.bookmark_title || note.bookmark_url}
                   </a>
                 ) : (
-                  <p className={`text-sm ${c.text} whitespace-pre-wrap leading-relaxed`}>
-                    {note.content || <span className={c.gray}>No content</span>}
-                  </p>
+                  <div className={`text-sm ${c.text} leading-relaxed prose prose-invert prose-sm max-w-none`}>
+                    <ReactMarkdown>{note.content || ''}</ReactMarkdown>
+                  </div>
                 )}
               </div>
             ))}
@@ -506,7 +516,7 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                       {note.bookmark_title || (() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
                     </span>
                   ) : (
-                    'Click to open this note'
+                    note.content?.slice(0, 120) || ''
                   )}
                 </p>
                 <div className={`folderpage-note-meta flex items-center gap-2 mt-4 pt-4 border-t ${c.border} text-xs ${c.gray}`}>
