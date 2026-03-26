@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
 import { BlockNoteEditor } from './BlockNoteEditor';
+import { EditorSearch } from './EditorSearch';
 import type { Note } from '../types';
 
 // Dark mode colors - Obsidian style
@@ -41,6 +42,20 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [isFullWidth, setIsFullWidth] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [blockNoteEditor, setBlockNoteEditor] = useState<any>(null);
+
+  // Ctrl+F to open search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Load note data
   useEffect(() => {
@@ -215,6 +230,18 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
           >
             {isFullWidth ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
           </button>
+
+          {/* Search Toggle */}
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className={`p-2 rounded-lg transition-colors ${
+              showSearch ? 'text-blue-400' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
+            }`}
+            title="Search in note (Ctrl+F)"
+            aria-label="Search in note"
+          >
+            <Search size={18} />
+          </button>
         </div>
 
         {/* Note Menu */}
@@ -306,10 +333,19 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               </p>
             </div>
           ) : (
-            <BlockNoteEditor
-              initialContent={content}
-              onChange={setContent}
-            />
+            <>
+              {showSearch && blockNoteEditor && (
+                <EditorSearch
+                  editor={blockNoteEditor}
+                  onClose={() => setShowSearch(false)}
+                />
+              )}
+              <BlockNoteEditor
+                initialContent={content}
+                onChange={setContent}
+                onEditorReady={setBlockNoteEditor}
+              />
+            </>
           )}
         </div>
       </div>
