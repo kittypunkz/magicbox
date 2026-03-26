@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { CreateNoteModal } from './components/CreateNoteModal';
@@ -13,7 +13,8 @@ import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import type { Note, Folder } from './types';
 import { useMinLoading } from './hooks/useMinLoading';
-import { Search, ArrowLeft, MoreVertical, LogOut, Shield, Plus } from 'lucide-react';
+import { Search, ArrowLeft, MoreVertical, LogOut, Shield, Plus, X, FileText, Folder as FolderIcon } from 'lucide-react';
+import { searchAPI } from './api/client';
 import './App.css';
 import { Agentation } from 'agentation';
 
@@ -208,6 +209,32 @@ function AppContent() {
   // UI state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<{ notes: Note[]; folders: Folder[] }>({ notes: [], folders: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults({ notes: [], folders: [] });
+      return;
+    }
+
+    setIsSearching(true);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const result = await searchAPI.search(searchQuery);
+        setSearchResults({ notes: result.data || [], folders: result.folders || [] });
+      } catch {
+        setSearchResults({ notes: [], folders: [] });
+      } finally {
+        setIsSearching(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(searchTimer.current);
+  }, [searchQuery]);
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
 
   const [noteDropdownOpen, setNoteDropdownOpen] = useState<number | null>(null);
@@ -361,7 +388,7 @@ function AppContent() {
 
   const SearchBar = () => (
     <div className="relative">
-      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b6b6b]" />
+      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b6b6b] z-10" />
       <input
         type="text"
         placeholder="Search notes..."
@@ -369,6 +396,65 @@ function AppContent() {
         onChange={(e) => setSearchQuery(e.target.value)}
         className="w-full lg:w-64 bg-[#202020] text-[#e6e6e6] text-sm rounded-lg pl-10 pr-4 py-2.5 border border-[#2f2f2f] placeholder-[#6b6b6b] focus:outline-none focus:border-blue-500"
       />
+      {searchQuery && (
+        <button
+          onClick={() => setSearchQuery('')}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b6b6b] hover:text-[#e6e6e6]"
+        >
+          <X size={14} />
+        </button>
+      )}
+      {/* Search Results Dropdown */}
+      {searchQuery.trim() && (searchResults.notes.length > 0 || searchResults.folders.length > 0 || !isSearching) && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-[#202020] border border-[#2f2f2f] rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+          {isSearching && <div className="px-4 py-3 text-sm text-[#6b6b6b]">Searching...</div>}
+          
+          {!isSearching && searchResults.folders.length > 0 && (
+            <div className="px-2 py-1">
+              <div className="px-2 py-1 text-xs text-[#6b6b6b] uppercase">Folders</div>
+              {searchResults.folders.map(folder => (
+                <button
+                  key={folder.id}
+                  onClick={() => { showFolder(folder.id); setSearchQuery(''); }}
+                  className="w-full text-left px-3 py-2 text-sm text-[#e6e6e6] hover:bg-[#2a2a2a] rounded flex items-center gap-2"
+                >
+                  <FolderIcon size={14} className="text-[#6b6b6b]" />
+                  {folder.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!isSearching && searchResults.notes.length > 0 && (
+            <div className="px-2 py-1">
+              <div className="px-2 py-1 text-xs text-[#6b6b6b] uppercase">Notes</div>
+              {searchResults.notes.map(note => (
+                <button
+                  key={note.id}
+                  onClick={() => { showNote(note.id); setSearchQuery(''); }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#2a2a2a] rounded"
+                >
+                  <div className="flex items-center gap-2">
+                    {note.bookmark_url ? (
+                      <span className="text-emerald-500 text-xs">🔗</span>
+                    ) : (
+                      <FileText size={14} className="text-[#6b6b6b]" />
+                    )}
+                    <span className="text-[#e6e6e6] truncate">{note.title}</span>
+                  </div>
+                  {note.folder_name && (
+                    <span className="text-xs text-[#4b5563] ml-6">{note.folder_name}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!isSearching && searchResults.notes.length === 0 && searchResults.folders.length === 0 && (
+            <div className="px-4 py-3 text-sm text-[#6b6b6b]">No results found</div>
+          )}
+        </div>
+      )}
     </div>
   );
 
