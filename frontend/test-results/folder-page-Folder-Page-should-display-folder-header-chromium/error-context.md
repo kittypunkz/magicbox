@@ -3,16 +3,13 @@
 ```yaml
 - generic [active] [ref=e1]:
   - generic [ref=e4]:
-    - generic [ref=e5]:
-      - img [ref=e7]
-      - heading "Welcome Back" [level=1] [ref=e11]
-      - paragraph [ref=e12]: Sign in with your passkey
-    - button "Sign in with Passkey" [ref=e13] [cursor=pointer]:
-      - img [ref=e14]
-      - generic [ref=e18]: Sign in with Passkey
-    - paragraph [ref=e19]: Use Face ID, Touch ID, or Windows Hello to sign in
-  - button "/agentation v2.3.3 Output Detail Standard React Components Hide Until Restart Marker Color Indigo Blue Cyan Green Yellow Orange Red Clear on copy/send Block page interactions Manage MCP & Webhooks Manage MCP & Webhooks MCP Connection MCP connection allows agents to receive and act on annotations. Learn more Webhooks Auto-Send The webhook URL will receive live annotation changes and annotation data." [ref=e21] [cursor=pointer]:
-    - img [ref=e23]
+    - img [ref=e6]
+    - heading "Setup Required" [level=1] [ref=e10]
+    - paragraph [ref=e11]: This MagicBox instance needs to be configured first.
+    - link "Go to Setup" [ref=e12] [cursor=pointer]:
+      - /url: /setup
+  - button "/agentation v2.3.3 Output Detail Standard React Components Hide Until Restart Marker Color Indigo Blue Cyan Green Yellow Orange Red Clear on copy/send Block page interactions Manage MCP & Webhooks Manage MCP & Webhooks MCP Connection MCP connection allows agents to receive and act on annotations. Learn more Webhooks Auto-Send The webhook URL will receive live annotation changes and annotation data." [ref=e14] [cursor=pointer]:
+    - img [ref=e16]
     - generic:
       - generic:
         - button:
