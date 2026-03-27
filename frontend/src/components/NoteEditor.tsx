@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search, Download } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
 import { BlockNoteEditor } from './BlockNoteEditor';
 import { EditorSearch } from './EditorSearch';
+import { exportNoteAsMarkdown } from '../utils/exportImport';
 import type { Note } from '../types';
 
 // Dark mode colors - Obsidian style
@@ -262,6 +263,16 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               <div 
                 className={`absolute top-full right-0 mt-1 w-40 ${c.sidebar} border ${c.border} rounded-lg shadow-lg z-50 py-1`}
               >
+                <button
+                  onClick={() => {
+                    if (note) exportNoteAsMarkdown(note);
+                    setShowNoteMenu(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm ${c.text} ${c.hover} transition-colors flex items-center gap-2`}
+                >
+                  <Download size={14} />
+                  Export as Markdown
+                </button>
                 <button
                   onClick={() => {
                     setShowNoteMenu(false);

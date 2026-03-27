@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square, Pin } from 'lucide-react';
+import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square, Pin, Download, Upload } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { exportNotesAsMarkdown, importMarkdownFile } from '../utils/exportImport';
 import { useFolder, useFolders } from '../hooks/useFolders';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { CreateNoteModal } from '../components/CreateNoteModal';
@@ -270,6 +271,35 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="3" rx="1"/><rect x="1" y="6" width="14" height="3" rx="1"/><rect x="1" y="11" width="14" height="3" rx="1"/></svg>
               </button>
             </div>
+
+            {/* Export All */}
+            {hasNotes && (
+              <button
+                onClick={() => folder?.notes && exportNotesAsMarkdown(folder.notes as Note[])}
+                className={`p-2 ${c.gray} hover:text-[#e6e6e6] ${c.hover} rounded-lg transition-colors`}
+                title="Export all notes"
+              >
+                <Download size={18} />
+              </button>
+            )}
+
+            {/* Import */}
+            {onCreateNote && (
+              <button
+                onClick={async () => {
+                  try {
+                    const { title, content } = await importMarkdownFile();
+                    await onCreateNote(title, content, folderId);
+                  } catch {
+                    // User cancelled
+                  }
+                }}
+                className={`p-2 ${c.gray} hover:text-[#e6e6e6] ${c.hover} rounded-lg transition-colors`}
+                title="Import markdown file"
+              >
+                <Upload size={18} />
+              </button>
+            )}
 
             {isBulkDeleteMode ? (
               // Bulk Delete Mode Actions
