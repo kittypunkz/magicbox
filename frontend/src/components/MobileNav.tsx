@@ -4,7 +4,7 @@ import { Menu, X, Home, Plus } from 'lucide-react';
 interface MobileNavProps {
   onShowAllNotes: () => void;
   onCreateNote: () => void;
-  currentView: 'home' | 'folder' | 'note';
+  currentView: 'home' | 'folder' | 'note' | 'settings';
 }
 
 const c = {

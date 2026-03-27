@@ -8,6 +8,7 @@ import { NoteEditor } from './components/NoteEditor';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
@@ -17,7 +18,7 @@ import { Search, ArrowLeft, MoreVertical, LogOut, Shield, Plus } from 'lucide-re
 import './App.css';
 import { Agentation } from 'agentation';
 
-type ViewType = 'home' | 'folder' | 'note';
+type ViewType = 'home' | 'folder' | 'note' | 'settings';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -276,6 +277,12 @@ function AppContent() {
     updateURL('home');
   }, [updateURL]);
 
+  const showSettings = useCallback(() => {
+    setView('settings');
+    setSelectedFolderId(null);
+    setSelectedNoteId(null);
+  }, []);
+
   const showFolder = useCallback((folderId: number) => {
     setView('folder');
     setSelectedFolderId(folderId);
@@ -401,6 +408,7 @@ function AppContent() {
           selectedFolderId={selectedFolderId}
           onCloseMobile={() => setSidebarOpen(false)}
           isMobile={isMobile}
+          onSettingsClick={showSettings}
         />
       </div>
 
@@ -436,6 +444,7 @@ function AppContent() {
             {view === 'home' && 'All Notes'}
             {view === 'folder' && getFolderName(selectedFolderId)}
             {view === 'note' && (selectedNote?.title || 'Untitled')}
+            {view === 'settings' && 'Settings'}
           </h1>
           
           <div className="flex-1" />
@@ -509,6 +518,10 @@ function AppContent() {
                 showAllNotes();
               }}
             />
+          )}
+
+          {view === 'settings' && (
+            <SettingsPage />
           )}
         </main>
 

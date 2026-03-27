@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home } from 'lucide-react';
+import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings } from 'lucide-react';
 
 import type { Folder as FolderType, Note } from '../types';
 import { SkeletonFolderItem } from './Skeleton';
@@ -17,10 +17,11 @@ interface SidebarProps {
   onFolderUpdate: (id: number, name: string) => void;
   onCancelEdit: () => void;
   loading: boolean;
-  currentView: 'home' | 'folder' | 'note';
+  currentView: 'home' | 'folder' | 'note' | 'settings';
   selectedFolderId: number | null;
   onCloseMobile?: () => void;
   isMobile?: boolean;
+  onSettingsClick?: () => void;
 }
 
 const c = {
@@ -50,6 +51,7 @@ export function Sidebar({
   selectedFolderId,
   onCloseMobile,
   isMobile,
+  onSettingsClick,
 }: SidebarProps) {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -337,7 +339,24 @@ export function Sidebar({
       </div>
 
       {/* Footer */}
-      <div className={`p-4 border-t ${c.border}`}>
+      <div className={`p-4 border-t ${c.border} space-y-2`}>
+        {/* Settings Button */}
+        {onSettingsClick && (
+          <button
+            onClick={() => {
+              onSettingsClick();
+              if (isMobile && onCloseMobile) onCloseMobile();
+            }}
+            className={`
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+              transition-colors min-h-[44px]
+              ${currentView === 'settings' ? c.active : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}
+            `}
+          >
+            <Settings size={16} />
+            <span className="flex-1 text-left">Settings</span>
+          </button>
+        )}
         <div className={`text-xs ${c.gray} text-center`}>
           {folders.length} folder{folders.length !== 1 ? 's' : ''} · {recentNotes.length} recent
         </div>
