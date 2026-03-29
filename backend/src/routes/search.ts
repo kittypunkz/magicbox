@@ -1,8 +1,12 @@
 import { Hono } from 'hono';
+import { authMiddleware } from '../middleware/auth';
 import { SearchSchema } from '../validators';
-import type { Env, PaginatedResponse, NoteWithFolder, Folder } from '../types';
+import type { Env, PaginatedResponse, NoteWithFolder, Folder, UserContext } from '../types';
 
-const search = new Hono<{ Bindings: Env }>();
+const search = new Hono<{ Bindings: Env; Variables: { user: UserContext } }>();
+
+// Apply auth to all search routes
+search.use('/*', authMiddleware);
 
 // Search notes and folders
 search.get('/', async (c) => {

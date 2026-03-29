@@ -17,19 +17,14 @@ import { ArrowLeft, MoreVertical, LogOut, Shield, Plus } from 'lucide-react';
 import { SearchBar } from './components/SearchBar';
 import './App.css';
 import { Agentation } from 'agentation';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 type ViewType = 'home' | 'folder' | 'note';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-  
-  // Test mode bypass — skip auth for E2E tests
-  const isTestMode = import.meta.env.VITE_TEST_MODE === 'true';
-  if (isTestMode) {
-    return <>{children}</>;
-  }
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#191919] flex items-center justify-center">
@@ -584,7 +579,9 @@ function App() {
 
   return (
     <AuthProvider>
-      <AppRoutes />
+      <ErrorBoundary>
+        <AppRoutes />
+      </ErrorBoundary>
       {isDev && <Agentation />}
     </AuthProvider>
   );
