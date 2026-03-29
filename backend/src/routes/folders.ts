@@ -1,9 +1,12 @@
 import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth';
 import { CreateFolderSchema, UpdateFolderSchema } from '../validators';
-import type { Env, Folder } from '../types';
+import type { Env, Folder, UserContext } from '../types';
 
-const folders = new Hono<{ Bindings: Env }>();
+const folders = new Hono<{ Bindings: Env; Variables: { user: UserContext } }>();
+
+// Apply auth to all folder routes
+folders.use('/*', authMiddleware);
 
 // Get all folders
 folders.get('/', async (c) => {
@@ -34,7 +37,7 @@ folders.get('/:id', async (c) => {
   }
   
   const { results: notes } = await db.prepare(`
-    SELECT id, title, COALESCE(is_pinned, 0) as is_pinned, created_at, updated_at 
+    SELECT id, title, content, bookmark_url, bookmark_title, COALESCE(is_pinned, 0) as is_pinned, created_at, updated_at 
     FROM notes 
     WHERE folder_id = ?1 
     ORDER BY COALESCE(is_pinned, 0) DESC, updated_at DESC
@@ -130,7 +133,7 @@ folders.patch('/:id', async (c) => {
   }
 });
 
-// Delete folder (TODO: Add authMiddleware when frontend has auth)
+// Delete folder
 folders.delete('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   

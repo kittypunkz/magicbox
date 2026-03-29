@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink } from 'lucide-react';
-import TextareaAutosize from 'react-textarea-autosize';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search, Download } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
+import { BlockNoteEditor } from './BlockNoteEditor';
+import { EditorSearch } from './EditorSearch';
+import { exportNoteAsMarkdown } from '../utils/exportImport';
 import type { Note } from '../types';
 
 // Dark mode colors - Obsidian style
@@ -40,6 +42,21 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [showNoteMenu, setShowNoteMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [isFullWidth, setIsFullWidth] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [blockNoteEditor, setBlockNoteEditor] = useState<any>(null);
+
+  // Ctrl+F to open search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Load note data
   useEffect(() => {
@@ -202,6 +219,30 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
           >
             {isPinned ? <Pin size={18} fill="currentColor" /> : <PinOff size={18} />}
           </button>
+
+          {/* Width Toggle */}
+          <button
+            onClick={() => setIsFullWidth(!isFullWidth)}
+            className={`p-2 rounded-lg transition-colors ${
+              isFullWidth ? 'text-blue-400' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
+            }`}
+            title={isFullWidth ? 'Default width' : 'Full width'}
+            aria-label={isFullWidth ? 'Default width' : 'Full width'}
+          >
+            {isFullWidth ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+          </button>
+
+          {/* Search Toggle */}
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className={`p-2 rounded-lg transition-colors ${
+              showSearch ? 'text-blue-400' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
+            }`}
+            title="Search in note (Ctrl+F)"
+            aria-label="Search in note"
+          >
+            <Search size={18} />
+          </button>
         </div>
 
         {/* Note Menu */}
@@ -224,6 +265,16 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               >
                 <button
                   onClick={() => {
+                    if (note) exportNoteAsMarkdown(note);
+                    setShowNoteMenu(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm ${c.text} ${c.hover} transition-colors flex items-center gap-2`}
+                >
+                  <Download size={14} />
+                  Export as Markdown
+                </button>
+                <button
+                  onClick={() => {
                     setShowNoteMenu(false);
                     setShowDeleteModal(true);
                   }}
@@ -243,7 +294,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
         data-area-id="noteeditor-content"
         className="noteeditor-content flex-1 overflow-y-auto"
       >
-        <div className="max-w-3xl mx-auto px-8 py-8">
+        <div className={`${isFullWidth ? 'max-w-6xl' : 'max-w-3xl'} mx-auto px-8 py-8 transition-all duration-300`}>
           {/* Title Input */}
           <input
             data-area-id="noteeditor-title"
@@ -293,18 +344,19 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               </p>
             </div>
           ) : (
-            <TextareaAutosize
-              data-area-id="noteeditor-textarea"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Start writing..."
-              minRows={10}
-              className={`noteeditor-textarea w-full resize-none outline-none text-base leading-relaxed ${c.placeholder} ${c.text}`}
-              style={{
-                background: 'transparent',
-                fontFamily: 'inherit',
-              }}
-            />
+            <>
+              {showSearch && blockNoteEditor && (
+                <EditorSearch
+                  editor={blockNoteEditor}
+                  onClose={() => setShowSearch(false)}
+                />
+              )}
+              <BlockNoteEditor
+                initialContent={content}
+                onChange={setContent}
+                onEditorReady={setBlockNoteEditor}
+              />
+            </>
           )}
         </div>
       </div>

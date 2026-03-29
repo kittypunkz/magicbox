@@ -1,10 +1,13 @@
 import { Hono } from 'hono';
 import { authMiddleware } from '../middleware/auth';
 import { CreateNoteSchema, UpdateNoteSchema, NoteQuerySchema } from '../validators';
-import type { Env, Note, NoteWithFolder, PaginatedResponse } from '../types';
+import type { Env, Note, NoteWithFolder, PaginatedResponse, UserContext } from '../types';
 import type { z } from 'zod';
 
-const notes = new Hono<{ Bindings: Env }>();
+const notes = new Hono<{ Bindings: Env; Variables: { user: UserContext } }>();
+
+// Apply auth to all note routes
+notes.use('/*', authMiddleware);
 
 // Whitelist of updateable columns
 const UPDATEABLE_COLUMNS = ['title', 'content', 'folder_id', 'is_pinned', 'bookmark_url', 'bookmark_title'] as const;
@@ -128,7 +131,7 @@ notes.get('/:id', async (c) => {
   return c.json({ success: true, data: note });
 });
 
-// Create note (TODO: Add authMiddleware when frontend has auth)
+// Create note
 notes.post('/', async (c) => {
   const body = await c.req.json();
   const parsed = CreateNoteSchema.safeParse(body);

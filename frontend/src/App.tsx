@@ -14,9 +14,11 @@ import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import type { Note, Folder } from './types';
 import { useMinLoading } from './hooks/useMinLoading';
-import { Search, ArrowLeft, MoreVertical, LogOut, Shield, Plus } from 'lucide-react';
+import { ArrowLeft, MoreVertical, LogOut, Shield, Plus } from 'lucide-react';
+import { SearchBar } from './components/SearchBar';
 import './App.css';
 import { Agentation } from 'agentation';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 type ViewType = 'home' | 'folder' | 'note' | 'settings';
 
@@ -126,7 +128,7 @@ function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             <h3 className="text-sm font-medium text-[#6b6b6b] mb-3 uppercase tracking-wider">
               Passkeys ({credentials.length})
             </h3>
-            
+
             {credentials.map((cred) => (
               <div
                 key={cred.id}
@@ -202,7 +204,6 @@ function AppContent() {
 
   // UI state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [editingFolder, setEditingFolder] = useState<Folder | null>(null);
 
   const [noteDropdownOpen, setNoteDropdownOpen] = useState<number | null>(null);
@@ -360,31 +361,18 @@ function AppContent() {
     return folder?.name ?? 'Unknown Folder';
   }, [folders]);
 
-  const SearchBar = () => (
-    <div className="relative">
-      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b6b6b]" />
-      <input
-        type="text"
-        placeholder="Search notes..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full lg:w-64 bg-[#202020] text-[#e6e6e6] text-sm rounded-lg pl-10 pr-4 py-2.5 border border-[#2f2f2f] placeholder-[#6b6b6b] focus:outline-none focus:border-blue-500"
-      />
-    </div>
-  );
-
   return (
     <div className="flex h-screen bg-[#191919] overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div 
+      <div
         className={`
           ${isMobile ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300' : 'relative'}
           ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}
@@ -429,7 +417,7 @@ function AppContent() {
               </svg>
             </button>
           )}
-          
+
           {view === 'note' && (
             <button
               onClick={handleBack}
@@ -439,17 +427,17 @@ function AppContent() {
               <ArrowLeft size={20} />
             </button>
           )}
-          
+
           <h1 className="text-lg font-semibold text-[#e6e6e6] truncate">
             {view === 'home' && 'All Notes'}
             {view === 'folder' && getFolderName(selectedFolderId)}
             {view === 'note' && (selectedNote?.title || 'Untitled')}
             {view === 'settings' && 'Settings'}
           </h1>
-          
+
           <div className="flex-1" />
-          
-          <SearchBar />
+
+          <SearchBar onNoteClick={showNote} onFolderClick={showFolder} />
 
           {/* Settings Button */}
           <button
@@ -459,7 +447,7 @@ function AppContent() {
           >
             <Shield size={20} />
           </button>
-          
+
           {view === 'note' && selectedNote && (
             <div className="relative">
               <button
@@ -496,7 +484,7 @@ function AppContent() {
               }}
             />
           )}
-          
+
           {view === 'folder' && selectedFolderId && (
             <FolderPage
               folderId={selectedFolderId}
@@ -505,7 +493,7 @@ function AppContent() {
               onCreateNote={handleCreateNoteSubmit}
             />
           )}
-          
+
           {view === 'note' && selectedNoteId && (
             <NoteEditor
               noteId={selectedNoteId}
@@ -545,12 +533,12 @@ function AppContent() {
             folder = await createFolder(folderName);
           }
           const folderId = folder?.id || 1;
-          
+
           // Create note (with optional bookmark_url)
           const newNote = await createNote({ title, content: content || '', folder_id: folderId, bookmark_url: bookmarkUrl });
           await refetchNotes();
           handleCloseModal();
-          
+
           // Redirect to the new note
           if (newNote?.id) {
             showNote(newNote.id);
@@ -600,11 +588,13 @@ function AppRoutes() {
 }
 
 function App() {
-  const isDev = import.meta.env.DEV;
-  
+  const isDev = import.meta.env.VITE_AGENTATION === 'true';
+
   return (
     <AuthProvider>
-      <AppRoutes />
+      <ErrorBoundary>
+        <AppRoutes />
+      </ErrorBoundary>
       {isDev && <Agentation />}
     </AuthProvider>
   );
