@@ -30,6 +30,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const checkStatus = async () => {
+    // Test mode bypass
+    if (import.meta.env.VITE_TEST_MODE === 'true') {
+      setIsSetup(true);
+      setIsAuthenticated(true);
+      return;
+    }
+    
     try {
       const res = await fetch(`${API_URL}/auth/status`, {
         credentials: 'include',
