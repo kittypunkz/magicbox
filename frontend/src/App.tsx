@@ -25,7 +25,13 @@ type ViewType = 'home' | 'folder' | 'note' | 'settings';
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-
+  
+  // Test mode bypass — skip auth for E2E tests
+  const isTestMode = import.meta.env.VITE_TEST_MODE === 'true';
+  if (isTestMode) {
+    return <>{children}</>;
+  }
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#191919] flex items-center justify-center">
