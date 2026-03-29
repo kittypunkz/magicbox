@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { authMiddleware } from '../middleware/auth';
+import { sessionAuthMiddleware as authMiddleware } from '../middleware/auth';
 import { CreateNoteSchema, UpdateNoteSchema, NoteQuerySchema } from '../validators';
 import type { Env, Note, NoteWithFolder, PaginatedResponse, UserContext } from '../types';
 import type { z } from 'zod';
