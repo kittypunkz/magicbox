@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { authMiddleware } from '../middleware/auth';
+import { sessionAuthMiddleware as authMiddleware } from '../middleware/auth';
 import { SearchSchema } from '../validators';
 import type { Env, PaginatedResponse, NoteWithFolder, Folder, UserContext } from '../types';
 
