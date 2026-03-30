@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search, Download } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search, Download, Folder as FolderIcon } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
 import { BlockNoteEditor } from './BlockNoteEditor';
 import { EditorSearch } from './EditorSearch';
+import { MoveToFolderModal } from './MoveToFolderModal';
 import { exportNoteAsMarkdown } from '../utils/exportImport';
 import type { Note } from '../types';
 
@@ -44,6 +45,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [isPinned, setIsPinned] = useState(false);
   const [isFullWidth, setIsFullWidth] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
   const [blockNoteEditor, setBlockNoteEditor] = useState<any>(null);
 
   // Ctrl+F to open search
@@ -265,6 +267,16 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               >
                 <button
                   onClick={() => {
+                    setShowNoteMenu(false);
+                    setShowMoveModal(true);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm ${c.text} ${c.hover} transition-colors flex items-center gap-2`}
+                >
+                  <FolderIcon size={14} />
+                  Move to folder
+                </button>
+                <button
+                  onClick={() => {
                     if (note) exportNoteAsMarkdown(note);
                     setShowNoteMenu(false);
                   }}
@@ -371,6 +383,18 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
+      />
+
+      {/* Move to Folder Modal */}
+      <MoveToFolderModal
+        isOpen={showMoveModal}
+        onClose={() => setShowMoveModal(false)}
+        folders={folders}
+        currentFolderId={folderId}
+        onMove={(newFolderId) => {
+          setFolderId(newFolderId);
+          // Auto-save will handle the API call
+        }}
       />
     </div>
   );
