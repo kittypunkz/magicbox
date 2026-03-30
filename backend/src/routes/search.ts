@@ -25,12 +25,22 @@ search.get('/', async (c) => {
   const db = c.env.DB;
   const offset = (page - 1) * limit;
   
-  // Sanitize FTS5 query: escape double quotes and wrap in quotes
-  const sanitizedQ = `"${q.replace(/"/g, '""')}"`;
-  
+  // Sanitize for trigram FTS: strip special chars, keep letters and numbers
+  const sanitizedQ = q.replace(/[^\p{L}\p{N}]/gu, ' ').trim();
+  if (!sanitizedQ) {
+    return c.json({
+      data: [],
+      pagination: { page, limit, total: 0, totalPages: 0 },
+      folders: [],
+    });
+  }
+
   // Search notes using FTS with pagination
-  const { results: notes } = await db.prepare(`
-    SELECT n.*, f.name as folder_name 
+  let notes: NoteWithFolder[] | null = null;
+  let totalCount = 0;
+
+  const ftsResult = await db.prepare(`
+    SELECT n.*, f.name as folder_name
     FROM notes_fts fts
     JOIN notes n ON fts.rowid = n.id
     JOIN folders f ON n.folder_id = f.id
@@ -38,13 +48,40 @@ search.get('/', async (c) => {
     ORDER BY rank
     LIMIT ?2 OFFSET ?3
   `).bind(sanitizedQ, limit, offset).all<NoteWithFolder>();
-  
+
+  notes = ftsResult.results;
+
   // Get total count for pagination
   const countResult = await db.prepare(`
-    SELECT COUNT(*) as total 
+    SELECT COUNT(*) as total
     FROM notes_fts fts
     WHERE notes_fts MATCH ?1
   `).bind(sanitizedQ).first<{ total: number }>();
+
+  totalCount = countResult?.total || 0;
+
+  // If FTS returns nothing, try LIKE as fallback for edge cases
+  if ((!notes || notes.length === 0) && sanitizedQ.length >= 2) {
+    const likePattern = `%${sanitizedQ.replace(/[\\%_]/g, '\\$&')}%`;
+    const { results: likeNotes } = await db.prepare(`
+      SELECT n.*, f.name as folder_name
+      FROM notes n
+      JOIN folders f ON n.folder_id = f.id
+      WHERE n.title LIKE ?1 ESCAPE '\\' OR n.content LIKE ?1 ESCAPE '\\'
+      ORDER BY n.updated_at DESC
+      LIMIT ?2 OFFSET ?3
+    `).bind(likePattern, limit, offset).all<NoteWithFolder>();
+
+    if (likeNotes && likeNotes.length > 0) {
+      notes = likeNotes;
+      const likeCount = await db.prepare(`
+        SELECT COUNT(*) as total
+        FROM notes n
+        WHERE n.title LIKE ?1 ESCAPE '\\' OR n.content LIKE ?1 ESCAPE '\\'
+      `).bind(likePattern).first<{ total: number }>();
+      totalCount = likeCount?.total || 0;
+    }
+  }
   
   // Escape LIKE special characters (%, _, \)
   const escapedQ = q.replace(/[\\%_]/g, '\\$&');
@@ -62,8 +99,8 @@ search.get('/', async (c) => {
     pagination: {
       page,
       limit,
-      total: countResult?.total || 0,
-      totalPages: Math.ceil((countResult?.total || 0) / limit),
+      total: totalCount,
+      totalPages: Math.ceil(totalCount / limit),
     },
     folders: folders || [],
   };
