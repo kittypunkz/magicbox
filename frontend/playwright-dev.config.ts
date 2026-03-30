@@ -1,10 +1,25 @@
 import { defineConfig, devices } from '@playwright/test';
-import baseConfig from './playwright.config';
 
 export default defineConfig({
-  ...baseConfig,
+  testDir: './e2e',
+  fullyParallel: false,
+  retries: 0,
+  workers: 1,
+  reporter: 'list',
   use: {
-    ...baseConfig.use,
     baseURL: 'https://develop.magicbox-app.pages.dev',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
   },
+  projects: [
+    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: './.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
+  ],
 });
