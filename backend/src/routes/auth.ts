@@ -267,6 +267,33 @@ app.get('/credentials', async (c) => {
   return c.json({ credentials: credentials.results || [] });
 });
 
+// POST /auth/test-login — TEST ONLY: bypass auth for E2E tests
+// Only works when TEST_SECRET env var is set
+app.post('/test-login', async (c) => {
+  const db = c.env.DB as D1Database;
+  const testSecret = c.env.TEST_SECRET;
+
+  // Only allow if TEST_SECRET is configured and matches
+  if (!testSecret) {
+    return c.json({ error: 'Test login not enabled' }, 404);
+  }
+
+  const body = await c.req.json();
+  if (body.secret !== testSecret) {
+    return c.json({ error: 'Invalid test secret' }, 401);
+  }
+
+  // Create a session for user 1
+  const sessionId = generateSessionId();
+  await db.prepare(
+    'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, ?)'
+  ).bind(sessionId, getSessionExpiry()).run();
+
+  return c.json({ success: true }, 200, {
+    'Set-Cookie': `sessionId=${sessionId}; HttpOnly; Secure; Domain=.bankapirak.com; SameSite=None; Max-Age=${SESSION_DURATION_DAYS * 24 * 60 * 60}; Path=/`
+  });
+});
+
 // DELETE /auth/credentials/:id - Remove a credential
 app.delete('/credentials/:id', async (c) => {
   const db = c.env.DB as D1Database;
