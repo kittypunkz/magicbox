@@ -1,0 +1,15 @@
+{
+  "cookies": [
+    {
+      "name": "sessionId",
+      "value": "594770a8f3e11aed18e4f25e7e4848d413bb6832e18b60c0b768d4a5b3b48428",
+      "domain": ".bankapirak.com",
+      "path": "/",
+      "expires": 1775435717.413,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    }
+  ],
+  "origins": []
+}

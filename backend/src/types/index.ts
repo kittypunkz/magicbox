@@ -68,6 +68,7 @@ export interface Env {
   DB: D1Database;
   JWT_SECRET: string;
   NODE_ENV?: string;
+  TEST_SECRET?: string;
   [key: string]: unknown;
 }
 

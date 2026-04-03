@@ -4,7 +4,7 @@ import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
-import { BlockNoteEditor } from './BlockNoteEditor';
+import { MilkdownEditor } from './MilkdownEditor';
 import { EditorSearch } from './EditorSearch';
 import { MoveToFolderModal } from './MoveToFolderModal';
 import { exportNoteAsMarkdown } from '../utils/exportImport';
@@ -363,7 +363,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                   onClose={() => setShowSearch(false)}
                 />
               )}
-              <BlockNoteEditor
+              <MilkdownEditor
                 initialContent={content}
                 onChange={setContent}
                 onEditorReady={setBlockNoteEditor}

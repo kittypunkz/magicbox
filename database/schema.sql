@@ -80,6 +80,19 @@ CREATE TRIGGER IF NOT EXISTS notes_au AFTER UPDATE ON notes BEGIN
     INSERT INTO notes_fts(rowid, title, content) VALUES (new.id, new.title, new.content);
 END;
 
+-- Feedback table
+CREATE TABLE IF NOT EXISTS feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+    comment TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Index for feedback by date
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
+
 -- Default data
 INSERT OR IGNORE INTO users (id, username) VALUES (1, 'owner');
 INSERT OR IGNORE INTO folders (id, name) VALUES (1, 'Inbox');

@@ -3,6 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2024-01-01"
 account_id = "49b16ed3ff0d8209f2a3da300341283b"
 
+[vars]
+TEST_SECRET = "e2e-test-secret-magicbox-2026"
+
 # Production D1 Database
 [[d1_databases]]
 binding = "DB"

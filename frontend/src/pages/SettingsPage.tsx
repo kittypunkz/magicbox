@@ -1,4 +1,6 @@
-import { Settings, GitBranch, Calendar, Server, Info } from 'lucide-react';
+import { Settings, GitBranch, Calendar, Server, Info, MessageSquare, Star } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { feedbackAPI, FeedbackItem } from '../api/client';
 
 // Dark mode colors (matching app theme)
 const c = {
@@ -16,6 +18,25 @@ const environment = isDev ? 'Development' : 'Production';
 const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
 export function SettingsPage() {
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+
+  const fetchFeedback = useCallback(async () => {
+    setLoadingFeedback(true);
+    try {
+      const data = await feedbackAPI.getAll();
+      setFeedbackList(data || []);
+    } catch (err) {
+      console.error('Failed to load feedback:', err);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFeedback();
+  }, [fetchFeedback]);
+
   return (
     <div
       data-area-id="settingspage"
@@ -111,6 +132,55 @@ export function SettingsPage() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Feedback Section */}
+        <div className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5`}>
+          <h2 className={`text-sm font-semibold ${c.text} mb-4 flex items-center gap-2`}>
+            <MessageSquare size={16} />
+            User Feedback
+          </h2>
+
+          {loadingFeedback ? (
+            <div className={`text-center py-8 ${c.gray}`}>Loading...</div>
+          ) : feedbackList.length === 0 ? (
+            <div className={`text-center py-8 ${c.gray}`}>No feedback yet</div>
+          ) : (
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {feedbackList.map((feedback) => (
+                <div key={feedback.id} className={`${c.bg} border ${c.border} rounded-lg p-3`}>
+                  <div className="flex items-start justify-between mb-2">
+                    <span className={`text-sm font-medium ${c.text}`}>
+                      {feedback.username || 'User'}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={12}
+                          className={feedback.rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-[#6b6b6b]'}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {feedback.comment && (
+                    <p className={`text-sm ${c.gray} whitespace-pre-wrap`}>
+                      {feedback.comment}
+                    </p>
+                  )}
+                  <p className={`text-xs ${c.gray} mt-2`}>
+                    {new Date(feedback.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer */}

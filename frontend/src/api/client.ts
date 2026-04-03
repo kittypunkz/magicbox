@@ -88,4 +88,21 @@ export const bookmarksAPI = {
   ).then(r => r.data),
 };
 
+export const feedbackAPI = {
+  getAll: () => fetchAPI<{ success: boolean; data: FeedbackItem[] }>('/feedback').then(r => r.data),
+  submit: (rating: number, comment: string) => fetchAPI<{ success: boolean; data: FeedbackItem }>('/feedback', {
+    method: 'POST',
+    body: JSON.stringify({ rating, comment }),
+  }).then(r => r.data),
+};
+
+export interface FeedbackItem {
+  id: number;
+  user_id: number;
+  username: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
 export type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult };

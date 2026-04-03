@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { FeedbackPage } from './pages/FeedbackPage';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
@@ -20,7 +21,7 @@ import './App.css';
 import { Agentation } from 'agentation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-type ViewType = 'home' | 'folder' | 'note' | 'settings';
+type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'feedback';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -284,6 +285,12 @@ function AppContent() {
     setSelectedNoteId(null);
   }, []);
 
+  const showFeedback = useCallback(() => {
+    setView('feedback');
+    setSelectedFolderId(null);
+    setSelectedNoteId(null);
+  }, []);
+
   const showFolder = useCallback((folderId: number) => {
     setView('folder');
     setSelectedFolderId(folderId);
@@ -397,6 +404,7 @@ function AppContent() {
           onCloseMobile={() => setSidebarOpen(false)}
           isMobile={isMobile}
           onSettingsClick={showSettings}
+          onFeedbackClick={showFeedback}
         />
       </div>
 
@@ -433,6 +441,7 @@ function AppContent() {
             {view === 'folder' && getFolderName(selectedFolderId)}
             {view === 'note' && (selectedNote?.title || 'Untitled')}
             {view === 'settings' && 'Settings'}
+            {view === 'feedback' && 'Feedback'}
           </h1>
 
           <div className="flex-1" />
@@ -510,6 +519,10 @@ function AppContent() {
 
           {view === 'settings' && (
             <SettingsPage />
+          )}
+
+          {view === 'feedback' && (
+            <FeedbackPage />
           )}
         </main>
 

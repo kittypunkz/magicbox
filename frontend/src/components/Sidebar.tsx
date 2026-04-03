@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings } from 'lucide-react';
+import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings, MessageSquare } from 'lucide-react';
 
 import type { Folder as FolderType, Note } from '../types';
 import { SkeletonFolderItem } from './Skeleton';
@@ -17,11 +17,12 @@ interface SidebarProps {
   onFolderUpdate: (id: number, name: string) => void;
   onCancelEdit: () => void;
   loading: boolean;
-  currentView: 'home' | 'folder' | 'note' | 'settings';
+  currentView: 'home' | 'folder' | 'note' | 'settings' | 'feedback';
   selectedFolderId: number | null;
   onCloseMobile?: () => void;
   isMobile?: boolean;
   onSettingsClick?: () => void;
+  onFeedbackClick?: () => void;
 }
 
 const c = {
@@ -52,6 +53,7 @@ export function Sidebar({
   onCloseMobile,
   isMobile,
   onSettingsClick,
+  onFeedbackClick,
 }: SidebarProps) {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -340,6 +342,23 @@ export function Sidebar({
 
       {/* Footer */}
       <div className={`p-4 border-t ${c.border} space-y-2`}>
+        {/* Feedback Button */}
+        {onFeedbackClick && (
+          <button
+            onClick={() => {
+              onFeedbackClick();
+              if (isMobile && onCloseMobile) onCloseMobile();
+            }}
+            className={`
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+              transition-colors min-h-[44px]
+              ${currentView === 'feedback' ? c.active : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}
+            `}
+          >
+            <MessageSquare size={16} />
+            <span className="flex-1 text-left">Feedback</span>
+          </button>
+        )}
         {/* Settings Button */}
         {onSettingsClick && (
           <button

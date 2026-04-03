@@ -6,6 +6,7 @@ import notes from './routes/notes';
 import search from './routes/search';
 import auth from './routes/auth';
 import bookmarks from './routes/bookmarks';
+import feedback from './routes/feedback';
 import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -44,5 +45,6 @@ app.route('/folders', folders);
 app.route('/notes', notes);
 app.route('/search', search);
 app.route('/bookmarks', bookmarks);
+app.route('/feedback', feedback);
 
 export default app;
