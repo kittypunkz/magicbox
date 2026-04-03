@@ -10,6 +10,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { FeedbackPage } from './pages/FeedbackPage';
+import { TagPage } from './pages/TagPage';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
@@ -21,7 +22,7 @@ import './App.css';
 import { Agentation } from 'agentation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'feedback';
+type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'feedback' | 'tag';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -193,7 +194,7 @@ function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { folderId, noteId } = useParams<{ folderId?: string; noteId?: string }>();
+  const { folderId, noteId, tagName } = useParams<{ folderId?: string; noteId?: string; tagName?: string }>();
   // Logout is available via useAuth in SettingsModal
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -244,12 +245,16 @@ function AppContent() {
         setView('folder');
         setSelectedFolderId(id);
       }
+    } else if (tagName) {
+      setView('tag');
+      setSelectedFolderId(null);
+      setSelectedNoteId(null);
     } else if (location.pathname === '/') {
       setView('home');
       setSelectedFolderId(null);
       setSelectedNoteId(null);
     }
-  }, [noteId, folderId, location.pathname]);
+  }, [noteId, folderId, tagName, location.pathname]);
 
   // Update selectedNote when selectedNoteId changes
   useEffect(() => {
@@ -290,6 +295,13 @@ function AppContent() {
     setSelectedFolderId(null);
     setSelectedNoteId(null);
   }, []);
+
+  const showTag = useCallback((tagName: string) => {
+    setView('tag');
+    setSelectedFolderId(null);
+    setSelectedNoteId(null);
+    navigate(`/tags/${tagName}`, { replace: true });
+  }, [navigate]);
 
   const showFolder = useCallback((folderId: number) => {
     setView('folder');
@@ -442,6 +454,7 @@ function AppContent() {
             {view === 'note' && (selectedNote?.title || 'Untitled')}
             {view === 'settings' && 'Settings'}
             {view === 'feedback' && 'Feedback'}
+            {view === 'tag' && `#${tagName}`}
           </h1>
 
           <div className="flex-1" />
@@ -524,6 +537,13 @@ function AppContent() {
           {view === 'feedback' && (
             <FeedbackPage />
           )}
+
+          {view === 'tag' && (
+            <TagPage 
+              onNoteClick={showNote}
+              onBack={showAllNotes}
+            />
+          )}
         </main>
 
         {/* Mobile Navigation */}
@@ -592,6 +612,11 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       <Route path="/note/:noteId" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+      <Route path="/tags/:tagName" element={
         <ProtectedRoute>
           <AppContent />
         </ProtectedRoute>
