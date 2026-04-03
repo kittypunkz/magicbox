@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import { Editor, rootCtx, defaultValueCtx } from '@milkdown/core';
-import { Crepe } from '@milkdown/crepe';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Editor, rootCtx, editorViewCtx, defaultValueCtx } from '@milkdown/core';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
+import { commonmark } from '@milkdown/preset-commonmark';
+import { history } from '@milkdown/plugin-history';
+import { cursor } from '@milkdown/plugin-cursor';
+import { HashtagDropdown, extractHashtags } from './HashtagDropdown';
 
 interface MilkdownEditorProps {
   initialContent: string;
   onChange: (markdown: string) => void;
   onEditorReady?: (editor: any) => void;
+  onTagsChange?: (tags: string[]) => void;
 }
 
 // Custom dark theme matching MagicBox palette
@@ -19,24 +23,21 @@ const editorStyles = `
     --md-gray: #6b6b6b;
   }
   
-  .milkdown-editor .editor {
-    background-color: transparent !important;
-    color: #e6e6e6 !important;
-    min-height: 300px;
-    padding: 0;
-  }
-  
   .milkdown-editor .milkdown {
     background-color: transparent !important;
   }
   
   .milkdown-editor .milkdown .editor {
     background-color: transparent !important;
+    color: #e6e6e6 !important;
+    min-height: 300px;
+    padding: 0;
   }
   
   .milkdown-editor .milkdown .ProseMirror {
     outline: none;
     min-height: 300px;
+    padding: 0;
   }
   
   .milkdown-editor .milkdown .ProseMirror p {
@@ -116,38 +117,140 @@ const editorStyles = `
     text-decoration: underline;
   }
   
+  .milkdown-editor .milkdown .ProseMirror hr {
+    border: none;
+    border-top: 1px solid #2f2f2f;
+    margin: 1em 0;
+  }
+  
+  .milkdown-editor .milkdown .ProseMirror table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  .milkdown-editor .milkdown .ProseMirror th,
+  .milkdown-editor .milkdown .ProseMirror td {
+    border: 1px solid #2f2f2f;
+    padding: 0.5em;
+  }
+  
+  .milkdown-editor .milkdown .ProseMirror th {
+    background: #2a2a2a;
+  }
+
+  /* Placeholder */
+  .milkdown-editor .ProseMirror.is-empty::before {
+    content: attr(data-placeholder);
+    color: #4b5563;
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+  
   /* Selection */
-  .milkdown-editor .milkdown .ProseMirror ::selection {
+  .milkdown-editor .ProseMirror ::selection {
     background: rgba(96, 165, 250, 0.3);
   }
   
-  /* CodeMirror theme overrides */
-  .milkdown-editor .cm-editor {
-    background: transparent !important;
-  }
-  
-  .milkdown-editor .cm-editor .cm-scroller {
-    font-family: inherit;
-    line-height: 1.8;
-  }
-  
-  .milkdown-editor .cm-editor .cm-content {
-    padding: 0;
-  }
-  
-  .milkdown-editor .cm-editor .cm-gutters {
-    background: transparent !important;
-    border-right: none !important;
-    color: #4b5563;
+  /* Image handling */
+  .milkdown-editor .ProseMirror img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
   }
 `;
 
-export function MilkdownEditor({ initialContent, onChange, onEditorReady }: MilkdownEditorProps) {
+export function MilkdownEditor({ initialContent, onChange, onEditorReady, onTagsChange }: MilkdownEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<Editor | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const contentLoaded = useRef(false);
+  
+  // Hashtag dropdown state
+  const [hashtagDropdown, setHashtagDropdown] = useState<{
+    show: boolean;
+    query: string;
+    position: { top: number; left: number };
+  }>({ show: false, query: '', position: { top: 0, left: 0 } });
+
+  // Get ProseMirror view for search functionality
+  const getProseMirrorView = useCallback(() => {
+    if (!editorRef.current) return null;
+    try {
+      return editorRef.current.action((ctx) => ctx.get(editorViewCtx));
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Handle tag selection
+  const handleTagSelect = useCallback((tagName: string) => {
+    const view = getProseMirrorView();
+    if (!view) return;
+    
+    const { state } = view;
+    const { from } = state.selection;
+    const textBeforeCursor = state.doc.textBetween(0, from, '\n', '\n');
+    const hashtagMatch = textBeforeCursor.match(/#([\w.-]*)$/);
+    
+    if (hashtagMatch) {
+      const insertFrom = from - hashtagMatch[0].length;
+      const tr = state.tr.insertText(`#${tagName} `, insertFrom, from);
+      view.dispatch(tr);
+      
+      // Extract and notify of tag changes
+      const fullText = state.doc.textContent;
+      const tags = extractHashtags(fullText);
+      onTagsChange?.(tags);
+    }
+    
+    setHashtagDropdown((prev) => ({ ...prev, show: false }));
+  }, [getProseMirrorView, onTagsChange]);
+
+  // Handle creating new tag
+  const handleCreateTag = useCallback(async (tagName: string) => {
+    try {
+      const { tagsAPI } = await import('../api/client');
+      await tagsAPI.create({ name: tagName });
+      handleTagSelect(tagName);
+    } catch (err) {
+      console.error('Failed to create tag:', err);
+    }
+  }, [handleTagSelect]);
+
+  // Close dropdown
+  const handleCloseDropdown = useCallback(() => {
+    setHashtagDropdown((prev) => ({ ...prev, show: false }));
+  }, []);
+
+  // Detect hashtag while typing
+  const detectHashtag = useCallback(() => {
+    const view = getProseMirrorView();
+    if (!view) return;
+    
+    const { state } = view;
+    const { from } = state.selection;
+    const textBeforeCursor = state.doc.textBetween(0, from, '\n', '\n');
+    const hashtagMatch = textBeforeCursor.match(/#([\w.-]*)$/);
+    
+    if (hashtagMatch) {
+      const query = hashtagMatch[1];
+      const pos = view.coordsAtPos(from);
+      const editorRect = view.dom.getBoundingClientRect();
+      
+      setHashtagDropdown({
+        show: true,
+        query,
+        position: {
+          top: pos.bottom - editorRect.top + 4,
+          left: pos.left - editorRect.left,
+        },
+      });
+    } else {
+      setHashtagDropdown((prev) => ({ ...prev, show: false }));
+    }
+  }, [getProseMirrorView]);
 
   // Initialize editor
   useEffect(() => {
@@ -158,58 +261,62 @@ export function MilkdownEditor({ initialContent, onChange, onEditorReady }: Milk
 
     const initEditor = async () => {
       try {
-        // Create editor with Milkdown v7 API
+        // Create the Milkdown editor with minimal plugins
         editorInstance = await Editor.make()
           .config((ctx) => {
-            // Set root element
             ctx.set(rootCtx, containerRef.current!);
-            // Set initial content
-            // Try to clean up BlockNote format if present
-            let cleanContent = initialContent;
             if (initialContent.trim()) {
-              // BlockNote stores as JSON blocks, try to convert to markdown
-              // If it looks like JSON, treat as plain text
-              try {
-                if (initialContent.trim().startsWith('[') || initialContent.trim().startsWith('{')) {
-                  // Likely BlockNote format - leave as-is for now
-                  // The editor will handle it
-                }
-              } catch {
-                // Not JSON, use as-is
-              }
-              ctx.set(defaultValueCtx, cleanContent);
+              ctx.set(defaultValueCtx, initialContent);
             }
           })
-          .use(Crepe)
+          .use(commonmark)
           .use(listener)
+          .use(history)
+          .use(cursor)
           .create();
 
         if (!isMounted || !editorInstance) return;
 
         editorRef.current = editorInstance;
         setIsReady(true);
+        contentLoaded.current = true;
 
         // Expose editor to parent for EditorSearch integration
         onEditorReady?.({
-          view: editorInstance,
+          _editor: editorInstance,
+          _getProseMirrorView: getProseMirrorView,
           getJSON: () => {
             try {
-              return editorInstance!.action((ctx) => ctx.get('markdown'));
+              const view = getProseMirrorView();
+              return view ? view.state.doc.toJSON() : {};
             } catch {
               return {};
             }
           },
         });
 
-        // Listen for changes using the listener plugin
+        // Set up listener for content changes
         editorInstance.action((ctx) => {
-          const listenerMgr = ctx.get(listenerCtx);
-          listenerMgr.markdownUpdated((ctx, markdown) => {
-            onChange(markdown);
+          const listenerManager = ctx.get(listenerCtx);
+          listenerManager.markdownUpdated((_c, markdown) => {
+            if (isMounted) {
+              onChange(markdown);
+              
+              // Extract tags from content
+              const tags = extractHashtags(markdown);
+              onTagsChange?.(tags);
+            }
           });
         });
 
-        contentLoaded.current = true;
+        // Add keydown listener for hashtag detection
+        const view = getProseMirrorView();
+        if (view) {
+          view.dom.addEventListener('keydown', () => {
+            setTimeout(detectHashtag, 0);
+          });
+        }
+
       } catch (err) {
         console.error('Failed to initialize Milkdown editor:', err);
         if (isMounted) {
@@ -225,56 +332,26 @@ export function MilkdownEditor({ initialContent, onChange, onEditorReady }: Milk
       if (editorInstance) {
         try {
           editorInstance.destroy();
-        } catch (e) {
+        } catch {
           // Ignore cleanup errors
         }
       }
     };
-  }, []);
-
-  // Handle content changes via onChange callback
-  useEffect(() => {
-    if (!editorRef.current || !contentLoaded.current) return;
-
-    let mounted = true;
-
-    const handleChange = () => {
-      if (!mounted || !editorRef.current) return;
-      try {
-        const markdown = editorRef.current.action((ctx) => {
-          try {
-            return ctx.get(listenerCtx);
-          } catch {
-            return '';
-          }
-        });
-        // Only call onChange if we got a valid markdown
-        if (typeof markdown === 'string' && markdown) {
-          onChange(markdown);
-        }
-      } catch (e) {
-        // Ignore errors
-      }
-    };
-
-    const timeoutId = setTimeout(handleChange, 100);
-
-    return () => {
-      mounted = false;
-      clearTimeout(timeoutId);
-    };
-  }, [initialContent, onChange]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error) {
     return (
       <div className="milkdown-editor-error p-4 bg-red-900/20 rounded-lg border border-red-800">
         <p className="text-red-400">{error}</p>
+        <p className="text-sm text-red-400/70 mt-2">
+          Please refresh the page to try again.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="milkdown-editor">
+    <div className="milkdown-editor relative">
       <style>{editorStyles}</style>
       <div
         ref={containerRef}
@@ -288,6 +365,17 @@ export function MilkdownEditor({ initialContent, onChange, onEditorReady }: Milk
         <div className="absolute inset-0 flex items-center justify-center bg-[#191919]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
         </div>
+      )}
+      
+      {/* Hashtag Dropdown */}
+      {hashtagDropdown.show && (
+        <HashtagDropdown
+          position={hashtagDropdown.position}
+          query={hashtagDropdown.query}
+          onSelect={handleTagSelect}
+          onClose={handleCloseDropdown}
+          onCreateTag={handleCreateTag}
+        />
       )}
     </div>
   );

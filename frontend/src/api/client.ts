@@ -1,4 +1,4 @@
-import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse } from '../types';
+import type { Folder, FolderWithNotes, Note, Tag, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse } from '../types';
 
 // API Base URL - Uses environment variable or localhost:8787 for development
 const isDev = import.meta.env.DEV;
@@ -72,6 +72,39 @@ export const notesAPI = {
     body: JSON.stringify(data),
   }).then(r => r.data),
   delete: (id: number) => fetchAPI<{ success: boolean }>(`/notes/${id}`, {
+    method: 'DELETE',
+  }),
+  getByTag: (tagName: string, options?: { signal?: AbortSignal }) =>
+    fetchAPI<{ tag: Tag; notes: Note[] }>(`/tags/${encodeURIComponent(tagName)}`, options),
+};
+
+export const tagsAPI = {
+  getAll: () => fetchAPI<{ tags: Tag[] }>('/tags').then(r => r.tags),
+  getPinned: () => fetchAPI<{ tags: Tag[] }>('/tags/pinned').then(r => r.tags),
+  getRecent: () => fetchAPI<{ tags: Tag[] }>('/tags/recent').then(r => r.tags),
+  search: (query: string) => fetchAPI<{ tags: Tag[] }>(`/tags/search?q=${encodeURIComponent(query)}`).then(r => r.tags),
+  getByName: (name: string) => fetchAPI<{ tag: Tag; notes: Note[] }>(`/tags/${encodeURIComponent(name)}`),
+  create: (data: { name: string; color?: string; icon?: string }) => 
+    fetchAPI<{ success: boolean; id: number }>('/tags', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  update: (id: number, data: { pinned?: number; name?: string; color?: string; pin_order?: number }) => 
+    fetchAPI<{ success: boolean }>(`/tags/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  rename: (id: number, name: string) =>
+    fetchAPI<{ success: boolean; updated_notes: number }>(`/tags/${id}/rename`, {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
+    }),
+  reorderPinned: (tagIds: number[]) =>
+    fetchAPI<{ success: boolean }>('/tags/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ tagIds }),
+    }),
+  delete: (id: number) => fetchAPI<{ success: boolean }>(`/tags/${id}`, {
     method: 'DELETE',
   }),
 };

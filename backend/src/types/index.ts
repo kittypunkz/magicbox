@@ -8,6 +8,20 @@ export interface Folder {
   updated_at: string;
 }
 
+export interface Tag {
+  id: number;
+  name: string;
+  color: string;
+  icon: string | null;
+  pinned: number;  // 0 or 1 (SQLite boolean)
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TagWithCount extends Tag {
+  note_count: number;
+}
+
 export interface Note {
   id: number;
   folder_id: number;
@@ -16,6 +30,8 @@ export interface Note {
   bookmark_url: string | null;
   bookmark_title: string | null;
   is_pinned: number;  // 0 or 1 (SQLite boolean)
+  tags: string;       // JSON array string of tag names
+  legacy_folder_id: number | null;  // backup for rollback
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +46,7 @@ export interface CreateFolderRequest {
 
 export interface CreateNoteRequest {
   folder_id: number;
+  tags?: string[];
   title: string;
   content?: string;
   bookmark_url?: string;
@@ -41,6 +58,7 @@ export interface UpdateNoteRequest {
   folder_id?: number;
   is_pinned?: boolean;
   bookmark_url?: string | null;
+  tags?: string[];
 }
 
 export interface SearchResult {

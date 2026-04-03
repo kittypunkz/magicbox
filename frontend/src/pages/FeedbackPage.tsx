@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Star, Send, MessageSquare } from 'lucide-react';
 import { feedbackAPI } from '../api/client';
-import type { FeedbackItem } from '../api/client';
 
 const c = {
   bg: 'bg-[#191919]',
@@ -51,35 +50,6 @@ function StarRating({
   );
 }
 
-// Feedback item component (for admin view)
-function FeedbackCard({ feedback }: { feedback: FeedbackItem }) {
-  const date = new Date(feedback.created_at).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  return (
-    <div className={`${c.input} border ${c.border} rounded-xl p-4`}>
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${c.text}`}>
-            {feedback.username || 'User'}
-          </span>
-          <StarRating rating={feedback.rating} readonly />
-        </div>
-        <span className={`text-xs ${c.gray}`}>{date}</span>
-      </div>
-      {feedback.comment && (
-        <p className={`text-sm ${c.text} whitespace-pre-wrap`}>
-          {feedback.comment}
-        </p>
-      )}
-    </div>
-  );
-}
 
 export function FeedbackPage() {
   const [rating, setRating] = useState(0);

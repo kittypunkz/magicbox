@@ -1,3 +1,9 @@
+/**
+ * @deprecated DEPRECATED (MGB-005): CentralInput has been removed as part of the
+ * Homepage Redesign. The homepage now uses a Bear-style note list with a floating
+ * "New Note" button. This file is retained for reference only — do not import or use.
+ */
+
 import { useState, useRef, useEffect } from 'react';
 import { Hash, CornerDownLeft, X } from 'lucide-react';
 import type { Folder } from '../types';

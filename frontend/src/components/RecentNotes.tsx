@@ -26,6 +26,7 @@ interface RecentNote {
   bookmark_url?: string | null;
   bookmark_title?: string | null;
   is_pinned?: number;
+  tags?: string[];
   viewedAt: string;
 }
 
@@ -59,6 +60,7 @@ export function RecentNotes({ onSelectNote }: RecentNotesProps) {
       bookmark_url: recentNote.bookmark_url ?? null,
       bookmark_title: recentNote.bookmark_title ?? null,
       is_pinned: recentNote.is_pinned ?? 0,
+      tags: recentNote.tags ?? [],
       created_at: recentNote.viewedAt,
       updated_at: recentNote.viewedAt,
     };

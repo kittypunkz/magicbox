@@ -1,6 +1,6 @@
 -- MagicBox Database Schema
--- Complete schema as of v1.4.0 (all migrations applied)
--- This file represents the current state of D1 after migrations 0001-0005
+-- Complete schema as of v1.5.0 (all migrations applied)
+-- This file represents the current state of D1 after migrations 0001-0007
 
 -- Folders table
 CREATE TABLE IF NOT EXISTS folders (
@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS notes (
     is_pinned INTEGER DEFAULT 0,           -- 0 = not pinned, 1 = pinned (migration 0003)
     bookmark_url TEXT DEFAULT NULL,         -- NULL = regular note (migration 0004)
     bookmark_title TEXT DEFAULT NULL,       -- fetched website title (migration 0005)
+    tags TEXT DEFAULT '[]',                 -- JSON array of tag names (migration 0007)
+    legacy_folder_id INTEGER,              -- backup for rollback (migration 0007)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (folder_id) REFERENCES folders(id) ON DELETE CASCADE
@@ -60,11 +62,26 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Tags table (migration 0007, 0008)
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    color TEXT DEFAULT '#3b82f6',
+    icon TEXT DEFAULT NULL,
+    pinned INTEGER DEFAULT 0,
+    pin_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_notes_is_pinned ON notes(is_pinned DESC);
 CREATE INDEX IF NOT EXISTS idx_notes_folder_pin_updated ON notes(folder_id, is_pinned DESC, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notes_bookmark ON notes(bookmark_url) WHERE bookmark_url IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
+CREATE INDEX IF NOT EXISTS idx_tags_pinned ON tags(pinned DESC, pin_order ASC, name ASC);
+CREATE INDEX IF NOT EXISTS idx_tags_pin_order ON tags(pinned DESC, pin_order ASC);
 
 -- Triggers to keep FTS index in sync
 CREATE TRIGGER IF NOT EXISTS notes_ai AFTER INSERT ON notes BEGIN

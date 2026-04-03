@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search, Download, Folder as FolderIcon } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search, Download, Folder as FolderIcon, Hash } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
@@ -8,6 +8,7 @@ import { MilkdownEditor } from './MilkdownEditor';
 import { EditorSearch } from './EditorSearch';
 import { MoveToFolderModal } from './MoveToFolderModal';
 import { exportNoteAsMarkdown } from '../utils/exportImport';
+import { useNavigate } from 'react-router-dom';
 import type { Note } from '../types';
 
 // Dark mode colors - Obsidian style
@@ -33,10 +34,12 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const { note, loading, error, updateNote } = useNote(noteId);
   const { folders } = useFolders();
   const { addRecentNote } = useRecentNotes();
+  const navigate = useNavigate();
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [folderId, setFolderId] = useState<number>(1);
+  const [tags, setTags] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showFolderMenu, setShowFolderMenu] = useState(false);
@@ -67,6 +70,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
       setContent(note.content || '');
       setFolderId(note.folder_id);
       setIsPinned(note.is_pinned === 1);
+      setTags(note.tags || []);
       addRecentNote(note);
     }
   }, [note, addRecentNote]);
@@ -75,11 +79,12 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const save = useCallback(async () => {
     if (!note) return;
     
-    const updates: { title?: string; content?: string; folder_id?: number; is_pinned?: boolean } = {};
+    const updates: { title?: string; content?: string; folder_id?: number; is_pinned?: boolean; tags?: string[] } = {};
     if (title !== note.title) updates.title = title;
     if (content !== note.content) updates.content = content;
     if (folderId !== note.folder_id) updates.folder_id = folderId;
     if (isPinned !== (note.is_pinned === 1)) updates.is_pinned = isPinned;
+    if (JSON.stringify(tags) !== JSON.stringify(note.tags || [])) updates.tags = tags;
     
     if (Object.keys(updates).length === 0) return;
     
@@ -90,7 +95,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
     if (updated) {
       onUpdate?.(updated);
     }
-  }, [note, title, content, folderId, isPinned, updateNote, onUpdate]);
+  }, [note, title, content, folderId, isPinned, tags, updateNote, onUpdate]);
 
   // Debounced auto-save
   useEffect(() => {
@@ -111,6 +116,16 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
 
   // Get folder name
   const currentFolder = folders.find((f) => f.id === folderId);
+
+  // Handle tags change from editor
+  const handleTagsChange = useCallback((newTags: string[]) => {
+    setTags(newTags);
+  }, []);
+
+  // Handle tag click
+  const handleTagClick = useCallback((tagName: string) => {
+    navigate(`/tags/${tagName}`);
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -314,8 +329,24 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Note title"
-            className={`noteeditor-title w-full text-4xl font-bold bg-transparent outline-none ${c.placeholder} ${c.text} mb-6`}
+            className={`noteeditor-title w-full text-4xl font-bold bg-transparent outline-none ${c.placeholder} ${c.text} mb-4`}
           />
+          
+          {/* Tags Display */}
+          {tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              <Hash size={14} className={c.gray} />
+              {tags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => handleTagClick(tag)}
+                  className="inline-flex items-center gap-0.5 px-2 py-0.5 text-sm bg-blue-500/20 text-blue-400 rounded-full hover:bg-blue-500/30 transition-colors"
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          )}
           
           {/* Bookmark View or Content Textarea */}
           {note?.bookmark_url ? (
@@ -367,6 +398,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                 initialContent={content}
                 onChange={setContent}
                 onEditorReady={setBlockNoteEditor}
+                onTagsChange={handleTagsChange}
               />
             </>
           )}

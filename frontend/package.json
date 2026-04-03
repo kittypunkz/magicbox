@@ -14,14 +14,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@blocknote/core": "^0.47.2",
-    "@blocknote/mantine": "^0.47.2",
-    "@blocknote/react": "^0.47.2",
     "@milkdown/core": "^7.5.2",
-    "@milkdown/crepe": "^7.5.2",
     "@milkdown/preset-commonmark": "^7.5.2",
-    "@milkdown/theme-nord": "^7.5.2",
-    "@milkdown/plugin-emoji": "^7.5.2",
+    "@milkdown/plugin-history": "^7.5.2",
+    "@milkdown/plugin-cursor": "^7.5.2",
     "@milkdown/plugin-listener": "^7.5.2",
     "@passwordless-id/webauthn": "^2.3.5",
     "clsx": "^2.1.1",

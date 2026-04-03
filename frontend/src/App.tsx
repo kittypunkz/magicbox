@@ -13,6 +13,7 @@ import { FeedbackPage } from './pages/FeedbackPage';
 import { TagPage } from './pages/TagPage';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
+import { useTags } from './hooks/useTags';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import type { Note, Folder } from './types';
 import { useMinLoading } from './hooks/useMinLoading';
@@ -214,8 +215,9 @@ function AppContent() {
 
   const { notes, deleteNote, createNote, refetch: refetchNotes, loading: notesLoading } = useNotes();
   const { folders, createFolder, updateFolder, deleteFolder, loading: foldersLoading } = useFolders();
+  const { pinnedTags, recentTags, tags: allTags, loading: tagsLoading, togglePin, renameTag, deleteTag, reorderPinned } = useTags();
 
-  const loading = notesLoading || foldersLoading;
+  const loading = notesLoading || foldersLoading || tagsLoading;
   const showLoading = useMinLoading(loading);
 
   // Check mobile
@@ -301,7 +303,8 @@ function AppContent() {
     setSelectedFolderId(null);
     setSelectedNoteId(null);
     navigate(`/tags/${tagName}`, { replace: true });
-  }, [navigate]);
+    if (isMobile) setSidebarOpen(false);
+  }, [navigate, isMobile]);
 
   const showFolder = useCallback((folderId: number) => {
     setView('folder');
@@ -401,8 +404,12 @@ function AppContent() {
         <Sidebar
           folders={folders}
           recentNotes={notes.slice(0, 5)}
+          pinnedTags={pinnedTags}
+          recentTags={recentTags}
+          allTags={allTags}
           onFolderClick={showFolder}
           onNoteClick={handleNoteClick}
+          onTagClick={showTag}
           onCreateNote={handleCreateNote}
           onCreateFolder={handleCreateFolder}
           onFolderEdit={handleFolderEdit}
@@ -410,9 +417,14 @@ function AppContent() {
           editingFolder={editingFolder}
           onFolderUpdate={handleFolderUpdate}
           onCancelEdit={() => setEditingFolder(null)}
+          onTagPin={togglePin}
+          onTagRename={renameTag}
+          onTagDelete={deleteTag}
+          onTagsReorder={reorderPinned}
           loading={showLoading}
           currentView={view}
           selectedFolderId={selectedFolderId}
+          selectedTagName={tagName}
           onCloseMobile={() => setSidebarOpen(false)}
           isMobile={isMobile}
           onSettingsClick={showSettings}
@@ -504,6 +516,7 @@ function AppContent() {
               onCreateNote={() => {
                 setIsCreateModalOpen(true);
               }}
+              onTagClick={showTag}
             />
           )}
 

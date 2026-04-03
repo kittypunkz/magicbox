@@ -29,9 +29,20 @@ export interface Note {
   bookmark_url: string | null;
   bookmark_title: string | null;
   is_pinned: number;
+  tags: string[];
   created_at: string;
   updated_at: string;
   folder_name?: string;
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  color: string;
+  icon: string | null;
+  pinned: number;
+  pin_order: number;
+  note_count?: number;
 }
 
 export interface CreateFolderRequest {
@@ -43,14 +54,16 @@ export interface CreateNoteRequest {
   title: string;
   content?: string;
   bookmark_url?: string;
+  tags?: string[];
 }
 
 export interface UpdateNoteRequest {
   title?: string;
   content?: string;
   folder_id?: number;
-  is_pinned?: boolean;  // NEW
+  is_pinned?: boolean;
   bookmark_url?: string | null;
+  tags?: string[];
 }
 
 export interface SearchResult {

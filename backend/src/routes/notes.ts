@@ -9,8 +9,8 @@ const notes = new Hono<{ Bindings: Env; Variables: { user: UserContext } }>();
 // Apply auth to all note routes
 notes.use('/*', authMiddleware);
 
-// Whitelist of updateable columns
-const UPDATEABLE_COLUMNS = ['title', 'content', 'folder_id', 'is_pinned', 'bookmark_url', 'bookmark_title'] as const;
+// Whitelist of updateable columns (includes tags)
+const UPDATEABLE_COLUMNS = ['title', 'content', 'folder_id', 'tags', 'is_pinned', 'bookmark_url', 'bookmark_title'] as const;
 
 /**
  * Fetch the title of a webpage from its URL.
@@ -49,12 +49,29 @@ async function fetchWebsiteTitle(url: string): Promise<string | null> {
   }
 }
 
+/**
+ * Convert folder_id to tags array for backward compatibility
+ * Used when folder_id is provided without tags
+ */
+async function folderIdToTags(db: D1Database, folderId: number): Promise<string> {
+  const folder = await db.prepare('SELECT name FROM folders WHERE id = ?1')
+    .bind(folderId)
+    .first<{ name: string }>();
+  
+  if (folder) {
+    return JSON.stringify([folder.name]);
+  }
+  return '[]';
+}
+
 // Get all notes with pagination
+// Backward compat: supports both ?folder_id=X and ?tag=folderName
 notes.get('/', async (c) => {
   const queryData = {
     page: c.req.query('page'),
     limit: c.req.query('limit'),
     folder_id: c.req.query('folder_id'),
+    tag: c.req.query('tag'),
   };
   
   const parsed = NoteQuerySchema.safeParse(queryData);
@@ -62,17 +79,32 @@ notes.get('/', async (c) => {
     return c.json({ success: false, error: 'Validation error', details: parsed.error.errors }, 400);
   }
   
-  const { page, limit, folder_id } = parsed.data;
+  const { page, limit, folder_id, tag } = parsed.data;
   const db = c.env.DB;
   const offset = (page - 1) * limit;
   
   // Build query dynamically but safely
   let whereClause = '';
   const bindings: (number | string)[] = [];
+  let paramIndex = 1;
   
+  // Backward compat: ?folder_id=X maps to tag filter
   if (folder_id) {
-    whereClause = 'WHERE n.folder_id = ?1';
-    bindings.push(folder_id);
+    // Get folder name first
+    const folder = await db.prepare('SELECT name FROM folders WHERE id = ?1')
+      .bind(folder_id)
+      .first<{ name: string }>();
+    
+    if (folder) {
+      whereClause = `WHERE json_extract(n.tags, '$') LIKE ?${paramIndex}`;
+      bindings.push(`%"${folder.name}"%`);
+      paramIndex++;
+    }
+  } else if (tag) {
+    // Filter by tag name
+    whereClause = `WHERE json_extract(n.tags, '$') LIKE ?${paramIndex}`;
+    bindings.push(`%"${tag}"%`);
+    paramIndex++;
   }
   
   // Get data and count in parallel
@@ -82,7 +114,7 @@ notes.get('/', async (c) => {
     JOIN folders f ON n.folder_id = f.id
     ${whereClause}
     ORDER BY COALESCE(n.is_pinned, 0) DESC, n.updated_at DESC
-    LIMIT ?${bindings.length + 1} OFFSET ?${bindings.length + 2}
+    LIMIT ?${paramIndex} OFFSET ?${paramIndex + 1}
   `;
   
   const countQuery = `SELECT COUNT(*) as total FROM notes n ${whereClause}`;
@@ -143,15 +175,48 @@ notes.post('/', async (c) => {
   const data = parsed.data;
   const db = c.env.DB;
   
+  // Backward compat: if tags provided but no folder_id, use first tag to find folder
+  let folderId = data.folder_id;
+  let tagsJson = '[]';
+  
+  if (data.tags && data.tags.length > 0) {
+    tagsJson = JSON.stringify(data.tags);
+    
+    // Auto-create folder from first tag if needed (backward compat)
+    if (!folderId) {
+      const firstTag = data.tags[0];
+      let folder = await db.prepare('SELECT id FROM folders WHERE name = ?1')
+        .bind(firstTag)
+        .first<{ id: number }>();
+      
+      if (!folder) {
+        // Create folder for backward compat
+        const result = await db.prepare('INSERT INTO folders (name) VALUES (?1) RETURNING id')
+          .bind(firstTag)
+          .first<{ id: number }>();
+        folderId = result?.id;
+      } else {
+        folderId = folder.id;
+      }
+    }
+  } else if (folderId) {
+    // Convert folder_id to tags for backward compat
+    tagsJson = await folderIdToTags(db, folderId);
+  } else {
+    // Default to folder 1 (Inbox)
+    folderId = 1;
+    tagsJson = JSON.stringify(['Inbox']);
+  }
+  
   // Verify folder exists
   const folder = await db.prepare('SELECT id FROM folders WHERE id = ?1')
-    .bind(data.folder_id)
+    .bind(folderId)
     .first();
   
   if (!folder) {
     return c.json({ success: false, error: 'Folder not found' }, 404);
   }
-  
+
   // Fetch website title if it's a bookmark
   let bookmarkTitle: string | null = null;
   if (data.bookmark_url) {
@@ -162,13 +227,15 @@ notes.post('/', async (c) => {
   const noteTitle = bookmarkTitle || data.title;
 
   const result = await db.prepare(`
-    INSERT INTO notes (folder_id, title, content, bookmark_url, bookmark_title, created_at, updated_at) 
-    VALUES (?1, ?2, ?3, ?4, ?5, datetime('now'), datetime('now')) 
+    INSERT INTO notes (folder_id, title, content, tags, legacy_folder_id, bookmark_url, bookmark_title, created_at, updated_at) 
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, datetime('now'), datetime('now')) 
     RETURNING *
   `).bind(
-    data.folder_id,
+    folderId,
     noteTitle,
     data.bookmark_url ? '' : (data.content || ''),
+    tagsJson,
+    folderId,  // legacy_folder_id
     data.bookmark_url || null,
     bookmarkTitle
   ).first<Note>();
@@ -176,7 +243,7 @@ notes.post('/', async (c) => {
   return c.json({ success: true, data: result }, 201);
 });
 
-// Update note (TODO: Add authMiddleware when frontend has auth) - SQL INJECTION FIX
+// Update note - supports tags updates
 notes.patch('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   
@@ -210,8 +277,17 @@ notes.patch('/:id', async (c) => {
   const values: (string | number | null)[] = [];
   let paramIndex = 1;
   
-  // Only allow whitelisted columns
+  // Handle tags specially - convert array to JSON string
+  if (data.tags !== undefined) {
+    updates.push(`tags = ?${paramIndex}`);
+    values.push(JSON.stringify(data.tags));
+    paramIndex++;
+  }
+  
+  // Only allow whitelisted columns (excluding tags which we handled above)
   for (const col of UPDATEABLE_COLUMNS) {
+    if (col === 'tags') continue; // Already handled above
+    
     const colValue = data[col as keyof z.infer<typeof UpdateNoteSchema>];
     if (colValue !== undefined) {
       updates.push(`${col} = ?${paramIndex}`);
@@ -239,7 +315,7 @@ notes.patch('/:id', async (c) => {
   return c.json({ success: true, data: result });
 });
 
-// Delete note (TODO: Add authMiddleware when frontend has auth)
+// Delete note
 notes.delete('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   
