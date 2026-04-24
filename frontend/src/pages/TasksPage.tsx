@@ -3,6 +3,7 @@ import { Square, Trash2, Plus, Loader2, AlertCircle, RotateCcw, LayoutDashboard,
 import { useTasks } from '../hooks/useTasks';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { SummaryView } from '../components/SummaryView';
+import { formatDate, formatDateTime } from '../lib/dates';
 import type { Task } from '../types';
 
 const c = {
@@ -19,18 +20,6 @@ const COLUMNS: { status: Task['status']; label: string; color: string }[] = [
   { status: 'done',    label: 'Done',    color: 'text-green-400' },
 ];
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Bangkok',
-  });
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Bangkok',
-  });
-}
 
 function TaskCard({
   task,

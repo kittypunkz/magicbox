@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square, Pin, Download, Upload } from 'lucide-react';
+import { formatDate } from '../lib/dates';
 import ReactMarkdown from 'react-markdown';
 import { exportNotesAsMarkdown, importMarkdownFile } from '../utils/exportImport';
 import { useFolder, useFolders } from '../hooks/useFolders';
@@ -28,13 +29,6 @@ interface FolderPageProps {
   onCreateNote?: (title: string, content: string, folderId: number, bookmarkUrl?: string) => Promise<void> | void;
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
 
 export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCreateNote }: FolderPageProps) {
   const { folder, loading, error, refetch } = useFolder(folderId);

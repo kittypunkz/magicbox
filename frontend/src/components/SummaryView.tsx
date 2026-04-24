@@ -1,5 +1,6 @@
 import { Loader2, AlertCircle, CheckCircle2, Clock, Inbox } from 'lucide-react';
 import { useSummary } from '../hooks/useSummary';
+import { formatDate, formatDateTime } from '../lib/dates';
 import type { Task } from '../types';
 
 const c = {
@@ -14,18 +15,6 @@ const SECTIONS = [
   { key: 'backlog'   as const, label: 'Backlog',       icon: Inbox,        color: 'text-[#6b6b6b]', emptyMsg: 'Backlog is clear'             },
 ] as const;
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Bangkok',
-  });
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Bangkok',
-  });
-}
 
 function TaskRow({ task, showCompleted }: { task: Task; showCompleted: boolean }) {
   return (

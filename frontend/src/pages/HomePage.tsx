@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Sparkles, FileText, Trash2, Plus } from 'lucide-react';
+import { formatDate } from '../lib/dates';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useNotes } from '../hooks/useNotes';
 import { SkeletonNoteItem } from '../components/Skeleton';
@@ -181,7 +182,7 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
                     </p>
                   )}
                   <p className={`homepage-recent-card-date text-xs ${c.gray} mt-2`}>
-                    {new Date(note.updated_at).toLocaleDateString()}
+                    {formatDate(note.updated_at)}
                   </p>
                 </div>
               </div>

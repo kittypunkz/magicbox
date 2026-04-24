@@ -3,6 +3,7 @@ import { Pin, Loader2, Sparkles } from 'lucide-react';
 import { processAPI } from '../api/client';
 import { TaskConfirmModal } from './TaskConfirmModal';
 import { tasksAPI } from '../api/client';
+import { formatRelativeTime, formatDate } from '../lib/dates';
 import type { Note } from '../types';
 
 interface NoteCardProps {
@@ -85,13 +86,5 @@ export function NoteCard({ note, onClick }: NoteCardProps) {
 }
 
 function getRelativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
+  return formatRelativeTime(dateStr);
 }
