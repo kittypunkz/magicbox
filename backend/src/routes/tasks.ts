@@ -94,6 +94,28 @@ app.patch('/:id', async (c) => {
   return c.json({ task });
 });
 
+// GET /tasks/summary — today's snapshot (Bangkok UTC+7)
+app.get('/summary', async (c) => {
+  const db = c.env.DB as D1Database;
+
+  const [backlogRes, doingRes, doneRes] = await Promise.all([
+    db.prepare("SELECT * FROM tasks WHERE status = 'backlog' ORDER BY created_at DESC").all<Task>(),
+    db.prepare("SELECT * FROM tasks WHERE status = 'doing' ORDER BY created_at DESC").all<Task>(),
+    db.prepare(
+      "SELECT * FROM tasks WHERE status = 'done' AND date(completed_at, '+7 hours') = date('now', '+7 hours') ORDER BY completed_at DESC"
+    ).all<Task>(),
+  ]);
+
+  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  return c.json({
+    date: today,
+    backlog: backlogRes.results ?? [],
+    doing: doingRes.results ?? [],
+    done_today: doneRes.results ?? [],
+  });
+});
+
 // DELETE /tasks/:id
 app.delete('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));

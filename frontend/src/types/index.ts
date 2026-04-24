@@ -84,6 +84,13 @@ export interface Task {
   completed_at: string | null;
 }
 
+export interface TaskSummary {
+  date: string;
+  backlog: Task[];
+  doing: Task[];
+  done_today: Task[];
+}
+
 export interface OpenRouterModel {
   id: string;
   name: string;

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Square, Trash2, Plus, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
+import { Square, Trash2, Plus, Loader2, AlertCircle, RotateCcw, LayoutDashboard, List } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { SummaryView } from '../components/SummaryView';
 import type { Task } from '../types';
 
 const c = {
@@ -211,6 +212,7 @@ interface TasksPageProps {
 export function TasksPage({ onNoteClick }: TasksPageProps) {
   const { tasks, loading, error, createTask, moveTask, renameTask, deleteTask } = useTasks();
   const [overColumn, setOverColumn] = useState<Task['status'] | null>(null);
+  const [viewMode, setViewMode] = useState<'board' | 'summary'>('board');
 
   return (
     <div className={`h-full flex flex-col ${c.bg}`}>
@@ -220,7 +222,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
           <div className="w-10 h-10 bg-[#2a2a2a] rounded-xl flex items-center justify-center flex-shrink-0">
             <Square size={20} className={c.gray} />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className={`text-lg sm:text-xl font-bold ${c.text}`}>Tasks</h1>
             <p className={`text-xs ${c.gray}`}>
               {tasks.filter(t => t.status === 'backlog').length} backlog ·{' '}
@@ -228,21 +230,40 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
               {tasks.filter(t => t.status === 'done').length} done
             </p>
           </div>
+          {/* View toggle */}
+          <div className="flex items-center gap-1 bg-[#2a2a2a] rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('board')}
+              title="Board"
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'board' ? 'bg-[#3a3a3a] text-[#e6e6e6]' : c.gray + ' hover:text-[#e6e6e6]'}`}
+            >
+              <LayoutDashboard size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode('summary')}
+              title="Summary"
+              className={`p-1.5 rounded-md transition-colors ${viewMode === 'summary' ? 'bg-[#3a3a3a] text-[#e6e6e6]' : c.gray + ' hover:text-[#e6e6e6]'}`}
+            >
+              <List size={15} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {error && (
+      {viewMode === 'summary' && <SummaryView />}
+
+      {viewMode === 'board' && error && (
         <div className="flex-shrink-0 mx-4 sm:mx-8 mt-4 flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
           <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
 
-      {loading ? (
+      {viewMode === 'board' && loading ? (
         <div className="flex-1 flex items-center justify-center">
           <Loader2 size={24} className={`animate-spin ${c.gray}`} />
         </div>
-      ) : (
+      ) : viewMode === 'board' ? (
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <div className="flex gap-4 p-4 sm:p-6 h-full min-w-[600px]">
             {COLUMNS.map(col => {

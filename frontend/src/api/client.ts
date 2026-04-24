@@ -1,4 +1,4 @@
-import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse, Settings, OpenRouterModel, Task } from '../types';
+import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse, Settings, OpenRouterModel, Task, TaskSummary } from '../types';
 
 // API Base URL - Uses environment variable or localhost:8787 for development
 const isDev = import.meta.env.DEV;
@@ -103,6 +103,7 @@ export const processAPI = {
 };
 
 export const tasksAPI = {
+  getSummary: () => fetchAPI<TaskSummary>('/tasks/summary'),
   getAll: (status?: Task['status']) => {
     const query = status ? `?status=${status}` : '';
     return fetchAPI<{ tasks: Task[] }>(`/tasks${query}`).then(r => r.tasks);
