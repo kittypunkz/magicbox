@@ -17,14 +17,30 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.use('*', sessionAuthMiddleware);
 
+function extractJSON(text: string): string {
+  // Strip markdown code fences: ```json ... ``` or ``` ... ```
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) return fenced[1].trim();
+  // Extract first [...] array found in the text
+  const start = text.indexOf('[');
+  const end = text.lastIndexOf(']');
+  if (start !== -1 && end > start) return text.slice(start, end + 1);
+  return text.trim();
+}
+
 async function extractTasksFromNote(note: Note, apiKey: string, model: string): Promise<SuggestedTask[]> {
-  const prompt = `Extract actionable tasks from the following note. Return a JSON array of objects with a "title" field. Only include clear action items. If there are no tasks, return an empty array.
+  const prompt = `You are a task extraction assistant. Read the note below and extract every actionable task or to-do item.
+
+Rules:
+- Return a JSON array of objects, each with a "title" field (string)
+- A task is something that needs to be done: "call John", "fix the bug", "buy groceries"
+- Do NOT include general statements or facts as tasks
+- If there are no tasks, return an empty array: []
+- Return ONLY the JSON array, nothing else
 
 Note title: ${note.title}
 Note content:
-${note.content}
-
-Return only valid JSON, no markdown:`;
+${note.content}`;
 
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -35,7 +51,7 @@ Return only valid JSON, no markdown:`;
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
+      temperature: 0.2,
     }),
   });
 
@@ -44,12 +60,13 @@ Return only valid JSON, no markdown:`;
   }
 
   const data = await res.json<{ choices: [{ message: { content: string } }] }>();
-  const text = data.choices[0].message.content.trim();
+  const raw = data.choices[0].message.content;
+  const text = extractJSON(raw);
 
   try {
     const parsed = JSON.parse(text);
     if (Array.isArray(parsed)) {
-      return parsed.filter((t): t is SuggestedTask => typeof t?.title === 'string');
+      return parsed.filter((t): t is SuggestedTask => typeof t?.title === 'string' && t.title.trim().length > 0);
     }
     return [];
   } catch {
