@@ -3,6 +3,14 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import { useCallback, useRef } from "react";
 
+const theme = {
+  colors: {
+    editor: {
+      background: "#191919",
+    },
+  },
+};
+
 interface BlockNoteEditorProps {
   initialContent: string;
   onChange: (markdown: string) => void;
@@ -41,7 +49,7 @@ export function BlockNoteEditor({ initialContent, onChange, onEditorReady }: Blo
       <BlockNoteView
         editor={editor}
         onChange={handleChange}
-        theme="dark"
+        theme={theme}
         slashMenu={true}
       />
     </div>
