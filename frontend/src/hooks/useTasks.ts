@@ -35,10 +35,16 @@ export function useTasks(statusFilter?: 'pending' | 'done') {
     return updated;
   }, []);
 
+  const renameTask = useCallback(async (id: number, title: string) => {
+    const updated = await tasksAPI.update(id, { title });
+    setTasks(prev => prev.map(t => t.id === id ? updated : t));
+    return updated;
+  }, []);
+
   const deleteTask = useCallback(async (id: number) => {
     await tasksAPI.delete(id);
     setTasks(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  return { tasks, loading, error, createTask, toggleTask, deleteTask, refetch: load };
+  return { tasks, loading, error, createTask, toggleTask, renameTask, deleteTask, refetch: load };
 }

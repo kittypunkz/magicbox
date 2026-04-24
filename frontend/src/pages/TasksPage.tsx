@@ -15,14 +15,26 @@ function TaskItem({
   task,
   onToggle,
   onDelete,
+  onRename,
   onNoteClick,
 }: {
   task: Task;
   onToggle: () => void;
   onDelete: () => void;
+  onRename: (title: string) => void;
   onNoteClick?: (noteId: number) => void;
 }) {
   const isDone = task.status === 'done';
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(task.title);
+
+  const commit = () => {
+    setEditing(false);
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== task.title) onRename(trimmed);
+    else setDraft(task.title);
+  };
+
   return (
     <div className={`flex items-start gap-3 p-3 rounded-lg border ${c.border} bg-[#202020] group`}>
       <button
@@ -32,9 +44,26 @@ function TaskItem({
         {isDone ? <CheckSquare size={18} /> : <Square size={18} />}
       </button>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm ${isDone ? 'line-through text-[#4b4b4b]' : c.text}`}>
-          {task.title}
-        </p>
+        {editing ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commit();
+              if (e.key === 'Escape') { setDraft(task.title); setEditing(false); }
+            }}
+            className={`w-full text-sm bg-transparent border-b border-blue-500 outline-none ${c.text} pb-0.5`}
+          />
+        ) : (
+          <p
+            onClick={() => !isDone && setEditing(true)}
+            className={`text-sm ${isDone ? 'line-through text-[#4b4b4b]' : `${c.text} cursor-text hover:text-white`}`}
+          >
+            {task.title}
+          </p>
+        )}
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className={`text-xs ${c.gray}`}>
             {new Date(task.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -69,7 +98,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
   const [adding, setAdding] = useState(false);
 
   const statusFilter = filter === 'all' ? undefined : filter;
-  const { tasks, loading, error, createTask, toggleTask, deleteTask } = useTasks(statusFilter);
+  const { tasks, loading, error, createTask, toggleTask, renameTask, deleteTask } = useTasks(statusFilter);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,6 +190,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                 task={task}
                 onToggle={() => toggleTask(task.id, task.status)}
                 onDelete={() => deleteTask(task.id)}
+                onRename={title => renameTask(task.id, title)}
                 onNoteClick={onNoteClick}
               />
             ))}
