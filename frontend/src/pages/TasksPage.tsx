@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckSquare, Square, Trash2, Plus, Loader2, AlertCircle, ArrowRight, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Square, Trash2, Plus, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
 import { ConfirmModal } from '../components/ConfirmModal';
 import type { Task } from '../types';
@@ -13,7 +13,7 @@ const c = {
 };
 
 const COLUMNS: { status: Task['status']; label: string; color: string }[] = [
-  { status: 'backlog', label: 'Backlog',  color: 'text-[#6b6b6b]' },
+  { status: 'backlog', label: 'Backlog', color: 'text-[#6b6b6b]'  },
   { status: 'doing',   label: 'Doing',   color: 'text-blue-400'   },
   { status: 'done',    label: 'Done',    color: 'text-green-400'  },
 ];
@@ -37,16 +37,25 @@ function TaskCard({
   onDelete,
   onRename,
   onNoteClick,
+  onDragStart,
+  onDragEnd,
+  isDragging,
 }: {
   task: Task;
   onMove: (status: Task['status']) => void;
   onDelete: () => void;
   onRename: (title: string) => void;
   onNoteClick?: (noteId: number) => void;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
   const [confirmUndo, setConfirmUndo] = useState(false);
+
+  const isDone = task.status === 'done';
+  const draggable = !isDone;
 
   const commit = () => {
     setEditing(false);
@@ -57,7 +66,15 @@ function TaskCard({
 
   return (
     <>
-      <div className={`p-3 rounded-lg border ${c.border} bg-[#202020] group flex flex-col gap-2`}>
+      <div
+        draggable={draggable}
+        onDragStart={draggable ? (e) => { e.dataTransfer.effectAllowed = 'move'; onDragStart(); } : undefined}
+        onDragEnd={draggable ? onDragEnd : undefined}
+        className={`p-3 rounded-lg border bg-[#202020] group flex flex-col gap-2 transition-all
+          ${isDragging ? 'opacity-40 scale-95' : ''}
+          ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}
+          ${c.border}`}
+      >
         {/* Title */}
         {editing ? (
           <input
@@ -73,11 +90,9 @@ function TaskCard({
           />
         ) : (
           <p
-            onClick={() => task.status !== 'done' && setEditing(true)}
-            className={`text-sm leading-snug ${
-              task.status === 'done'
-                ? 'line-through text-[#4b4b4b]'
-                : `${c.text} cursor-text hover:text-white`
+            onClick={() => !isDone && setEditing(true)}
+            className={`text-sm leading-snug select-none ${
+              isDone ? 'text-[#888]' : `${c.text} hover:text-white`
             }`}
           >
             {task.title}
@@ -86,7 +101,7 @@ function TaskCard({
 
         {/* Date */}
         <p className={`text-xs ${c.gray}`}>
-          {task.status === 'done' && task.completed_at
+          {isDone && task.completed_at
             ? `Completed ${formatDateTime(task.completed_at)}`
             : `Created ${formatDate(task.created_at)}`}
         </p>
@@ -100,47 +115,18 @@ function TaskCard({
           </button>
         )}
 
-        {/* Actions row */}
+        {/* Actions */}
         <div className="flex items-center justify-between mt-1">
-          <div className="flex items-center gap-1">
-            {task.status === 'backlog' && (
-              <button
-                onClick={() => onMove('doing')}
-                title="Move to Doing"
-                className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${c.gray} hover:text-blue-400 hover:bg-[#2a2a2a] transition-colors`}
-              >
-                <ArrowRight size={12} /> Doing
-              </button>
-            )}
-            {task.status === 'doing' && (
-              <>
-                <button
-                  onClick={() => onMove('backlog')}
-                  title="Move to Backlog"
-                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${c.gray} hover:text-[#e6e6e6] hover:bg-[#2a2a2a] transition-colors`}
-                >
-                  <ArrowLeft size={12} /> Backlog
-                </button>
-                <button
-                  onClick={() => onMove('done')}
-                  title="Mark Done"
-                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${c.gray} hover:text-green-400 hover:bg-[#2a2a2a] transition-colors`}
-                >
-                  <CheckSquare size={12} /> Done
-                </button>
-              </>
-            )}
-            {task.status === 'done' && (
+          <div>
+            {isDone && (
               <button
                 onClick={() => setConfirmUndo(true)}
-                title="Move back to Doing"
                 className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${c.gray} hover:text-yellow-400 hover:bg-[#2a2a2a] transition-colors`}
               >
                 <RotateCcw size={12} /> Undo
               </button>
             )}
           </div>
-
           <button
             onClick={onDelete}
             className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-all ${c.gray} hover:text-red-400`}
@@ -227,9 +213,17 @@ interface TasksPageProps {
 
 export function TasksPage({ onNoteClick }: TasksPageProps) {
   const { tasks, loading, error, createTask, moveTask, renameTask, deleteTask } = useTasks();
+  const [draggedId, setDraggedId] = useState<number | null>(null);
+  const [overColumn, setOverColumn] = useState<Task['status'] | null>(null);
 
-  const handleAdd = async (title: string, status: Task['status']) => {
-    await createTask(title, status);
+  const handleDrop = (targetStatus: Task['status']) => {
+    if (draggedId === null) return;
+    const task = tasks.find(t => t.id === draggedId);
+    if (task && task.status !== targetStatus) {
+      moveTask(draggedId, targetStatus);
+    }
+    setDraggedId(null);
+    setOverColumn(null);
   };
 
   return (
@@ -269,8 +263,16 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
           <div className="flex gap-4 p-4 sm:p-6 h-full min-w-[600px]">
             {COLUMNS.map(col => {
               const colTasks = tasks.filter(t => t.status === col.status);
+              const isOver = overColumn === col.status && draggedId !== null;
+
               return (
-                <div key={col.status} className="flex-1 flex flex-col min-w-[200px] max-w-sm">
+                <div
+                  key={col.status}
+                  className="flex-1 flex flex-col min-w-[200px] max-w-sm"
+                  onDragOver={e => { e.preventDefault(); setOverColumn(col.status); }}
+                  onDragLeave={() => setOverColumn(null)}
+                  onDrop={() => handleDrop(col.status)}
+                >
                   {/* Column header */}
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <span className={`text-xs font-semibold uppercase tracking-wider ${col.color}`}>
@@ -281,8 +283,11 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                     </span>
                   </div>
 
-                  {/* Cards */}
-                  <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                  {/* Drop zone */}
+                  <div
+                    className={`flex-1 overflow-y-auto space-y-2 pr-1 rounded-xl transition-colors
+                      ${isOver ? 'bg-[#ffffff08] ring-1 ring-[#3f3f3f]' : ''}`}
+                  >
                     {colTasks.map(task => (
                       <TaskCard
                         key={task.id}
@@ -291,19 +296,22 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                         onDelete={() => deleteTask(task.id)}
                         onRename={title => renameTask(task.id, title)}
                         onNoteClick={onNoteClick}
+                        onDragStart={() => setDraggedId(task.id)}
+                        onDragEnd={() => { setDraggedId(null); setOverColumn(null); }}
+                        isDragging={draggedId === task.id}
                       />
                     ))}
 
                     {colTasks.length === 0 && (
                       <div className={`text-center py-8 text-xs ${c.gray} opacity-50`}>
-                        No tasks
+                        {isOver ? 'Drop here' : 'No tasks'}
                       </div>
                     )}
                   </div>
 
                   {/* Add task */}
                   <div className="mt-3">
-                    <AddTaskInput status={col.status} onAdd={handleAdd} />
+                    <AddTaskInput status={col.status} onAdd={async (title, status) => { await createTask(title, status); }} />
                   </div>
                 </div>
               );
