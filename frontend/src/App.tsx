@@ -122,6 +122,7 @@ function AppContent() {
 
   // View state
   const [view, setView] = useState<ViewType>('home');
+  const [previousView, setPreviousView] = useState<ViewType>('home');
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | undefined>(undefined);
@@ -265,10 +266,11 @@ function AppContent() {
   }, [updateURL]);
 
   const showNote = useCallback((noteId: number) => {
+    setPreviousView(view);
     setView('note');
     setSelectedNoteId(noteId);
     updateURL('note', selectedFolderId, noteId);
-  }, [selectedFolderId, updateURL]);
+  }, [view, selectedFolderId, updateURL]);
 
   const handleNoteClick = useCallback((note: Note) => {
     showNote(note.id);
@@ -323,10 +325,12 @@ function AppContent() {
   const handleBack = useCallback(() => {
     if (selectedFolderId) {
       showFolder(selectedFolderId);
+    } else if (previousView === 'bookmarks') {
+      showBookmarks();
     } else {
       showAllNotes();
     }
-  }, [selectedFolderId, showFolder, showAllNotes]);
+  }, [selectedFolderId, previousView, showFolder, showBookmarks, showAllNotes]);
 
   const getFolderName = useCallback((folderId: number | null) => {
     if (!folderId) return 'All Notes';
