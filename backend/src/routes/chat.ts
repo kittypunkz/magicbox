@@ -56,13 +56,13 @@ app.post('/', async (c) => {
     // FTS5 failed — will use recent notes fallback below
   }
 
-  // Always include the 3 most recently updated notes (deduplicated with FTS5 results)
+  // Always include the 3 most recently created notes (deduplicated with FTS5 results)
   try {
     const recentResult = await db.prepare(`
       SELECT n.id, n.title, n.content, f.name AS folder_name
       FROM notes n
       JOIN folders f ON n.folder_id = f.id
-      ORDER BY n.updated_at DESC
+      ORDER BY n.created_at DESC
       LIMIT 3
     `).all<NoteResult>();
     const existingIds = new Set(notes.map(n => n.id));
