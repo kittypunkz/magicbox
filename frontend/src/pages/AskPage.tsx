@@ -46,6 +46,10 @@ export function AskPage({ onNoteClick }: AskPageProps) {
 
     setInput('');
     setError(null);
+
+    // Build history from current messages (exclude sources metadata)
+    const history = messages.map(m => ({ role: m.role, content: m.content }));
+
     setMessages(prev => [...prev, { role: 'user', content: msg }]);
     setLoading(true);
     scrollToBottom();
@@ -55,7 +59,7 @@ export function AskPage({ onNoteClick }: AskPageProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ message: msg }),
+        body: JSON.stringify({ message: msg, history }),
       });
 
       const data = await res.json() as { content?: string; sources?: Source[]; error?: string };
@@ -85,10 +89,18 @@ export function AskPage({ onNoteClick }: AskPageProps) {
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#2a2a2a] rounded-xl flex items-center justify-center flex-shrink-0">
             <MessageSquare size={24} className={c.gray} />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className={`text-lg sm:text-2xl font-bold ${c.text}`}>Ask</h1>
             <p className={`text-xs sm:text-sm ${c.gray}`}>Chat with your notes</p>
           </div>
+          {messages.length > 0 && (
+            <button
+              onClick={() => setMessages([])}
+              className={`text-xs ${c.gray} hover:text-[#e6e6e6] px-3 py-1.5 border border-[#2f2f2f] rounded-lg transition-colors`}
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
