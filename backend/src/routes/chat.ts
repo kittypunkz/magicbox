@@ -50,11 +50,11 @@ app.post('/', async (c) => {
   ).join('\n\n---\n\n');
 
   const systemPrompt = context
-    ? `You are a helpful assistant with access to the user's notes. Answer using the relevant notes below. Cite notes as [Note ID].
+    ? `You are a search assistant for the user's personal notes. Answer ONLY using the notes provided below. Do not use any outside knowledge. If the notes don't contain enough information to answer, say so. Cite notes as [Note ID].
 
-Relevant notes:
+Notes:
 ${context}`
-    : 'You are a helpful assistant. Answer the user\'s question concisely.';
+    : 'You are a search assistant for the user\'s personal notes. No relevant notes were found for this query. Tell the user you couldn\'t find relevant notes and suggest they try different keywords.';
 
   const upstreamRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
