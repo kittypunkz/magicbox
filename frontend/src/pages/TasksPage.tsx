@@ -35,14 +35,19 @@ function TaskItem({
         <p className={`text-sm ${isDone ? 'line-through text-[#4b4b4b]' : c.text}`}>
           {task.title}
         </p>
-        {task.note_id && onNoteClick && (
-          <button
-            onClick={() => onNoteClick(task.note_id!)}
-            className="text-xs text-blue-400 hover:text-blue-300 mt-0.5 transition-colors"
-          >
-            View source note →
-          </button>
-        )}
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className={`text-xs ${c.gray}`}>
+            {new Date(task.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+          {task.note_id && onNoteClick && (
+            <button
+              onClick={() => onNoteClick(task.note_id!)}
+              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              View source note →
+            </button>
+          )}
+        </div>
       </div>
       <button
         onClick={onDelete}
