@@ -1,7 +1,7 @@
 {
   "name": "magicbox-frontend",
   "private": true,
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "scripts": {
     "dev": "cross-env VITE_API_URL=http://localhost:8787 vite",
@@ -17,6 +17,7 @@
     "@blocknote/core": "^0.47.2",
     "@blocknote/mantine": "^0.47.2",
     "@blocknote/react": "^0.47.2",
+    "@tailwindcss/typography": "^0.5.19",
     "clsx": "^2.1.1",
     "lucide-react": "^0.309.0",
     "react": "^18.2.0",
