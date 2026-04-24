@@ -3,7 +3,8 @@ import { Send, Loader2, MessageSquare, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+const isDev = import.meta.env.DEV;
+const API_BASE = import.meta.env.VITE_API_URL || (isDev ? 'http://localhost:8787' : '/api');
 
 const c = {
   bg: 'bg-[#191919]',

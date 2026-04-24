@@ -3,7 +3,8 @@ import { Settings, GitBranch, Calendar, Server, Info, Key, Bot, Loader2, CheckCi
 import { settingsAPI } from '../api/client';
 import type { OpenRouterModel } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+const isDev = import.meta.env.DEV;
+const API_BASE = import.meta.env.VITE_API_URL || (isDev ? 'http://localhost:8787' : '/api');
 
 const c = {
   bg: 'bg-[#191919]',
