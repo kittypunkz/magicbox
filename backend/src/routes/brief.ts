@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { sessionAuthMiddleware } from '../middleware/auth';
+import { getAIConfig } from '../lib/settings';
 
 interface Brief {
   id: number;
@@ -84,21 +85,13 @@ app.get('/', async (c) => {
   let brief = await db.prepare('SELECT * FROM daily_briefs WHERE date = ?').bind(today).first<Brief>();
 
   if (!brief) {
-    // Generate on-demand
-    const rows = await db.prepare(
-      "SELECT key, value FROM settings WHERE key IN ('openrouter_api_key', 'preferred_model')"
-    ).all<{ key: string; value: string }>();
-    const cfg: Record<string, string> = {};
-    for (const r of rows.results ?? []) cfg[r.key] = r.value;
-
-    if (!cfg.openrouter_api_key) {
-      return c.json({ error: 'OpenRouter API key not configured — set it in Settings' }, 400);
+    const aiCfg = await getAIConfig(c.env);
+    if (!aiCfg) {
+      return c.json({ error: 'OpenRouter API key not configured — set it in Settings or as a Worker secret' }, 400);
     }
 
-    const model = cfg.preferred_model || 'openai/gpt-4o-mini';
-
     try {
-      const content = await generateBrief(db, cfg.openrouter_api_key, model, today);
+      const content = await generateBrief(db, aiCfg.apiKey, aiCfg.model, today);
       brief = await db.prepare(
         'INSERT INTO daily_briefs (date, content) VALUES (?, ?) RETURNING *'
       ).bind(today, content).first<Brief>();

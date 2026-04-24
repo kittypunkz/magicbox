@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { streamText } from 'hono/streaming';
 import type { Env } from '../types';
 import { sessionAuthMiddleware } from '../middleware/auth';
+import { getAIConfig } from '../lib/settings';
 
 interface NoteResult {
   id: number;
@@ -23,18 +24,9 @@ app.post('/', async (c) => {
 
   const db = c.env.DB as D1Database;
 
-  // Load settings
-  const rows = await db.prepare(
-    "SELECT key, value FROM settings WHERE key IN ('openrouter_api_key', 'preferred_model')"
-  ).all<{ key: string; value: string }>();
-  const cfg: Record<string, string> = {};
-  for (const r of rows.results ?? []) cfg[r.key] = r.value;
-
-  if (!cfg.openrouter_api_key) {
-    return c.json({ error: 'OpenRouter API key not configured' }, 400);
-  }
-
-  const model = cfg.preferred_model || 'openai/gpt-4o-mini';
+  const aiCfg = await getAIConfig(c.env);
+  if (!aiCfg) return c.json({ error: 'OpenRouter API key not configured' }, 400);
+  const { apiKey, model } = aiCfg;
 
   // FTS5 retrieval — top 5 matching notes
   const q = `"${body.message.slice(0, 200).replace(/"/g, '""')}"`;
@@ -63,7 +55,7 @@ ${context}`
   const upstreamRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${cfg.openrouter_api_key}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

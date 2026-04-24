@@ -66,18 +66,13 @@ export default {
     const existing = await db.prepare('SELECT id FROM daily_briefs WHERE date = ?').bind(today).first();
     if (existing) return;
 
-    const rows = await db.prepare(
-      "SELECT key, value FROM settings WHERE key IN ('openrouter_api_key', 'preferred_model')"
-    ).all<{ key: string; value: string }>();
-    const cfg: Record<string, string> = {};
-    for (const r of rows.results ?? []) cfg[r.key] = r.value;
-
-    if (!cfg.openrouter_api_key) return;
-
-    const model = cfg.preferred_model || 'openai/gpt-4o-mini';
+    const { getAIConfig } = await import('./lib/settings');
+    const aiCfg = await getAIConfig(env);
+    if (!aiCfg) return;
+    const { model } = aiCfg;
 
     try {
-      const content = await generateBrief(db, cfg.openrouter_api_key, model, today);
+      const content = await generateBrief(db, aiCfg.apiKey, model, today);
       await db.prepare(
         'INSERT OR IGNORE INTO daily_briefs (date, content) VALUES (?, ?)'
       ).bind(today, content).run();

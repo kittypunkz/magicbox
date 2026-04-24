@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { sessionAuthMiddleware } from '../middleware/auth';
+import { getAIConfig } from '../lib/settings';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -40,17 +41,13 @@ app.put('/', async (c) => {
 
 // GET /settings/models — proxy OpenRouter model list
 app.get('/models', async (c) => {
-  const db = c.env.DB as D1Database;
-  const row = await db.prepare('SELECT value FROM settings WHERE key = ?')
-    .bind('openrouter_api_key')
-    .first<{ value: string }>();
-
-  if (!row?.value) {
+  const aiCfg = await getAIConfig(c.env);
+  if (!aiCfg) {
     return c.json({ error: 'OpenRouter API key not configured' }, 400);
   }
 
   const res = await fetch('https://openrouter.ai/api/v1/models', {
-    headers: { Authorization: `Bearer ${row.value}` },
+    headers: { Authorization: `Bearer ${aiCfg.apiKey}` },
   });
 
   if (!res.ok) {

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { sessionAuthMiddleware } from '../middleware/auth';
+import { getAIConfig } from '../lib/settings';
 
 interface Note {
   id: number;
@@ -56,20 +57,6 @@ Return only valid JSON, no markdown:`;
   }
 }
 
-async function getSettings(db: D1Database): Promise<{ apiKey: string; model: string } | null> {
-  const rows = await db.prepare(
-    "SELECT key, value FROM settings WHERE key IN ('openrouter_api_key', 'preferred_model')"
-  ).all<{ key: string; value: string }>();
-
-  const map: Record<string, string> = {};
-  for (const row of rows.results ?? []) map[row.key] = row.value;
-
-  if (!map.openrouter_api_key) return null;
-  return {
-    apiKey: map.openrouter_api_key,
-    model: map.preferred_model || 'openai/gpt-4o-mini',
-  };
-}
 
 // POST /process/notes/:id — extract tasks from a single note
 app.post('/notes/:id', async (c) => {
@@ -78,7 +65,7 @@ app.post('/notes/:id', async (c) => {
 
   const db = c.env.DB as D1Database;
 
-  const cfg = await getSettings(db);
+  const cfg = await getAIConfig(c.env);
   if (!cfg) return c.json({ error: 'OpenRouter API key not configured' }, 400);
 
   const note = await db.prepare(
@@ -95,7 +82,7 @@ app.post('/notes/:id', async (c) => {
 app.post('/recent', async (c) => {
   const db = c.env.DB as D1Database;
 
-  const cfg = await getSettings(db);
+  const cfg = await getAIConfig(c.env);
   if (!cfg) return c.json({ error: 'OpenRouter API key not configured' }, 400);
 
   const notes = await db.prepare(
