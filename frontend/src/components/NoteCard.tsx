@@ -3,7 +3,7 @@ import { Pin, Loader2, Sparkles } from 'lucide-react';
 import { processAPI } from '../api/client';
 import { TaskConfirmModal } from './TaskConfirmModal';
 import { tasksAPI } from '../api/client';
-import { formatRelativeTime, formatDate } from '../lib/dates';
+import { formatRelativeTime } from '../lib/dates';
 import type { Note } from '../types';
 
 interface NoteCardProps {
