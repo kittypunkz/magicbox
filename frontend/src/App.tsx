@@ -4,7 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { CreateNoteModal } from './components/CreateNoteModal';
 import { MobileNav } from './components/MobileNav';
 import { FolderPage } from './pages/FolderPage';
-import { NoteEditorPage } from './pages/NoteEditorPage';
+import { NoteEditor } from './components/NoteEditor';
 import { NotesPage } from './pages/NotesPage';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
@@ -468,7 +468,7 @@ function AppContent() {
           )}
 
           {view === 'note' && selectedNoteId && (
-            <NoteEditorPage
+            <NoteEditor
               noteId={selectedNoteId}
               onBack={handleBack}
               onDelete={(id) => {
