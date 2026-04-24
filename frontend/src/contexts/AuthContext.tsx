@@ -1,17 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { client } from '@passwordless-id/webauthn';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isSetup: boolean;
   isLoading: boolean;
-  login: () => Promise<void>;
-  setup: () => Promise<void>;
+  login: (password: string) => Promise<void>;
+  setup: (password: string) => Promise<void>;
   logout: () => Promise<void>;
-  addDevice: () => Promise<void>;
-  credentials: { id: string; created_at: string; last_used_at: string | null }[];
-  removeCredential: (id: string) => Promise<void>;
-  refreshCredentials: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -22,32 +17,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSetup, setIsSetup] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [credentials, setCredentials] = useState<{ id: string; created_at: string; last_used_at: string | null }[]>([]);
 
-  // Check auth status on mount
   useEffect(() => {
     checkStatus();
   }, []);
 
   const checkStatus = async () => {
-    // Test mode bypass
     if (import.meta.env.VITE_TEST_MODE === 'true') {
       setIsSetup(true);
       setIsAuthenticated(true);
+      setIsLoading(false);
       return;
     }
-    
+
     try {
-      const res = await fetch(`${API_URL}/auth/status`, {
-        credentials: 'include',
-      });
+      const res = await fetch(`${API_URL}/auth/status`, { credentials: 'include' });
       const data = await res.json();
       setIsSetup(data.isSetup);
       setIsAuthenticated(data.isAuthenticated);
-      
-      if (data.isAuthenticated) {
-        await fetchCredentials();
-      }
     } catch (error) {
       console.error('Auth check failed:', error);
     } finally {
@@ -55,163 +42,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const fetchCredentials = async () => {
-    try {
-      const res = await fetch(`${API_URL}/auth/credentials`, {
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCredentials(data.credentials);
-      }
-    } catch (error) {
-      console.error('Fetch credentials failed:', error);
+  const setup = async (password: string) => {
+    const res = await fetch(`${API_URL}/auth/setup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Setup failed');
     }
+
+    await checkStatus();
   };
 
-  const refreshCredentials = async () => {
-    if (isAuthenticated) {
-      await fetchCredentials();
+  const login = async (password: string) => {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Login failed');
     }
-  };
 
-  const setup = async () => {
-    try {
-      // Get challenge from server
-      const challengeRes = await fetch(`${API_URL}/auth/register/challenge`, {
-        credentials: 'include',
-      });
-      
-      if (!challengeRes.ok) {
-        throw new Error('Failed to get challenge');
-      }
-      
-      const { challenge } = await challengeRes.json();
-
-      // Register passkey - v2 API
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const registration = await (client as any).register({
-        user: 'owner',
-        challenge,
-        authenticatorType: 'both',
-        userVerification: 'required',
-        discoverable: 'required',
-      });
-
-      // Send to server
-      const res = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ registration, challenge }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Setup failed');
-      }
-
-      await checkStatus();
-    } catch (error) {
-      console.error('Setup error:', error);
-      throw error;
-    }
-  };
-
-  const login = async () => {
-    try {
-      // Get challenge from server
-      const challengeRes = await fetch(`${API_URL}/auth/login/challenge`, {
-        credentials: 'include',
-      });
-      
-      if (!challengeRes.ok) {
-        const error = await challengeRes.json();
-        throw new Error(error.error || 'Failed to get challenge');
-      }
-      
-      const { challenge } = await challengeRes.json();
-
-      // Authenticate with passkey - v2 API
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const authentication = await (client as any).authenticate({
-        challenge,
-        userVerification: 'required',
-      });
-
-      // Send to server
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ authentication, challenge }),
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Login failed');
-      }
-
-      await checkStatus();
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
+    await checkStatus();
   };
 
   const logout = async () => {
-    try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      setIsAuthenticated(false);
-      setCredentials([]);
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
-  const addDevice = async () => {
-    // Same as setup, but requires authentication (done automatically by server checking session)
-    await setup();
-    await fetchCredentials();
-  };
-
-  const removeCredential = async (id: string) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/credentials/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || 'Failed to remove credential');
-      }
-
-      await fetchCredentials();
-    } catch (error) {
-      console.error('Remove credential error:', error);
-      throw error;
-    }
+    await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+    setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        isAuthenticated,
-        isSetup,
-        isLoading,
-        login,
-        setup,
-        logout,
-        addDevice,
-        credentials,
-        removeCredential,
-        refreshCredentials,
-      }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated, isSetup, isLoading, login, setup, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -219,8 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }

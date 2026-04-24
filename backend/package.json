@@ -9,7 +9,6 @@
     "db:migrate": "wrangler d1 migrations apply magicbox-db"
   },
   "dependencies": {
-    "@passwordless-id/webauthn": "^2.3.5",
     "@tsndr/cloudflare-worker-jwt": "^2.5.3",
     "hono": "^3.12.0",
     "zod": "^3.22.3"

@@ -1,300 +1,173 @@
 import { Hono } from 'hono';
-import { server } from '@passwordless-id/webauthn';
-import type { Env, Credential } from '../types';
+import type { Env } from '../types';
 
 const app = new Hono<{ Bindings: Env }>();
 
 const SESSION_DURATION_DAYS = 7;
+const PBKDF2_ITERATIONS = 100_000;
 
-// Helper: Generate random session ID
 function generateSessionId(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Helper: Get session expiration date
 function getSessionExpiry(): string {
   const date = new Date();
   date.setDate(date.getDate() + SESSION_DURATION_DAYS);
   return date.toISOString();
 }
 
-// GET /auth/status - Check if setup is complete and session status
+function toHex(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function fromHex(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
+}
+
+async function hashPassword(password: string, saltHex?: string): Promise<{ hash: string; salt: string }> {
+  const salt = saltHex ? fromHex(saltHex) : crypto.getRandomValues(new Uint8Array(32));
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-256', salt, iterations: PBKDF2_ITERATIONS },
+    keyMaterial,
+    256
+  );
+  return { hash: toHex(bits), salt: toHex(salt.buffer) };
+}
+
+function sessionCookie(value: string, maxAge: number): string {
+  return `sessionId=${value}; HttpOnly; Secure; Domain=.bankapirak.com; SameSite=None; Max-Age=${maxAge}; Path=/`;
+}
+
+// GET /auth/status
 app.get('/status', async (c) => {
   const db = c.env.DB as D1Database;
-  
-  // Check if any credentials exist
-  const credentials = await db.prepare('SELECT COUNT(*) as count FROM credentials').first<{ count: number }>();
-  const isSetup = credentials && credentials.count > 0;
-  
-  // Check session cookie
+
+  const user = await db.prepare('SELECT password_hash FROM users WHERE id = 1').first<{ password_hash: string | null }>();
+  const isSetup = !!(user?.password_hash);
+
   const sessionId = c.req.header('Cookie')?.match(/sessionId=([^;]+)/)?.[1];
   let isAuthenticated = false;
-  
   if (sessionId) {
     const session = await db.prepare(
-      'SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")'
+      'SELECT id FROM sessions WHERE id = ? AND expires_at > datetime("now")'
     ).bind(sessionId).first();
     isAuthenticated = !!session;
   }
-  
+
   return c.json({ isSetup, isAuthenticated });
 });
 
-// GET /auth/register/challenge - Get registration challenge
-app.get('/register/challenge', async (c) => {
-  const challenge = server.randomChallenge();
-  
-  // Store challenge temporarily (5 minutes)
+// POST /auth/setup — first-run: create master password
+app.post('/setup', async (c) => {
   const db = c.env.DB as D1Database;
+
+  const user = await db.prepare('SELECT password_hash FROM users WHERE id = 1').first<{ password_hash: string | null }>();
+  if (user?.password_hash) {
+    return c.json({ error: 'Already set up' }, 400);
+  }
+
+  const body = await c.req.json<{ password: string }>();
+  if (!body.password || body.password.length < 8) {
+    return c.json({ error: 'Password must be at least 8 characters' }, 400);
+  }
+
+  const { hash, salt } = await hashPassword(body.password);
+
+  // Ensure the user row exists (created in migration 0002)
   await db.prepare(
-    'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, datetime("now", "+5 minutes"))'
-  ).bind(`challenge:${challenge}`).run();
-  
-  return c.json({ challenge });
+    'UPDATE users SET password_hash = ?, password_salt = ? WHERE id = 1'
+  ).bind(hash, salt).run();
+
+  const sessionId = generateSessionId();
+  await db.prepare(
+    'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, ?)'
+  ).bind(sessionId, getSessionExpiry()).run();
+
+  return c.json({ success: true }, 200, {
+    'Set-Cookie': sessionCookie(sessionId, SESSION_DURATION_DAYS * 24 * 60 * 60),
+  });
 });
 
-// POST /auth/register - Complete registration
-app.post('/register', async (c) => {
-  const body = await c.req.json();
-  const registration = body.registration;
-  const challenge = body.challenge;
-  
+// POST /auth/login
+app.post('/login', async (c) => {
   const db = c.env.DB as D1Database;
-  
-  // Verify challenge exists and is valid
-  const storedChallenge = await db.prepare(
-    'SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")'
-  ).bind(`challenge:${challenge}`).first();
-  
-  if (!storedChallenge) {
-    return c.json({ error: 'Invalid or expired challenge' }, 400);
-  }
-  
-  // Get origin from request
-  const origin = c.req.header('Origin') || '';
-  
-  try {
-    // Verify registration
-    const expected = {
-      challenge,
-      origin,
-    };
-    
-    const parsed = await server.verifyRegistration(registration, expected);
-    
-    // Store credential
-    await db.prepare(
-      `INSERT INTO credentials (id, user_id, public_key, algorithm, counter) 
-       VALUES (?, 1, ?, ?, 0)`
-    ).bind(
-      parsed.credential.id, 
-      parsed.credential.publicKey, 
-      parsed.credential.algorithm
-    ).run();
-    
-    // Clean up challenge
-    await db.prepare('DELETE FROM sessions WHERE id = ?').bind(`challenge:${challenge}`).run();
-    
-    // Create session
-    const sessionId = generateSessionId();
-    await db.prepare(
-      'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, ?)'
-    ).bind(sessionId, getSessionExpiry()).run();
-    
-    return c.json({ 
-      success: true,
-      credentialId: parsed.credential.id 
-    }, 200, {
-      'Set-Cookie': `sessionId=${sessionId}; HttpOnly; Secure; Domain=.bankapirak.com; SameSite=None; Max-Age=${SESSION_DURATION_DAYS * 24 * 60 * 60}; Path=/`
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    return c.json({ error: 'Registration failed' }, 400);
-  }
-});
 
-// GET /auth/login/challenge - Get authentication challenge
-app.get('/login/challenge', async (c) => {
-  const db = c.env.DB as D1Database;
-  
-  // Check if setup is complete
-  const credentials = await db.prepare('SELECT COUNT(*) as count FROM credentials').first<{ count: number }>();
-  if (!credentials || credentials.count === 0) {
+  const body = await c.req.json<{ password: string }>();
+  if (!body.password) {
+    return c.json({ error: 'Password required' }, 400);
+  }
+
+  const user = await db.prepare(
+    'SELECT password_hash, password_salt FROM users WHERE id = 1'
+  ).first<{ password_hash: string | null; password_salt: string | null }>();
+
+  if (!user?.password_hash || !user?.password_salt) {
     return c.json({ error: 'Setup required' }, 400);
   }
-  
-  const challenge = server.randomChallenge();
-  
-  // Store challenge temporarily (5 minutes)
+
+  const { hash } = await hashPassword(body.password, user.password_salt);
+
+  if (hash !== user.password_hash) {
+    return c.json({ error: 'Invalid password' }, 401);
+  }
+
+  const sessionId = generateSessionId();
   await db.prepare(
-    'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, datetime("now", "+5 minutes"))'
-  ).bind(`challenge:${challenge}`).run();
-  
-  return c.json({ challenge });
+    'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, ?)'
+  ).bind(sessionId, getSessionExpiry()).run();
+
+  return c.json({ success: true }, 200, {
+    'Set-Cookie': sessionCookie(sessionId, SESSION_DURATION_DAYS * 24 * 60 * 60),
+  });
 });
 
-// POST /auth/login - Complete authentication
-app.post('/login', async (c) => {
-  const body = await c.req.json();
-  const authentication = body.authentication;
-  const challenge = body.challenge;
-  
-  const db = c.env.DB as D1Database;
-  
-  // Verify challenge exists and is valid
-  const storedChallenge = await db.prepare(
-    'SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")'
-  ).bind(`challenge:${challenge}`).first();
-  
-  if (!storedChallenge) {
-    return c.json({ error: 'Invalid or expired challenge' }, 400);
-  }
-  
-  // Get credential from database
-  const credential = await db.prepare(
-    'SELECT * FROM credentials WHERE id = ?'
-  ).bind(authentication.id).first<Credential>();
-  
-  if (!credential) {
-    return c.json({ error: 'Credential not found' }, 400);
-  }
-  
-  const origin = c.req.header('Origin') || '';
-  
-  try {
-    // Verify authentication
-    const expected = {
-      challenge,
-      origin,
-      userVerified: true,
-      counter: credential.counter,
-    };
-    
-    const credentialKey = {
-      id: credential.id,
-      publicKey: credential.public_key,
-      algorithm: credential.algorithm as 'ES256' | 'RS256' | 'EdDSA',
-      transports: [] as string[],
-    };
-    
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const parsed = await server.verifyAuthentication(authentication, credentialKey as any, expected);
-    
-    // Update counter
-    await db.prepare(
-      'UPDATE credentials SET counter = ?, last_used_at = datetime("now") WHERE id = ?'
-    ).bind(parsed.counter, credential.id).run();
-    
-    // Clean up challenge
-    await db.prepare('DELETE FROM sessions WHERE id = ?').bind(`challenge:${challenge}`).run();
-    
-    // Create session
-    const sessionId = generateSessionId();
-    await db.prepare(
-      'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, ?)'
-    ).bind(sessionId, getSessionExpiry()).run();
-    
-    return c.json({ success: true }, 200, {
-      'Set-Cookie': `sessionId=${sessionId}; HttpOnly; Secure; Domain=.bankapirak.com; SameSite=None; Max-Age=${SESSION_DURATION_DAYS * 24 * 60 * 60}; Path=/`
-    });
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return c.json({ error: 'Authentication failed' }, 400);
-  }
-});
-
-// POST /auth/logout - Logout
+// POST /auth/logout
 app.post('/logout', async (c) => {
   const db = c.env.DB as D1Database;
   const sessionId = c.req.header('Cookie')?.match(/sessionId=([^;]+)/)?.[1];
-  
+
   if (sessionId) {
     await db.prepare('DELETE FROM sessions WHERE id = ?').bind(sessionId).run();
   }
-  
+
   return c.json({ success: true }, 200, {
-    'Set-Cookie': `sessionId=; HttpOnly; Secure; Domain=.bankapirak.com; SameSite=None; Max-Age=0; Path=/`
+    'Set-Cookie': sessionCookie('', 0),
   });
 });
 
-// GET /auth/me - Get current user (for session validation)
+// GET /auth/me
 app.get('/me', async (c) => {
   const db = c.env.DB as D1Database;
   const sessionId = c.req.header('Cookie')?.match(/sessionId=([^;]+)/)?.[1];
-  
+
   if (!sessionId) {
     return c.json({ error: 'Not authenticated' }, 401);
   }
-  
+
   const session = await db.prepare(
-    'SELECT s.*, u.username FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = ? AND s.expires_at > datetime("now")'
+    `SELECT s.expires_at, u.username
+     FROM sessions s JOIN users u ON s.user_id = u.id
+     WHERE s.id = ? AND s.expires_at > datetime("now")`
   ).bind(sessionId).first<{ username: string; expires_at: string }>();
-  
-  if (!session) {
-    return c.json({ error: 'Session expired' }, 401);
-  }
-  
-  return c.json({ 
-    username: session.username,
-    expiresAt: session.expires_at 
-  });
-});
 
-// GET /auth/credentials - List registered credentials (for management)
-app.get('/credentials', async (c) => {
-  const db = c.env.DB as D1Database;
-  
-  // Verify session
-  const sessionId = c.req.header('Cookie')?.match(/sessionId=([^;]+)/)?.[1];
-  if (!sessionId) {
-    return c.json({ error: 'Not authenticated' }, 401);
-  }
-  
-  const session = await db.prepare(
-    'SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")'
-  ).bind(sessionId).first();
-  
   if (!session) {
     return c.json({ error: 'Session expired' }, 401);
   }
-  
-  const credentials = await db.prepare(
-    'SELECT id, created_at, last_used_at FROM credentials WHERE user_id = 1 ORDER BY created_at DESC'
-  ).all<{ id: string; created_at: string; last_used_at: string | null }>();
-  
-  return c.json({ credentials: credentials.results || [] });
-});
 
-// DELETE /auth/credentials/:id - Remove a credential
-app.delete('/credentials/:id', async (c) => {
-  const db = c.env.DB as D1Database;
-  const credentialId = c.req.param('id');
-  
-  // Verify session
-  const sessionId = c.req.header('Cookie')?.match(/sessionId=([^;]+)/)?.[1];
-  if (!sessionId) {
-    return c.json({ error: 'Not authenticated' }, 401);
-  }
-  
-  const session = await db.prepare(
-    'SELECT * FROM sessions WHERE id = ? AND expires_at > datetime("now")'
-  ).bind(sessionId).first();
-  
-  if (!session) {
-    return c.json({ error: 'Session expired' }, 401);
-  }
-  
-  // Don't allow deleting the last credential (prevent lockout)
-  const count = await db.prepare('SELECT COUNT(*) as count FROM credentials').first<{ count: number }>();
-  if (count && count.count <= 1) {
-    return c.json({ error: 'Cannot delete the last credential' }, 400);
-  }
-  
-  await db.prepare('DELETE FROM credentials WHERE id = ? AND user_id = 1').bind(credentialId).run();
-  
-  return c.json({ success: true });
+  return c.json({ username: session.username, expiresAt: session.expires_at });
 });
 
 export default app;

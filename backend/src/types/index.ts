@@ -51,17 +51,9 @@ export interface SearchResult {
 export interface User {
   id: number;
   username: string;
+  password_hash: string | null;
+  password_salt: string | null;
   created_at: string;
-}
-
-export interface Credential {
-  id: string;
-  user_id: number;
-  public_key: string;
-  algorithm: string;
-  counter: number;
-  created_at: string;
-  last_used_at: string | null;
 }
 
 export interface Env {
