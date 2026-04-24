@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Square, Trash2, Plus, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -215,13 +215,17 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
   const { tasks, loading, error, createTask, moveTask, renameTask, deleteTask } = useTasks();
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [overColumn, setOverColumn] = useState<Task['status'] | null>(null);
+  // Ref so handleDrop always reads the current dragged id, avoiding stale closure
+  const draggedIdRef = useRef<number | null>(null);
 
   const handleDrop = (targetStatus: Task['status']) => {
-    if (draggedId === null) return;
-    const task = tasks.find(t => t.id === draggedId);
+    const id = draggedIdRef.current;
+    if (id === null) return;
+    const task = tasks.find(t => t.id === id);
     if (task && task.status !== targetStatus) {
-      moveTask(draggedId, targetStatus);
+      moveTask(id, targetStatus);
     }
+    draggedIdRef.current = null;
     setDraggedId(null);
     setOverColumn(null);
   };
@@ -296,8 +300,8 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                         onDelete={() => deleteTask(task.id)}
                         onRename={title => renameTask(task.id, title)}
                         onNoteClick={onNoteClick}
-                        onDragStart={() => setDraggedId(task.id)}
-                        onDragEnd={() => { setDraggedId(null); setOverColumn(null); }}
+                        onDragStart={() => { draggedIdRef.current = task.id; setDraggedId(task.id); }}
+                        onDragEnd={() => { draggedIdRef.current = null; setDraggedId(null); setOverColumn(null); }}
                         isDragging={draggedId === task.id}
                       />
                     ))}
