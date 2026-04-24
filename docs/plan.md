@@ -136,10 +136,10 @@ GET  /auth/me       → current user from session (unchanged)
 
 | # | Task | Status | Files |
 |---|------|--------|-------|
-| 9 | Icon rail sidebar (rewrite Sidebar.tsx) | `[ ]` | `frontend/src/components/Sidebar.tsx` |
-| 10 | MarkdownEditor component (textarea + react-markdown toggle) | `[ ]` | `frontend/src/components/MarkdownEditor.tsx` |
-| 11 | NoteEditorPage rewrite (click-to-edit, auto-save, folder selector) | `[ ]` | `frontend/src/pages/NoteEditorPage.tsx`, `App.tsx` |
-| 12 | NotesPage — feed view with NoteCard component | `[ ]` | `frontend/src/pages/NotesPage.tsx`, `components/NoteCard.tsx`, `App.tsx` |
+| 9 | Icon rail sidebar (rewrite Sidebar.tsx) | `[x]` | `frontend/src/components/Sidebar.tsx` |
+| 10 | MarkdownEditor component (textarea + react-markdown toggle) | `[x]` | `frontend/src/components/MarkdownEditor.tsx` |
+| 11 | NoteEditorPage rewrite (click-to-edit, auto-save, folder selector) | `[x]` | `frontend/src/pages/NoteEditorPage.tsx`, `App.tsx` |
+| 12 | NotesPage — feed view with NoteCard component | `[x]` | `frontend/src/pages/NotesPage.tsx`, `components/NoteCard.tsx`, `App.tsx` |
 
 **Checkpoint 4:** Icon rail works · Feed shows cards with filters · Editor opens and auto-saves
 

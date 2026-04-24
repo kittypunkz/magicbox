@@ -4,8 +4,8 @@ import { Sidebar } from './components/Sidebar';
 import { CreateNoteModal } from './components/CreateNoteModal';
 import { MobileNav } from './components/MobileNav';
 import { FolderPage } from './pages/FolderPage';
-import { NoteEditor } from './components/NoteEditor';
-import { HomePage } from './pages/HomePage';
+import { NoteEditorPage } from './pages/NoteEditorPage';
+import { NotesPage } from './pages/NotesPage';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -306,9 +306,8 @@ function AppContent() {
       {/* Sidebar */}
       <div
         className={`
-          ${isMobile ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300' : 'relative'}
+          ${isMobile ? 'fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 w-[280px]' : 'relative flex-shrink-0'}
           ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}
-          w-[280px] flex-shrink-0
         `}
       >
         <Sidebar
@@ -410,12 +409,10 @@ function AppContent() {
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           {view === 'home' && (
-            <HomePage
+            <NotesPage
               folders={folders}
               onSelectNote={handleNoteClick}
-              onCreateNote={() => {
-                setIsCreateModalOpen(true);
-              }}
+              onCreateNote={handleCreateNote}
             />
           )}
 
@@ -429,12 +426,9 @@ function AppContent() {
           )}
 
           {view === 'note' && selectedNoteId && (
-            <NoteEditor
+            <NoteEditorPage
               noteId={selectedNoteId}
               onBack={handleBack}
-              onUpdate={() => {
-                // Note will be updated via the hook
-              }}
               onDelete={(id) => {
                 deleteNote(id);
                 showAllNotes();
