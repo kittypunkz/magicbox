@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckSquare, Square, X, Loader2, AlertCircle } from 'lucide-react';
 
 interface SuggestedTask {
@@ -23,9 +23,13 @@ export function TaskConfirmModal({
   onConfirm,
   onClose,
 }: TaskConfirmModalProps) {
-  const [tasks, setTasks] = useState<SuggestedTask[]>(
-    () => suggestions.map(s => ({ ...s, selected: true }))
-  );
+  const [tasks, setTasks] = useState<SuggestedTask[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTasks(suggestions.map(s => ({ ...s, selected: true })));
+    }
+  }, [isOpen, suggestions]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
