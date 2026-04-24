@@ -29,9 +29,30 @@ export function useTasks() {
   }, []);
 
   const moveTask = useCallback(async (id: number, status: Task['status']) => {
-    const updated = await tasksAPI.update(id, { status });
-    setTasks(prev => prev.map(t => t.id === id ? updated : t));
-    return updated;
+    // Optimistic update — move immediately so the user sees instant feedback
+    let original: Task | undefined;
+    setTasks(prev => {
+      original = prev.find(t => t.id === id);
+      return prev.map(t =>
+        t.id === id
+          ? { ...t, status, completed_at: status !== 'done' ? null : t.completed_at }
+          : t
+      );
+    });
+
+    try {
+      const updated = await tasksAPI.update(id, { status });
+      // Confirm with server value (picks up server-set completed_at)
+      setTasks(prev => prev.map(t => t.id === id ? updated : t));
+      return updated;
+    } catch (err) {
+      // Revert to original on failure
+      if (original) {
+        setTasks(prev => prev.map(t => t.id === id ? original! : t));
+      }
+      setError(err instanceof Error ? err.message : 'Failed to move task');
+      throw err;
+    }
   }, []);
 
   const renameTask = useCallback(async (id: number, title: string) => {

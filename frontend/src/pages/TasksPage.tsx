@@ -268,10 +268,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                     e.preventDefault();
                     const id = parseInt(e.dataTransfer.getData('text/plain'));
                     if (!isNaN(id)) {
-                      const task = tasks.find(t => t.id === id);
-                      if (task && task.status !== col.status) {
-                        moveTask(id, col.status);
-                      }
+                      moveTask(id, col.status);
                     }
                     setOverColumn(null);
                   }}
