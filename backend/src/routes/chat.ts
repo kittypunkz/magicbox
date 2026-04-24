@@ -27,22 +27,47 @@ app.post('/', async (c) => {
   if (!aiCfg) return c.json({ error: 'OpenRouter API key not configured' }, 400);
   const { apiKey, model } = aiCfg;
 
-  // FTS5 retrieval — top 5 matching notes
+  // FTS5 retrieval — search individual words, fallback to recent notes
   let notes: NoteResult[] = [];
   try {
-    const q = `"${body.message.slice(0, 200).replace(/"/g, '""')}"`;
-    const result = await db.prepare(`
-      SELECT n.id, n.title, n.content, f.name AS folder_name
-      FROM notes_fts fts
-      JOIN notes n ON fts.rowid = n.id
-      JOIN folders f ON n.folder_id = f.id
-      WHERE notes_fts MATCH ?
-      ORDER BY rank
-      LIMIT 5
-    `).bind(q).all<NoteResult>();
-    notes = result.results ?? [];
+    // Build an OR query from individual words (more permissive than phrase match)
+    const words = body.message
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2)
+      .slice(0, 10)
+      .map(w => w.replace(/"/g, ''))
+      .join(' OR ');
+
+    if (words) {
+      const result = await db.prepare(`
+        SELECT n.id, n.title, n.content, f.name AS folder_name
+        FROM notes_fts fts
+        JOIN notes n ON fts.rowid = n.id
+        JOIN folders f ON n.folder_id = f.id
+        WHERE notes_fts MATCH ?
+        ORDER BY rank
+        LIMIT 5
+      `).bind(words).all<NoteResult>();
+      notes = result.results ?? [];
+    }
   } catch {
-    // FTS5 may fail on short queries — proceed without context
+    // FTS5 failed — will use recent notes fallback below
+  }
+
+  // Fallback: if no FTS5 matches, include the 5 most recently updated notes
+  if (notes.length === 0) {
+    try {
+      const result = await db.prepare(`
+        SELECT n.id, n.title, n.content, f.name AS folder_name
+        FROM notes n
+        JOIN folders f ON n.folder_id = f.id
+        ORDER BY n.updated_at DESC
+        LIMIT 5
+      `).all<NoteResult>();
+      notes = result.results ?? [];
+    } catch {}
   }
 
   const context = notes.map(n =>
@@ -50,11 +75,11 @@ app.post('/', async (c) => {
   ).join('\n\n---\n\n');
 
   const systemPrompt = context
-    ? `You are a search assistant for the user's personal notes. Answer ONLY using the notes provided below. Do not use any outside knowledge. If the notes don't contain enough information to answer, say so. Cite notes as [Note ID].
+    ? `You are an assistant that helps the user recall and reason about their personal notes. Use the notes below as your primary source. If the answer is clearly in the notes, cite it as [Note ID]. If the notes don't contain enough information, say so honestly rather than inventing details.
 
 Notes:
 ${context}`
-    : 'You are a search assistant for the user\'s personal notes. No relevant notes were found for this query. Tell the user you couldn\'t find relevant notes and suggest they try different keywords.';
+    : `You are an assistant for the user's personal notes. No notes were found. Tell the user their notes don't seem to contain relevant information for this question, and suggest what kinds of notes would help.`;
 
   const upstreamRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
