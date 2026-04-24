@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckSquare, Square, Trash2, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
+import { ConfirmModal } from '../components/ConfirmModal';
 import type { Task } from '../types';
 
 const c = {
@@ -10,6 +11,14 @@ const c = {
   border: 'border-[#2f2f2f]',
   input: 'bg-[#2a2a2a]',
 };
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
 
 function TaskItem({
   task,
@@ -27,6 +36,7 @@ function TaskItem({
   const isDone = task.status === 'done';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
+  const [confirmUncheck, setConfirmUncheck] = useState(false);
 
   const commit = () => {
     setEditing(false);
@@ -35,56 +45,79 @@ function TaskItem({
     else setDraft(task.title);
   };
 
+  const handleCheckboxClick = () => {
+    if (isDone) {
+      setConfirmUncheck(true);
+    } else {
+      onToggle();
+    }
+  };
+
   return (
-    <div className={`flex items-start gap-3 p-3 rounded-lg border ${c.border} bg-[#202020] group`}>
-      <button
-        onClick={onToggle}
-        className={`mt-0.5 flex-shrink-0 transition-colors ${isDone ? 'text-green-400' : c.gray}`}
-      >
-        {isDone ? <CheckSquare size={18} /> : <Square size={18} />}
-      </button>
-      <div className="flex-1 min-w-0">
-        {editing ? (
-          <input
-            autoFocus
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={e => {
-              if (e.key === 'Enter') commit();
-              if (e.key === 'Escape') { setDraft(task.title); setEditing(false); }
-            }}
-            className={`w-full text-sm bg-transparent border-b border-blue-500 outline-none ${c.text} pb-0.5`}
-          />
-        ) : (
-          <p
-            onClick={() => !isDone && setEditing(true)}
-            className={`text-sm ${isDone ? 'line-through text-[#4b4b4b]' : `${c.text} cursor-text hover:text-white`}`}
-          >
-            {task.title}
-          </p>
-        )}
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className={`text-xs ${c.gray}`}>
-            {new Date(task.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-          </span>
-          {task.note_id && onNoteClick && (
-            <button
-              onClick={() => onNoteClick(task.note_id!)}
-              className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+    <>
+      <div className={`flex items-start gap-3 p-3 rounded-lg border ${c.border} bg-[#202020] group`}>
+        <button
+          onClick={handleCheckboxClick}
+          className={`mt-0.5 flex-shrink-0 transition-colors ${isDone ? 'text-green-400' : c.gray}`}
+        >
+          {isDone ? <CheckSquare size={18} /> : <Square size={18} />}
+        </button>
+        <div className="flex-1 min-w-0">
+          {editing ? (
+            <input
+              autoFocus
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={e => {
+                if (e.key === 'Enter') commit();
+                if (e.key === 'Escape') { setDraft(task.title); setEditing(false); }
+              }}
+              className={`w-full text-sm bg-transparent border-b border-blue-500 outline-none ${c.text} pb-0.5`}
+            />
+          ) : (
+            <p
+              onClick={() => !isDone && setEditing(true)}
+              className={`text-sm ${isDone ? 'line-through text-[#4b4b4b]' : `${c.text} cursor-text hover:text-white`}`}
             >
-              View source note →
-            </button>
+              {task.title}
+            </p>
           )}
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className={`text-xs ${c.gray}`}>
+              {isDone && task.completed_at
+                ? `Completed ${formatDateTime(task.completed_at)}`
+                : `Created ${formatDate(task.created_at)}`}
+            </span>
+            {task.note_id && onNoteClick && (
+              <button
+                onClick={() => onNoteClick(task.note_id!)}
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                View source note →
+              </button>
+            )}
+          </div>
         </div>
+        <button
+          onClick={onDelete}
+          className={`flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${c.gray} hover:text-red-400`}
+        >
+          <Trash2 size={16} />
+        </button>
       </div>
-      <button
-        onClick={onDelete}
-        className={`flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${c.gray} hover:text-red-400`}
-      >
-        <Trash2 size={16} />
-      </button>
-    </div>
+
+      <ConfirmModal
+        isOpen={confirmUncheck}
+        onClose={() => setConfirmUncheck(false)}
+        onConfirm={() => { setConfirmUncheck(false); onToggle(); }}
+        title="Mark as incomplete?"
+        message="This will clear the completion date and time. Are you sure?"
+        confirmText="Yes, uncheck"
+        cancelText="Cancel"
+        variant="warning"
+      />
+    </>
   );
 }
 
