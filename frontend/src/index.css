@@ -91,3 +91,13 @@ textarea {
   font-family: inherit;
   line-height: 1.8;
 }
+
+/* BlockNote — blend into page background, remove focus border */
+.blocknote-editor-wrapper *:focus-visible {
+  outline: none !important;
+}
+
+.blocknote-editor-wrapper {
+  --mantine-color-body: #191919;
+  --mantine-color-dark-7: #191919;
+}
