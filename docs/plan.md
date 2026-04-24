@@ -101,9 +101,9 @@ GET  /auth/me       → current user from session (unchanged)
 
 | # | Task | Status | Files |
 |---|------|--------|-------|
-| 1 | D1 migration: tasks, daily_briefs, settings tables | `[ ]` | `backend/migrations/0007_v2_tables.sql` |
-| 2 | Backend settings routes + OpenRouter models proxy | `[ ]` | `backend/src/routes/settings.ts`, `index.ts`, `types/index.ts` |
-| 3 | Frontend Settings page: API key input + model picker | `[ ]` | `frontend/src/pages/SettingsPage.tsx`, `api/client.ts`, `types/index.ts` |
+| 1 | D1 migration: tasks, daily_briefs, settings tables | `[x]` | `backend/migrations/0007_v2_tables.sql` |
+| 2 | Backend settings routes + OpenRouter models proxy | `[x]` | `backend/src/routes/settings.ts`, `index.ts`, `types/index.ts` |
+| 3 | Frontend Settings page: API key input + model picker | `[x]` | `frontend/src/pages/SettingsPage.tsx`, `api/client.ts`, `types/index.ts` |
 
 **Checkpoint 1:** API key stored/retrieved · Model picker loads live models · Build clean
 

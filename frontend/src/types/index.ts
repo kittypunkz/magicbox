@@ -74,3 +74,13 @@ export interface ApiResponse<T> {
   error?: string;
   details?: unknown;
 }
+
+export interface OpenRouterModel {
+  id: string;
+  name: string;
+}
+
+export interface Settings {
+  openrouter_api_key?: string;
+  preferred_model?: string;
+}

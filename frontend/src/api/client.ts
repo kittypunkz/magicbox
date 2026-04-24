@@ -1,4 +1,4 @@
-import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse } from '../types';
+import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse, Settings, OpenRouterModel } from '../types';
 
 // API Base URL - Uses environment variable or localhost:8787 for development
 const isDev = import.meta.env.DEV;
@@ -88,4 +88,13 @@ export const bookmarksAPI = {
   ).then(r => r.data),
 };
 
-export type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult };
+export const settingsAPI = {
+  getAll: () => fetchAPI<{ settings: Settings }>('/settings').then(r => r.settings),
+  update: (data: Partial<Settings>) => fetchAPI<{ success: boolean }>('/settings', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  getModels: () => fetchAPI<{ models: OpenRouterModel[] }>('/settings/models').then(r => r.models),
+};
+
+export type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, Settings, OpenRouterModel };
