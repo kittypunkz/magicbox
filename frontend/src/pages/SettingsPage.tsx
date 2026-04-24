@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Settings, GitBranch, Calendar, Server, Info, Key, Bot, Loader2, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Settings, GitBranch, Calendar, Server, Info, Key, Bot, Loader2, CheckCircle, AlertCircle, Eye, EyeOff, FlaskConical } from 'lucide-react';
 import { settingsAPI } from '../api/client';
 import type { OpenRouterModel } from '../types';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
 const c = {
   bg: 'bg-[#191919]',
@@ -201,10 +203,63 @@ export function SettingsPage() {
           </div>
         </div>
 
+        {/* Debug Panel */}
+        <DebugPanel />
+
         <div className={`text-center py-4 ${c.gray} text-xs`}>
           MagicBox — A markdown note-taking app
         </div>
       </div>
+    </div>
+  );
+}
+
+function DebugPanel() {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; log: string[]; reply?: string; error?: string } | null>(null);
+
+  const run = async () => {
+    setRunning(true);
+    setResult(null);
+    try {
+      const res = await fetch(`${API_BASE}/settings/debug`, { credentials: 'include' });
+      const data = await res.json() as { ok: boolean; log: string[]; reply?: string; error?: string };
+      setResult(data);
+    } catch (err) {
+      setResult({ ok: false, log: [], error: err instanceof Error ? err.message : 'Fetch failed' });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div className={`bg-[#2a2a2a] border border-[#2f2f2f] rounded-xl p-4 sm:p-5`}>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className={`text-sm font-semibold text-[#e6e6e6] flex items-center gap-2`}>
+          <FlaskConical size={16} />
+          Connection Test
+        </h2>
+        <button
+          onClick={run}
+          disabled={running}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors"
+        >
+          {running ? <Loader2 size={12} className="animate-spin" /> : <FlaskConical size={12} />}
+          {running ? 'Testing...' : 'Run Test'}
+        </button>
+      </div>
+
+      {result && (
+        <div className="space-y-2">
+          <div className={`flex items-center gap-2 text-sm font-medium ${result.ok ? 'text-green-400' : 'text-red-400'}`}>
+            {result.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
+            {result.ok ? `OpenRouter OK — replied: "${result.reply}"` : `Failed: ${result.error}`}
+          </div>
+          <pre className="text-xs text-[#6b6b6b] bg-[#191919] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+            {result.log.join('\n')}
+          </pre>
+        </div>
+      )}
     </div>
   );
 }
