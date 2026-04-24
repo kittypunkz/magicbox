@@ -10,6 +10,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TasksPage } from './pages/TasksPage';
+import { AskPage } from './pages/AskPage';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
@@ -21,7 +22,7 @@ import './App.css';
 import { Agentation } from 'agentation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'tasks';
+type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -168,6 +169,10 @@ function AppContent() {
       setView('tasks');
       setSelectedFolderId(null);
       setSelectedNoteId(null);
+    } else if (location.pathname === '/ask') {
+      setView('ask');
+      setSelectedFolderId(null);
+      setSelectedNoteId(null);
     } else if (location.pathname === '/') {
       setView('home');
       setSelectedFolderId(null);
@@ -214,6 +219,13 @@ function AppContent() {
     setSelectedFolderId(null);
     setSelectedNoteId(null);
     navigate('/tasks', { replace: true });
+  }, [navigate]);
+
+  const showAsk = useCallback(() => {
+    setView('ask');
+    setSelectedFolderId(null);
+    setSelectedNoteId(null);
+    navigate('/ask', { replace: true });
   }, [navigate]);
 
   const showFolder = useCallback((folderId: number) => {
@@ -329,6 +341,7 @@ function AppContent() {
           isMobile={isMobile}
           onSettingsClick={showSettings}
           onTasksClick={showTasks}
+          onAskClick={showAsk}
         />
       </div>
 
@@ -366,6 +379,7 @@ function AppContent() {
             {view === 'note' && (selectedNote?.title || 'Untitled')}
             {view === 'settings' && 'Settings'}
             {view === 'tasks' && 'Tasks'}
+            {view === 'ask' && 'Ask'}
           </h1>
 
           <div className="flex-1" />
@@ -443,6 +457,10 @@ function AppContent() {
           {view === 'tasks' && (
             <TasksPage onNoteClick={showNote} />
           )}
+
+          {view === 'ask' && (
+            <AskPage onNoteClick={showNote} />
+          )}
         </main>
 
         {/* Mobile Navigation */}
@@ -516,6 +534,11 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       <Route path="/tasks" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+      <Route path="/ask" element={
         <ProtectedRoute>
           <AppContent />
         </ProtectedRoute>

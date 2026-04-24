@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings, CheckSquare } from 'lucide-react';
+import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings, CheckSquare, MessageSquare } from 'lucide-react';
 import type { Folder as FolderType, Note } from '../types';
 import { SkeletonFolderItem } from './Skeleton';
 
@@ -16,12 +16,13 @@ interface SidebarProps {
   onFolderUpdate: (id: number, name: string) => void;
   onCancelEdit: () => void;
   loading: boolean;
-  currentView: 'home' | 'folder' | 'note' | 'settings' | 'tasks';
+  currentView: 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask';
   selectedFolderId: number | null;
   onCloseMobile?: () => void;
   isMobile?: boolean;
   onSettingsClick?: () => void;
   onTasksClick?: () => void;
+  onAskClick?: () => void;
 }
 
 const bg = 'bg-[#202020]';
@@ -51,6 +52,7 @@ export function Sidebar({
   isMobile,
   onSettingsClick,
   onTasksClick,
+  onAskClick,
 }: SidebarProps) {
   const [expanded, setExpanded] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -123,6 +125,7 @@ export function Sidebar({
           onCreateNote={() => { onCreateNote(); onCloseMobile?.(); }}
           onHomeClick={() => { window.location.href = '/'; onCloseMobile?.(); }}
           onTasksClick={() => { onTasksClick?.(); onCloseMobile?.(); }}
+          onAskClick={() => { onAskClick?.(); onCloseMobile?.(); }}
           onSettingsClick={() => { onSettingsClick?.(); onCloseMobile?.(); }}
           onFolderClick={handleFolderClick}
           onNoteClick={(n) => { onNoteClick(n); onCloseMobile?.(); }}
@@ -173,6 +176,15 @@ export function Sidebar({
           expanded={expanded}
           onClick={() => onTasksClick?.()}
           isActive={currentView === 'tasks'}
+        />
+
+        {/* Ask */}
+        <NavItem
+          icon={<MessageSquare size={18} />}
+          label="Ask"
+          expanded={expanded}
+          onClick={() => onAskClick?.()}
+          isActive={currentView === 'ask'}
         />
 
         {/* Expanded: folder tree */}
@@ -349,7 +361,7 @@ function FolderDropdown({
 function MobileContent({
   folders, recentNotes, currentView, selectedFolderId, loading,
   isCreatingFolder, newFolderName, editingFolder, editingName, folderDropdownOpen,
-  onCreateNote, onHomeClick, onTasksClick, onSettingsClick,
+  onCreateNote, onHomeClick, onTasksClick, onAskClick, onSettingsClick,
   onFolderClick, onNoteClick, onStartCreateFolder, onNewFolderNameChange,
   onKeyDown, onEditingNameChange, onFolderUpdateBlur, onFolderEdit, onFolderDelete,
   setFolderDropdownOpen,
@@ -367,6 +379,7 @@ function MobileContent({
   onCreateNote: () => void;
   onHomeClick: () => void;
   onTasksClick: () => void;
+  onAskClick: () => void;
   onSettingsClick: () => void;
   onFolderClick: (f: FolderType) => void;
   onNoteClick: (n: Note) => void;
@@ -394,6 +407,10 @@ function MobileContent({
 
       <button onClick={onTasksClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'tasks' ? active : `${text} ${hover}`}`}>
         <CheckSquare size={18} /><span className="flex-1 text-left">Tasks</span>
+      </button>
+
+      <button onClick={onAskClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'ask' ? active : `${text} ${hover}`}`}>
+        <MessageSquare size={18} /><span className="flex-1 text-left">Ask</span>
       </button>
 
       <div className="pt-2">

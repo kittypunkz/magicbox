@@ -9,6 +9,7 @@ import bookmarks from './routes/bookmarks';
 import settings from './routes/settings';
 import tasks from './routes/tasks';
 import process from './routes/process';
+import chat from './routes/chat';
 import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -50,5 +51,6 @@ app.route('/bookmarks', bookmarks);
 app.route('/settings', settings);
 app.route('/tasks', tasks);
 app.route('/process', process);
+app.route('/chat', chat);
 
 export default app;

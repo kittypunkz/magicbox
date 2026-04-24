@@ -149,8 +149,8 @@ GET  /auth/me       → current user from session (unchanged)
 
 | # | Task | Status | Files |
 |---|------|--------|-------|
-| 13 | Backend POST /chat: FTS5 RAG + OpenRouter streaming (SSE) | `[ ]` | `backend/src/routes/chat.ts`, `index.ts` |
-| 14 | Frontend AskPage: streaming chat UI | `[ ]` | `frontend/src/pages/AskPage.tsx`, `App.tsx`, `api/client.ts` |
+| 13 | Backend POST /chat: FTS5 RAG + OpenRouter streaming (SSE) | `[x]` | `backend/src/routes/chat.ts`, `index.ts` |
+| 14 | Frontend AskPage: streaming chat UI | `[x]` | `frontend/src/pages/AskPage.tsx`, `App.tsx`, `api/client.ts` |
 
 **Checkpoint 5:** Ask a question → streaming answer with note references
 
