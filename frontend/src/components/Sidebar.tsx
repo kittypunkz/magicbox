@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings, CheckSquare, MessageSquare, Bookmark, Newspaper } from 'lucide-react';
+import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings, CheckSquare, MessageSquare, Bookmark, Newspaper, ChevronRight } from 'lucide-react';
 import type { Folder as FolderType, Note } from '../types';
 import { SkeletonFolderItem } from './Skeleton';
 
@@ -58,7 +58,7 @@ export function Sidebar({
   onBriefClick,
   onBookmarksClick,
 }: SidebarProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(() => localStorage.getItem('sidebar-expanded') === 'true');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [editingName, setEditingName] = useState('');
@@ -148,13 +148,16 @@ export function Sidebar({
     );
   }
 
+  const toggle = () => {
+    const next = !expanded;
+    setExpanded(next);
+    localStorage.setItem('sidebar-expanded', String(next));
+    if (!next) setFolderDropdownOpen(null);
+  };
+
   // Desktop: icon rail
   return (
-    <div
-      className={`h-full ${bg} border-r ${border} flex flex-col transition-all duration-200 ${expanded ? 'w-[220px]' : 'w-[48px]'}`}
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => { setExpanded(false); setFolderDropdownOpen(null); }}
-    >
+    <div className={`h-full ${bg} border-r ${border} flex flex-col transition-all duration-200 ${expanded ? 'w-[220px]' : 'w-[48px]'}`}>
       {/* Top nav icons */}
       <div className="flex-1 overflow-y-auto py-2">
         {/* New Note */}
@@ -311,7 +314,7 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Settings at bottom */}
+      {/* Settings + collapse toggle at bottom */}
       <div className={`border-t ${border} py-1`}>
         <NavItem
           icon={<Settings size={18} />}
@@ -320,6 +323,17 @@ export function Sidebar({
           onClick={() => onSettingsClick?.()}
           isActive={currentView === 'settings'}
         />
+        <button
+          onClick={toggle}
+          title={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+          className={`w-full flex items-center px-3 py-2.5 transition-colors ${gray} hover:text-[#e6e6e6] hover:bg-[#2f2f2f]`}
+        >
+          <ChevronRight
+            size={18}
+            className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+          />
+          {expanded && <span className="ml-3 text-sm">Collapse</span>}
+        </button>
       </div>
     </div>
   );
