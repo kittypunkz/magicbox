@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Square, Trash2, Plus, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -13,9 +13,9 @@ const c = {
 };
 
 const COLUMNS: { status: Task['status']; label: string; color: string }[] = [
-  { status: 'backlog', label: 'Backlog', color: 'text-[#6b6b6b]'  },
-  { status: 'doing',   label: 'Doing',   color: 'text-blue-400'   },
-  { status: 'done',    label: 'Done',    color: 'text-green-400'  },
+  { status: 'backlog', label: 'Backlog', color: 'text-[#6b6b6b]' },
+  { status: 'doing',   label: 'Doing',   color: 'text-blue-400'  },
+  { status: 'done',    label: 'Done',    color: 'text-green-400' },
 ];
 
 function formatDate(iso: string) {
@@ -37,22 +37,17 @@ function TaskCard({
   onDelete,
   onRename,
   onNoteClick,
-  onDragStart,
-  onDragEnd,
-  isDragging,
 }: {
   task: Task;
   onMove: (status: Task['status']) => void;
   onDelete: () => void;
   onRename: (title: string) => void;
   onNoteClick?: (noteId: number) => void;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  isDragging: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
   const [confirmUndo, setConfirmUndo] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   const isDone = task.status === 'done';
   const draggable = !isDone;
@@ -68,14 +63,18 @@ function TaskCard({
     <>
       <div
         draggable={draggable}
-        onDragStart={draggable ? (e) => { e.dataTransfer.effectAllowed = 'move'; onDragStart(); } : undefined}
-        onDragEnd={draggable ? onDragEnd : undefined}
+        onDragStart={draggable ? e => {
+          // Store task id in dataTransfer — survives across all React render cycles
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(task.id));
+          setDragging(true);
+        } : undefined}
+        onDragEnd={draggable ? () => setDragging(false) : undefined}
         className={`p-3 rounded-lg border bg-[#202020] group flex flex-col gap-2 transition-all
-          ${isDragging ? 'opacity-40 scale-95' : ''}
+          ${dragging ? 'opacity-40 scale-95' : ''}
           ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}
           ${c.border}`}
       >
-        {/* Title */}
         {editing ? (
           <input
             autoFocus
@@ -99,7 +98,6 @@ function TaskCard({
           </p>
         )}
 
-        {/* Date */}
         <p className={`text-xs ${c.gray}`}>
           {isDone && task.completed_at
             ? `Completed ${formatDateTime(task.completed_at)}`
@@ -115,7 +113,6 @@ function TaskCard({
           </button>
         )}
 
-        {/* Actions */}
         <div className="flex items-center justify-between mt-1">
           <div>
             {isDone && (
@@ -213,22 +210,7 @@ interface TasksPageProps {
 
 export function TasksPage({ onNoteClick }: TasksPageProps) {
   const { tasks, loading, error, createTask, moveTask, renameTask, deleteTask } = useTasks();
-  const [draggedId, setDraggedId] = useState<number | null>(null);
   const [overColumn, setOverColumn] = useState<Task['status'] | null>(null);
-  // Ref so handleDrop always reads the current dragged id, avoiding stale closure
-  const draggedIdRef = useRef<number | null>(null);
-
-  const handleDrop = (targetStatus: Task['status']) => {
-    const id = draggedIdRef.current;
-    if (id === null) return;
-    const task = tasks.find(t => t.id === id);
-    if (task && task.status !== targetStatus) {
-      moveTask(id, targetStatus);
-    }
-    draggedIdRef.current = null;
-    setDraggedId(null);
-    setOverColumn(null);
-  };
 
   return (
     <div className={`h-full flex flex-col ${c.bg}`}>
@@ -249,7 +231,6 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
         </div>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="flex-shrink-0 mx-4 sm:mx-8 mt-4 flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
           <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
@@ -257,7 +238,6 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
         </div>
       )}
 
-      {/* Kanban columns */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <Loader2 size={24} className={`animate-spin ${c.gray}`} />
@@ -267,17 +247,35 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
           <div className="flex gap-4 p-4 sm:p-6 h-full min-w-[600px]">
             {COLUMNS.map(col => {
               const colTasks = tasks.filter(t => t.status === col.status);
-              const isOver = overColumn === col.status && draggedId !== null;
+              const isOver = overColumn === col.status;
 
               return (
                 <div
                   key={col.status}
                   className="flex-1 flex flex-col min-w-[200px] max-w-sm"
-                  onDragOver={e => { e.preventDefault(); setOverColumn(col.status); }}
-                  onDragLeave={() => setOverColumn(null)}
-                  onDrop={() => handleDrop(col.status)}
+                  onDragOver={e => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    setOverColumn(col.status);
+                  }}
+                  onDragLeave={e => {
+                    // Only clear when leaving the column entirely, not when entering a child
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      setOverColumn(null);
+                    }
+                  }}
+                  onDrop={e => {
+                    e.preventDefault();
+                    const id = parseInt(e.dataTransfer.getData('text/plain'));
+                    if (!isNaN(id)) {
+                      const task = tasks.find(t => t.id === id);
+                      if (task && task.status !== col.status) {
+                        moveTask(id, col.status);
+                      }
+                    }
+                    setOverColumn(null);
+                  }}
                 >
-                  {/* Column header */}
                   <div className="flex items-center gap-2 mb-3 px-1">
                     <span className={`text-xs font-semibold uppercase tracking-wider ${col.color}`}>
                       {col.label}
@@ -287,7 +285,6 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                     </span>
                   </div>
 
-                  {/* Drop zone */}
                   <div
                     className={`flex-1 overflow-y-auto space-y-2 pr-1 rounded-xl transition-colors
                       ${isOver ? 'bg-[#ffffff08] ring-1 ring-[#3f3f3f]' : ''}`}
@@ -300,9 +297,6 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                         onDelete={() => deleteTask(task.id)}
                         onRename={title => renameTask(task.id, title)}
                         onNoteClick={onNoteClick}
-                        onDragStart={() => { draggedIdRef.current = task.id; setDraggedId(task.id); }}
-                        onDragEnd={() => { draggedIdRef.current = null; setDraggedId(null); setOverColumn(null); }}
-                        isDragging={draggedId === task.id}
                       />
                     ))}
 
@@ -313,9 +307,11 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                     )}
                   </div>
 
-                  {/* Add task */}
                   <div className="mt-3">
-                    <AddTaskInput status={col.status} onAdd={async (title, status) => { await createTask(title, status); }} />
+                    <AddTaskInput
+                      status={col.status}
+                      onAdd={async (title, status) => { await createTask(title, status); }}
+                    />
                   </div>
                 </div>
               );
