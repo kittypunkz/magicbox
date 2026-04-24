@@ -11,6 +11,8 @@ import { SetupPage } from './pages/SetupPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TasksPage } from './pages/TasksPage';
 import { AskPage } from './pages/AskPage';
+import { BriefPage } from './pages/BriefPage';
+import { BookmarksPage } from './pages/BookmarksPage';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
@@ -22,7 +24,7 @@ import './App.css';
 import { Agentation } from 'agentation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask';
+type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -173,6 +175,14 @@ function AppContent() {
       setView('ask');
       setSelectedFolderId(null);
       setSelectedNoteId(null);
+    } else if (location.pathname === '/brief') {
+      setView('brief');
+      setSelectedFolderId(null);
+      setSelectedNoteId(null);
+    } else if (location.pathname === '/bookmarks') {
+      setView('bookmarks');
+      setSelectedFolderId(null);
+      setSelectedNoteId(null);
     } else if (location.pathname === '/') {
       setView('home');
       setSelectedFolderId(null);
@@ -226,6 +236,20 @@ function AppContent() {
     setSelectedFolderId(null);
     setSelectedNoteId(null);
     navigate('/ask', { replace: true });
+  }, [navigate]);
+
+  const showBrief = useCallback(() => {
+    setView('brief');
+    setSelectedFolderId(null);
+    setSelectedNoteId(null);
+    navigate('/brief', { replace: true });
+  }, [navigate]);
+
+  const showBookmarks = useCallback(() => {
+    setView('bookmarks');
+    setSelectedFolderId(null);
+    setSelectedNoteId(null);
+    navigate('/bookmarks', { replace: true });
   }, [navigate]);
 
   const showFolder = useCallback((folderId: number) => {
@@ -342,6 +366,8 @@ function AppContent() {
           onSettingsClick={showSettings}
           onTasksClick={showTasks}
           onAskClick={showAsk}
+          onBriefClick={showBrief}
+          onBookmarksClick={showBookmarks}
         />
       </div>
 
@@ -380,6 +406,8 @@ function AppContent() {
             {view === 'settings' && 'Settings'}
             {view === 'tasks' && 'Tasks'}
             {view === 'ask' && 'Ask'}
+            {view === 'brief' && 'Daily Brief'}
+            {view === 'bookmarks' && 'Bookmarks'}
           </h1>
 
           <div className="flex-1" />
@@ -461,6 +489,14 @@ function AppContent() {
           {view === 'ask' && (
             <AskPage onNoteClick={showNote} />
           )}
+
+          {view === 'brief' && (
+            <BriefPage />
+          )}
+
+          {view === 'bookmarks' && (
+            <BookmarksPage onSelectNote={handleNoteClick} />
+          )}
         </main>
 
         {/* Mobile Navigation */}
@@ -539,6 +575,16 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       <Route path="/ask" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+      <Route path="/brief" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+      <Route path="/bookmarks" element={
         <ProtectedRoute>
           <AppContent />
         </ProtectedRoute>

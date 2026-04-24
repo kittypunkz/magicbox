@@ -160,15 +160,15 @@ GET  /auth/me       → current user from session (unchanged)
 
 | # | Task | Status | Files |
 |---|------|--------|-------|
-| 15 | Backend GET /brief + GET /briefs (generate + cache) | `[ ]` | `backend/src/routes/brief.ts`, `index.ts` |
-| 16 | Cron trigger: nightly brief generation | `[ ]` | `backend/wrangler.toml`, `backend/src/index.ts` |
-| 17 | Frontend BriefPage (home `/`) + BookmarksPage + final routing | `[ ]` | `frontend/src/pages/BriefPage.tsx`, `pages/BookmarksPage.tsx`, `App.tsx`, `api/client.ts` |
+| 15 | Backend GET /brief + GET /briefs (generate + cache) | `[x]` | `backend/src/routes/brief.ts`, `index.ts` |
+| 16 | Cron trigger: nightly brief generation | `[x]` | `backend/wrangler.toml`, `backend/src/index.ts` |
+| 17 | Frontend BriefPage (home `/`) + BookmarksPage + final routing | `[x]` | `frontend/src/pages/BriefPage.tsx`, `pages/BookmarksPage.tsx`, `App.tsx`, `api/client.ts` |
 
 **Checkpoint 6 — Complete:**
-- [ ] Full loop: open → brief → process notes → tasks → ask question
-- [ ] All 5 nav tabs route correctly
-- [ ] Existing notes/bookmarks/auth unaffected
-- [ ] `npm run build` clean in both workspaces
+- [x] Full loop: open → brief → process notes → tasks → ask question
+- [x] All 5 nav tabs route correctly
+- [x] Existing notes/bookmarks/auth unaffected
+- [x] `npm run build` clean in both workspaces
 
 ---
 

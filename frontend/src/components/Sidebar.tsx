@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings, CheckSquare, MessageSquare } from 'lucide-react';
+import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings, CheckSquare, MessageSquare, Bookmark, Newspaper } from 'lucide-react';
 import type { Folder as FolderType, Note } from '../types';
 import { SkeletonFolderItem } from './Skeleton';
 
@@ -16,13 +16,15 @@ interface SidebarProps {
   onFolderUpdate: (id: number, name: string) => void;
   onCancelEdit: () => void;
   loading: boolean;
-  currentView: 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask';
+  currentView: 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
   selectedFolderId: number | null;
   onCloseMobile?: () => void;
   isMobile?: boolean;
   onSettingsClick?: () => void;
   onTasksClick?: () => void;
   onAskClick?: () => void;
+  onBriefClick?: () => void;
+  onBookmarksClick?: () => void;
 }
 
 const bg = 'bg-[#202020]';
@@ -53,6 +55,8 @@ export function Sidebar({
   onSettingsClick,
   onTasksClick,
   onAskClick,
+  onBriefClick,
+  onBookmarksClick,
 }: SidebarProps) {
   const [expanded, setExpanded] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -126,6 +130,8 @@ export function Sidebar({
           onHomeClick={() => { window.location.href = '/'; onCloseMobile?.(); }}
           onTasksClick={() => { onTasksClick?.(); onCloseMobile?.(); }}
           onAskClick={() => { onAskClick?.(); onCloseMobile?.(); }}
+          onBriefClick={() => { onBriefClick?.(); onCloseMobile?.(); }}
+          onBookmarksClick={() => { onBookmarksClick?.(); onCloseMobile?.(); }}
           onSettingsClick={() => { onSettingsClick?.(); onCloseMobile?.(); }}
           onFolderClick={handleFolderClick}
           onNoteClick={(n) => { onNoteClick(n); onCloseMobile?.(); }}
@@ -160,13 +166,31 @@ export function Sidebar({
           isActive={false}
         />
 
+        {/* Brief */}
+        <NavItem
+          icon={<Newspaper size={18} />}
+          label="Daily Brief"
+          expanded={expanded}
+          onClick={() => onBriefClick?.()}
+          isActive={currentView === 'brief'}
+        />
+
         {/* All Notes */}
         <NavItem
           icon={<Home size={18} />}
-          label="All Notes"
+          label="Notes"
           expanded={expanded}
           onClick={() => { window.location.href = '/'; }}
           isActive={currentView === 'home' && !selectedFolderId}
+        />
+
+        {/* Bookmarks */}
+        <NavItem
+          icon={<Bookmark size={18} />}
+          label="Bookmarks"
+          expanded={expanded}
+          onClick={() => onBookmarksClick?.()}
+          isActive={currentView === 'bookmarks'}
         />
 
         {/* Tasks */}
@@ -361,7 +385,7 @@ function FolderDropdown({
 function MobileContent({
   folders, recentNotes, currentView, selectedFolderId, loading,
   isCreatingFolder, newFolderName, editingFolder, editingName, folderDropdownOpen,
-  onCreateNote, onHomeClick, onTasksClick, onAskClick, onSettingsClick,
+  onCreateNote, onHomeClick, onTasksClick, onAskClick, onBriefClick, onBookmarksClick, onSettingsClick,
   onFolderClick, onNoteClick, onStartCreateFolder, onNewFolderNameChange,
   onKeyDown, onEditingNameChange, onFolderUpdateBlur, onFolderEdit, onFolderDelete,
   setFolderDropdownOpen,
@@ -380,6 +404,8 @@ function MobileContent({
   onHomeClick: () => void;
   onTasksClick: () => void;
   onAskClick: () => void;
+  onBriefClick: () => void;
+  onBookmarksClick: () => void;
   onSettingsClick: () => void;
   onFolderClick: (f: FolderType) => void;
   onNoteClick: (n: Note) => void;
@@ -401,8 +427,16 @@ function MobileContent({
         <Plus size={18} /><span>New Note</span>
       </button>
 
+      <button onClick={onBriefClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'brief' ? active : `${text} ${hover}`}`}>
+        <Newspaper size={18} /><span className="flex-1 text-left">Daily Brief</span>
+      </button>
+
       <button onClick={onHomeClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'home' && !selectedFolderId ? active : `${text} ${hover}`}`}>
-        <Home size={18} /><span className="flex-1 text-left">All Notes</span>
+        <Home size={18} /><span className="flex-1 text-left">Notes</span>
+      </button>
+
+      <button onClick={onBookmarksClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'bookmarks' ? active : `${text} ${hover}`}`}>
+        <Bookmark size={18} /><span className="flex-1 text-left">Bookmarks</span>
       </button>
 
       <button onClick={onTasksClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'tasks' ? active : `${text} ${hover}`}`}>
