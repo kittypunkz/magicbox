@@ -55,16 +55,23 @@ function sessionCookie(value: string, maxAge: number): string {
 app.get('/status', async (c) => {
   const db = c.env.DB as D1Database;
 
-  const user = await db.prepare('SELECT password_hash FROM users WHERE id = 1').first<{ password_hash: string | null }>();
-  const isSetup = !!(user?.password_hash);
+  let isSetup = false;
+  try {
+    const user = await db.prepare('SELECT password_hash FROM users WHERE id = 1').first<{ password_hash: string | null }>();
+    isSetup = !!(user?.password_hash);
+  } catch {
+    // column may not exist yet — treat as not set up
+  }
 
   const sessionId = c.req.header('Cookie')?.match(/sessionId=([^;]+)/)?.[1];
   let isAuthenticated = false;
   if (sessionId) {
-    const session = await db.prepare(
-      'SELECT id FROM sessions WHERE id = ? AND expires_at > datetime("now")'
-    ).bind(sessionId).first();
-    isAuthenticated = !!session;
+    try {
+      const session = await db.prepare(
+        'SELECT id FROM sessions WHERE id = ? AND expires_at > datetime("now")'
+      ).bind(sessionId).first();
+      isAuthenticated = !!session;
+    } catch {}
   }
 
   return c.json({ isSetup, isAuthenticated });
@@ -74,31 +81,37 @@ app.get('/status', async (c) => {
 app.post('/setup', async (c) => {
   const db = c.env.DB as D1Database;
 
-  const user = await db.prepare('SELECT password_hash FROM users WHERE id = 1').first<{ password_hash: string | null }>();
-  if (user?.password_hash) {
-    return c.json({ error: 'Already set up' }, 400);
+  try {
+    const user = await db.prepare('SELECT password_hash FROM users WHERE id = 1').first<{ password_hash: string | null }>();
+    if (user?.password_hash) {
+      return c.json({ error: 'Already set up' }, 400);
+    }
+
+    const body = await c.req.json<{ password: string }>();
+    if (!body.password || body.password.length < 8) {
+      return c.json({ error: 'Password must be at least 8 characters' }, 400);
+    }
+
+    const { hash, salt } = await hashPassword(body.password);
+
+    // Upsert the user row in case it doesn't exist yet
+    await db.prepare(
+      'INSERT INTO users (id, username, password_hash, password_salt) VALUES (1, \'owner\', ?, ?) ON CONFLICT(id) DO UPDATE SET password_hash = excluded.password_hash, password_salt = excluded.password_salt'
+    ).bind(hash, salt).run();
+
+    const sessionId = generateSessionId();
+    await db.prepare(
+      'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, ?)'
+    ).bind(sessionId, getSessionExpiry()).run();
+
+    return c.json({ success: true }, 200, {
+      'Set-Cookie': sessionCookie(sessionId, SESSION_DURATION_DAYS * 24 * 60 * 60),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Setup error:', msg);
+    return c.json({ error: `Setup failed: ${msg}` }, 500);
   }
-
-  const body = await c.req.json<{ password: string }>();
-  if (!body.password || body.password.length < 8) {
-    return c.json({ error: 'Password must be at least 8 characters' }, 400);
-  }
-
-  const { hash, salt } = await hashPassword(body.password);
-
-  // Ensure the user row exists (created in migration 0002)
-  await db.prepare(
-    'UPDATE users SET password_hash = ?, password_salt = ? WHERE id = 1'
-  ).bind(hash, salt).run();
-
-  const sessionId = generateSessionId();
-  await db.prepare(
-    'INSERT INTO sessions (id, user_id, expires_at) VALUES (?, 1, ?)'
-  ).bind(sessionId, getSessionExpiry()).run();
-
-  return c.json({ success: true }, 200, {
-    'Set-Cookie': sessionCookie(sessionId, SESSION_DURATION_DAYS * 24 * 60 * 60),
-  });
 });
 
 // POST /auth/login
