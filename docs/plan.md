@@ -125,8 +125,8 @@ GET  /auth/me       → current user from session (unchanged)
 
 | # | Task | Status | Files |
 |---|------|--------|-------|
-| 7 | Backend process routes: `/notes/:id/process` + `/process/recent` | `[ ]` | `backend/src/routes/notes.ts` or `routes/process.ts`, `index.ts` |
-| 8 | Frontend TaskConfirmModal + NoteCard Extract Tasks button | `[ ]` | `frontend/src/components/TaskConfirmModal.tsx`, `components/NoteCard.tsx` |
+| 7 | Backend process routes: `/notes/:id/process` + `/process/recent` | `[x]` | `backend/src/routes/notes.ts` or `routes/process.ts`, `index.ts` |
+| 8 | Frontend TaskConfirmModal + NoteCard Extract Tasks button | `[x]` | `frontend/src/components/TaskConfirmModal.tsx`, `components/NoteCard.tsx` |
 
 **Checkpoint 3:** Note → Extract → Confirm → Task with note link · Batch process works
 

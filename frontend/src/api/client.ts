@@ -88,6 +88,15 @@ export const bookmarksAPI = {
   ).then(r => r.data),
 };
 
+export const processAPI = {
+  note: (id: number) => fetchAPI<{ tasks: { title: string }[]; note_id: number }>(`/process/notes/${id}`, {
+    method: 'POST',
+  }),
+  recent: () => fetchAPI<{ results: { note_id: number; note_title: string; tasks: { title: string }[] }[] }>('/process/recent', {
+    method: 'POST',
+  }),
+};
+
 export const tasksAPI = {
   getAll: (status?: 'pending' | 'done') => {
     const query = status ? `?status=${status}` : '';
