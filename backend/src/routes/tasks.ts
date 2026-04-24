@@ -7,7 +7,7 @@ interface Task {
   id: number;
   note_id: number | null;
   title: string;
-  status: 'pending' | 'done';
+  status: 'backlog' | 'doing' | 'done';
   created_at: string;
   completed_at: string | null;
 }
@@ -47,11 +47,11 @@ app.post('/', async (c) => {
   }
 
   const db = c.env.DB as D1Database;
-  const { title, note_id } = parsed.data;
+  const { title, note_id, status } = parsed.data;
 
   const result = await db.prepare(
-    'INSERT INTO tasks (title, note_id) VALUES (?, ?) RETURNING *'
-  ).bind(title, note_id ?? null).first<Task>();
+    'INSERT INTO tasks (title, note_id, status) VALUES (?, ?, ?) RETURNING *'
+  ).bind(title, note_id ?? null, status ?? 'backlog').first<Task>();
 
   return c.json({ task: result }, 201);
 });
@@ -82,6 +82,7 @@ app.patch('/:id', async (c) => {
     } else {
       sets.push('completed_at = NULL');
     }
+
   }
 
   params.push(String(id));

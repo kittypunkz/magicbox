@@ -103,15 +103,15 @@ export const processAPI = {
 };
 
 export const tasksAPI = {
-  getAll: (status?: 'pending' | 'done') => {
+  getAll: (status?: Task['status']) => {
     const query = status ? `?status=${status}` : '';
     return fetchAPI<{ tasks: Task[] }>(`/tasks${query}`).then(r => r.tasks);
   },
-  create: (title: string, note_id?: number) => fetchAPI<{ task: Task }>('/tasks', {
+  create: (title: string, note_id?: number, status?: Task['status']) => fetchAPI<{ task: Task }>('/tasks', {
     method: 'POST',
-    body: JSON.stringify({ title, note_id }),
+    body: JSON.stringify({ title, note_id, status }),
   }).then(r => r.task),
-  update: (id: number, data: { title?: string; status?: 'pending' | 'done' }) =>
+  update: (id: number, data: { title?: string; status?: Task['status'] }) =>
     fetchAPI<{ task: Task }>(`/tasks/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

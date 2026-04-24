@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckSquare, Square, Trash2, Plus, Loader2, AlertCircle } from 'lucide-react';
+import { CheckSquare, Square, Trash2, Plus, Loader2, AlertCircle, ArrowRight, ArrowLeft, RotateCcw } from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
 import { ConfirmModal } from '../components/ConfirmModal';
 import type { Task } from '../types';
@@ -12,31 +12,41 @@ const c = {
   input: 'bg-[#2a2a2a]',
 };
 
+const COLUMNS: { status: Task['status']; label: string; color: string }[] = [
+  { status: 'backlog', label: 'Backlog',  color: 'text-[#6b6b6b]' },
+  { status: 'doing',   label: 'Doing',   color: 'text-blue-400'   },
+  { status: 'done',    label: 'Done',    color: 'text-green-400'  },
+];
+
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Bangkok' });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Bangkok',
+  });
 }
 
 function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Bangkok' });
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Bangkok',
+  });
 }
 
-function TaskItem({
+function TaskCard({
   task,
-  onToggle,
+  onMove,
   onDelete,
   onRename,
   onNoteClick,
 }: {
   task: Task;
-  onToggle: () => void;
+  onMove: (status: Task['status']) => void;
   onDelete: () => void;
   onRename: (title: string) => void;
   onNoteClick?: (noteId: number) => void;
 }) {
-  const isDone = task.status === 'done';
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.title);
-  const [confirmUncheck, setConfirmUncheck] = useState(false);
+  const [confirmUndo, setConfirmUndo] = useState(false);
 
   const commit = () => {
     setEditing(false);
@@ -45,79 +55,169 @@ function TaskItem({
     else setDraft(task.title);
   };
 
-  const handleCheckboxClick = () => {
-    if (isDone) {
-      setConfirmUncheck(true);
-    } else {
-      onToggle();
-    }
-  };
-
   return (
     <>
-      <div className={`flex items-start gap-3 p-3 rounded-lg border ${c.border} bg-[#202020] group`}>
-        <button
-          onClick={handleCheckboxClick}
-          className={`mt-0.5 flex-shrink-0 transition-colors ${isDone ? 'text-green-400' : c.gray}`}
-        >
-          {isDone ? <CheckSquare size={18} /> : <Square size={18} />}
-        </button>
-        <div className="flex-1 min-w-0">
-          {editing ? (
-            <input
-              autoFocus
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              onBlur={commit}
-              onKeyDown={e => {
-                if (e.key === 'Enter') commit();
-                if (e.key === 'Escape') { setDraft(task.title); setEditing(false); }
-              }}
-              className={`w-full text-sm bg-transparent border-b border-blue-500 outline-none ${c.text} pb-0.5`}
-            />
-          ) : (
-            <p
-              onClick={() => !isDone && setEditing(true)}
-              className={`text-sm ${isDone ? 'line-through text-[#4b4b4b]' : `${c.text} cursor-text hover:text-white`}`}
-            >
-              {task.title}
-            </p>
-          )}
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className={`text-xs ${c.gray}`}>
-              {isDone && task.completed_at
-                ? `Completed ${formatDateTime(task.completed_at)}`
-                : `Created ${formatDate(task.created_at)}`}
-            </span>
-            {task.note_id && onNoteClick && (
+      <div className={`p-3 rounded-lg border ${c.border} bg-[#202020] group flex flex-col gap-2`}>
+        {/* Title */}
+        {editing ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => {
+              if (e.key === 'Enter') commit();
+              if (e.key === 'Escape') { setDraft(task.title); setEditing(false); }
+            }}
+            className={`w-full text-sm bg-transparent border-b border-blue-500 outline-none ${c.text} pb-0.5`}
+          />
+        ) : (
+          <p
+            onClick={() => task.status !== 'done' && setEditing(true)}
+            className={`text-sm leading-snug ${
+              task.status === 'done'
+                ? 'line-through text-[#4b4b4b]'
+                : `${c.text} cursor-text hover:text-white`
+            }`}
+          >
+            {task.title}
+          </p>
+        )}
+
+        {/* Date */}
+        <p className={`text-xs ${c.gray}`}>
+          {task.status === 'done' && task.completed_at
+            ? `Completed ${formatDateTime(task.completed_at)}`
+            : `Created ${formatDate(task.created_at)}`}
+        </p>
+
+        {task.note_id && onNoteClick && (
+          <button
+            onClick={() => onNoteClick(task.note_id!)}
+            className="text-xs text-blue-400 hover:text-blue-300 transition-colors text-left"
+          >
+            View source note →
+          </button>
+        )}
+
+        {/* Actions row */}
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-1">
+            {task.status === 'backlog' && (
               <button
-                onClick={() => onNoteClick(task.note_id!)}
-                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                onClick={() => onMove('doing')}
+                title="Move to Doing"
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${c.gray} hover:text-blue-400 hover:bg-[#2a2a2a] transition-colors`}
               >
-                View source note →
+                <ArrowRight size={12} /> Doing
+              </button>
+            )}
+            {task.status === 'doing' && (
+              <>
+                <button
+                  onClick={() => onMove('backlog')}
+                  title="Move to Backlog"
+                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${c.gray} hover:text-[#e6e6e6] hover:bg-[#2a2a2a] transition-colors`}
+                >
+                  <ArrowLeft size={12} /> Backlog
+                </button>
+                <button
+                  onClick={() => onMove('done')}
+                  title="Mark Done"
+                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${c.gray} hover:text-green-400 hover:bg-[#2a2a2a] transition-colors`}
+                >
+                  <CheckSquare size={12} /> Done
+                </button>
+              </>
+            )}
+            {task.status === 'done' && (
+              <button
+                onClick={() => setConfirmUndo(true)}
+                title="Move back to Doing"
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${c.gray} hover:text-yellow-400 hover:bg-[#2a2a2a] transition-colors`}
+              >
+                <RotateCcw size={12} /> Undo
               </button>
             )}
           </div>
+
+          <button
+            onClick={onDelete}
+            className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-all ${c.gray} hover:text-red-400`}
+          >
+            <Trash2 size={14} />
+          </button>
         </div>
-        <button
-          onClick={onDelete}
-          className={`flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ${c.gray} hover:text-red-400`}
-        >
-          <Trash2 size={16} />
-        </button>
       </div>
 
       <ConfirmModal
-        isOpen={confirmUncheck}
-        onClose={() => setConfirmUncheck(false)}
-        onConfirm={() => { setConfirmUncheck(false); onToggle(); }}
+        isOpen={confirmUndo}
+        onClose={() => setConfirmUndo(false)}
+        onConfirm={() => { setConfirmUndo(false); onMove('doing'); }}
         title="Mark as incomplete?"
-        message="This will clear the completion date and time. Are you sure?"
-        confirmText="Yes, uncheck"
+        message="This will clear the completion date and time and move the task back to Doing."
+        confirmText="Yes, undo"
         cancelText="Cancel"
         variant="warning"
       />
     </>
+  );
+}
+
+function AddTaskInput({
+  status,
+  onAdd,
+}: {
+  status: Task['status'];
+  onAdd: (title: string, status: Task['status']) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!value.trim()) return;
+    setLoading(true);
+    try {
+      await onAdd(value.trim(), status);
+      setValue('');
+      setOpen(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${c.gray} hover:text-[#e6e6e6] hover:bg-[#2a2a2a] transition-colors`}
+      >
+        <Plus size={14} /> Add task
+      </button>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="flex gap-2">
+      <input
+        autoFocus
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setValue(''); } }}
+        onBlur={() => { if (!value.trim()) setOpen(false); }}
+        placeholder="Task title…"
+        className={`flex-1 px-3 py-2 ${c.input} border ${c.border} rounded-lg ${c.text} placeholder-[#4b4b4b] text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+      />
+      <button
+        type="submit"
+        disabled={loading || !value.trim()}
+        className="px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm transition-colors"
+      >
+        {loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+      </button>
+    </form>
   );
 }
 
@@ -126,110 +226,91 @@ interface TasksPageProps {
 }
 
 export function TasksPage({ onNoteClick }: TasksPageProps) {
-  const [filter, setFilter] = useState<'all' | 'pending' | 'done'>('all');
-  const [newTitle, setNewTitle] = useState('');
-  const [adding, setAdding] = useState(false);
+  const { tasks, loading, error, createTask, moveTask, renameTask, deleteTask } = useTasks();
 
-  const statusFilter = filter === 'all' ? undefined : filter;
-  const { tasks, loading, error, createTask, toggleTask, renameTask, deleteTask } = useTasks(statusFilter);
-
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-    setAdding(true);
-    try {
-      await createTask(newTitle.trim());
-      setNewTitle('');
-    } finally {
-      setAdding(false);
-    }
+  const handleAdd = async (title: string, status: Task['status']) => {
+    await createTask(title, status);
   };
 
-  const pending = tasks.filter(t => t.status === 'pending').length;
-  const done = tasks.filter(t => t.status === 'done').length;
-
   return (
-    <div className={`h-full overflow-y-auto ${c.bg}`}>
+    <div className={`h-full flex flex-col ${c.bg}`}>
       {/* Header */}
-      <div className={`sticky top-0 bg-[#202020] border-b ${c.border} px-4 sm:px-8 py-4 sm:py-6 z-10`}>
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#2a2a2a] rounded-xl flex items-center justify-center flex-shrink-0">
-            <CheckSquare size={24} className={c.gray} />
+      <div className={`flex-shrink-0 bg-[#202020] border-b ${c.border} px-4 sm:px-8 py-4 sm:py-5`}>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-[#2a2a2a] rounded-xl flex items-center justify-center flex-shrink-0">
+            <Square size={20} className={c.gray} />
           </div>
           <div>
-            <h1 className={`text-lg sm:text-2xl font-bold ${c.text}`}>Tasks</h1>
-            <p className={`text-xs sm:text-sm ${c.gray}`}>{pending} pending · {done} done</p>
+            <h1 className={`text-lg sm:text-xl font-bold ${c.text}`}>Tasks</h1>
+            <p className={`text-xs ${c.gray}`}>
+              {tasks.filter(t => t.status === 'backlog').length} backlog ·{' '}
+              {tasks.filter(t => t.status === 'doing').length} doing ·{' '}
+              {tasks.filter(t => t.status === 'done').length} done
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="px-4 sm:px-8 py-4 sm:py-6 space-y-4">
-        {/* Add task */}
-        <form onSubmit={handleAdd} className="flex gap-2">
-          <input
-            type="text"
-            value={newTitle}
-            onChange={e => setNewTitle(e.target.value)}
-            placeholder="Add a task..."
-            className={`flex-1 px-3 py-2.5 ${c.input} border ${c.border} rounded-lg ${c.text} placeholder-[#4b4b4b] text-sm focus:outline-none focus:border-blue-500 transition-colors`}
-          />
-          <button
-            type="submit"
-            disabled={adding || !newTitle.trim()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
-          >
-            {adding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-          </button>
-        </form>
-
-        {/* Filter tabs */}
-        <div className="flex gap-1">
-          {(['all', 'pending', 'done'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-sm capitalize transition-colors ${
-                filter === f ? 'bg-blue-500 text-white' : `${c.gray} hover:text-[#e6e6e6] hover:bg-[#2a2a2a]`
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+      {/* Error */}
+      {error && (
+        <div className="flex-shrink-0 mx-4 sm:mx-8 mt-4 flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-400">{error}</p>
         </div>
+      )}
 
-        {/* Error */}
-        {error && (
-          <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-400">{error}</p>
-          </div>
-        )}
+      {/* Kanban columns */}
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 size={24} className={`animate-spin ${c.gray}`} />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-4 p-4 sm:p-6 h-full min-w-[600px]">
+            {COLUMNS.map(col => {
+              const colTasks = tasks.filter(t => t.status === col.status);
+              return (
+                <div key={col.status} className="flex-1 flex flex-col min-w-[200px] max-w-sm">
+                  {/* Column header */}
+                  <div className="flex items-center gap-2 mb-3 px-1">
+                    <span className={`text-xs font-semibold uppercase tracking-wider ${col.color}`}>
+                      {col.label}
+                    </span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full bg-[#2a2a2a] ${c.gray}`}>
+                      {colTasks.length}
+                    </span>
+                  </div>
 
-        {/* Task list */}
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 size={24} className={`animate-spin ${c.gray}`} />
+                  {/* Cards */}
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                    {colTasks.map(task => (
+                      <TaskCard
+                        key={task.id}
+                        task={task}
+                        onMove={status => moveTask(task.id, status)}
+                        onDelete={() => deleteTask(task.id)}
+                        onRename={title => renameTask(task.id, title)}
+                        onNoteClick={onNoteClick}
+                      />
+                    ))}
+
+                    {colTasks.length === 0 && (
+                      <div className={`text-center py-8 text-xs ${c.gray} opacity-50`}>
+                        No tasks
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add task */}
+                  <div className="mt-3">
+                    <AddTaskInput status={col.status} onAdd={handleAdd} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ) : tasks.length === 0 ? (
-          <div className={`text-center py-12 ${c.gray}`}>
-            <CheckSquare size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No tasks yet</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {tasks.map(task => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggle={() => toggleTask(task.id, task.status)}
-                onDelete={() => deleteTask(task.id)}
-                onRename={title => renameTask(task.id, title)}
-                onNoteClick={onNoteClick}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

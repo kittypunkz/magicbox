@@ -79,7 +79,7 @@ export interface Task {
   id: number;
   note_id: number | null;
   title: string;
-  status: 'pending' | 'done';
+  status: 'backlog' | 'doing' | 'done';
   created_at: string;
   completed_at: string | null;
 }
