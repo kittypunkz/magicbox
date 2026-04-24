@@ -24,7 +24,7 @@ app.use('*', cors({
     }
     return 'http://localhost:3000';
   },
-  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
   exposeHeaders: ['Set-Cookie'],
   credentials: true,
@@ -38,7 +38,7 @@ app.get('/', (c) => {
   return c.json({
     success: true,
     name: 'MagicBox API',
-    version: '2.0.0',
+    version: '1.4.0',
     status: 'running',
   });
 });
