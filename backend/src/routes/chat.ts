@@ -48,7 +48,7 @@ app.post('/', async (c) => {
         JOIN folders f ON n.folder_id = f.id
         WHERE notes_fts MATCH ?
         ORDER BY rank
-        LIMIT 5
+        LIMIT 8
       `).bind(words).all<NoteResult>();
       notes = result.results ?? [];
     }
@@ -56,18 +56,24 @@ app.post('/', async (c) => {
     // FTS5 failed — will use recent notes fallback below
   }
 
-  // Fallback: if no FTS5 matches, include the 5 most recently updated notes
+  // Always include the 3 most recently updated notes (deduplicated with FTS5 results)
+  try {
+    const recentResult = await db.prepare(`
+      SELECT n.id, n.title, n.content, f.name AS folder_name
+      FROM notes n
+      JOIN folders f ON n.folder_id = f.id
+      ORDER BY n.updated_at DESC
+      LIMIT 3
+    `).all<NoteResult>();
+    const existingIds = new Set(notes.map(n => n.id));
+    for (const note of recentResult.results ?? []) {
+      if (!existingIds.has(note.id)) notes.push(note);
+    }
+  } catch {}
+
+  // If still nothing, that means there are no notes at all
   if (notes.length === 0) {
-    try {
-      const result = await db.prepare(`
-        SELECT n.id, n.title, n.content, f.name AS folder_name
-        FROM notes n
-        JOIN folders f ON n.folder_id = f.id
-        ORDER BY n.updated_at DESC
-        LIMIT 5
-      `).all<NoteResult>();
-      notes = result.results ?? [];
-    } catch {}
+    return c.json({ content: "You don't have any notes yet. Create some notes first, then ask me questions about them.", sources: [] });
   }
 
   const context = notes.map(n =>
