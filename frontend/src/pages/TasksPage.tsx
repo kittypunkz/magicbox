@@ -336,7 +336,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
             })}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
