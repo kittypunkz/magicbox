@@ -183,6 +183,10 @@ function AppContent() {
       setView('bookmarks');
       setSelectedFolderId(null);
       setSelectedNoteId(null);
+    } else if (location.pathname === '/settings') {
+      setView('settings');
+      setSelectedFolderId(null);
+      setSelectedNoteId(null);
     } else if (location.pathname === '/') {
       setView('home');
       setSelectedFolderId(null);
@@ -222,7 +226,8 @@ function AppContent() {
     setView('settings');
     setSelectedFolderId(null);
     setSelectedNoteId(null);
-  }, []);
+    navigate('/settings', { replace: true });
+  }, [navigate]);
 
   const showTasks = useCallback(() => {
     setView('tasks');
@@ -585,6 +590,11 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       <Route path="/bookmarks" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
         <ProtectedRoute>
           <AppContent />
         </ProtectedRoute>
