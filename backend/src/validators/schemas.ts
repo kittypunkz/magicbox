@@ -50,3 +50,20 @@ export const UpdateFolderSchema = z.object({
 export const SearchSchema = PaginationSchema.extend({
   q: z.string().trim().min(1).max(200),
 });
+
+// Task schemas
+export const CreateTaskSchema = z.object({
+  title: z.string().trim().min(1).max(500),
+  note_id: z.number().int().positive().optional(),
+});
+
+export const UpdateTaskSchema = z.object({
+  title: z.string().trim().min(1).max(500).optional(),
+  status: z.enum(['pending', 'done']).optional(),
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'At least one field must be provided',
+});
+
+export const TaskQuerySchema = z.object({
+  status: z.enum(['pending', 'done']).optional(),
+});

@@ -113,9 +113,9 @@ GET  /auth/me       → current user from session (unchanged)
 
 | # | Task | Status | Files |
 |---|------|--------|-------|
-| 4 | Backend tasks CRUD (GET/POST/PATCH/DELETE /tasks) | `[ ]` | `backend/src/routes/tasks.ts`, `index.ts`, `validators/schemas.ts` |
-| 5 | Frontend tasks API client + `useTasks` hook | `[ ]` | `frontend/src/api/client.ts`, `hooks/useTasks.ts`, `types/index.ts` |
-| 6 | Frontend TasksPage + route + nav icon | `[ ]` | `frontend/src/pages/TasksPage.tsx`, `App.tsx`, `components/Sidebar.tsx` |
+| 4 | Backend tasks CRUD (GET/POST/PATCH/DELETE /tasks) | `[x]` | `backend/src/routes/tasks.ts`, `index.ts`, `validators/schemas.ts` |
+| 5 | Frontend tasks API client + `useTasks` hook | `[x]` | `frontend/src/api/client.ts`, `hooks/useTasks.ts`, `types/index.ts` |
+| 6 | Frontend TasksPage + route + nav icon | `[x]` | `frontend/src/pages/TasksPage.tsx`, `App.tsx`, `components/Sidebar.tsx` |
 
 **Checkpoint 2:** Create/complete/delete tasks · Source note links work · Build clean
 

@@ -1,4 +1,4 @@
-import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse, Settings, OpenRouterModel } from '../types';
+import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse, Settings, OpenRouterModel, Task } from '../types';
 
 // API Base URL - Uses environment variable or localhost:8787 for development
 const isDev = import.meta.env.DEV;
@@ -88,6 +88,23 @@ export const bookmarksAPI = {
   ).then(r => r.data),
 };
 
+export const tasksAPI = {
+  getAll: (status?: 'pending' | 'done') => {
+    const query = status ? `?status=${status}` : '';
+    return fetchAPI<{ tasks: Task[] }>(`/tasks${query}`).then(r => r.tasks);
+  },
+  create: (title: string, note_id?: number) => fetchAPI<{ task: Task }>('/tasks', {
+    method: 'POST',
+    body: JSON.stringify({ title, note_id }),
+  }).then(r => r.task),
+  update: (id: number, data: { title?: string; status?: 'pending' | 'done' }) =>
+    fetchAPI<{ task: Task }>(`/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }).then(r => r.task),
+  delete: (id: number) => fetchAPI<{ success: boolean }>(`/tasks/${id}`, { method: 'DELETE' }),
+};
+
 export const settingsAPI = {
   getAll: () => fetchAPI<{ settings: Settings }>('/settings').then(r => r.settings),
   update: (data: Partial<Settings>) => fetchAPI<{ success: boolean }>('/settings', {
@@ -97,4 +114,4 @@ export const settingsAPI = {
   getModels: () => fetchAPI<{ models: OpenRouterModel[] }>('/settings/models').then(r => r.models),
 };
 
-export type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, Settings, OpenRouterModel };
+export type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, Settings, OpenRouterModel, Task };

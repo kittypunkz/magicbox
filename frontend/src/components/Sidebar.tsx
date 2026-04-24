@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings } from 'lucide-react';
+import { Plus, Folder, FileText, X, MoreHorizontal, Pencil, Trash2, Home, Settings, CheckSquare } from 'lucide-react';
 
 import type { Folder as FolderType, Note } from '../types';
 import { SkeletonFolderItem } from './Skeleton';
@@ -17,11 +17,12 @@ interface SidebarProps {
   onFolderUpdate: (id: number, name: string) => void;
   onCancelEdit: () => void;
   loading: boolean;
-  currentView: 'home' | 'folder' | 'note' | 'settings';
+  currentView: 'home' | 'folder' | 'note' | 'settings' | 'tasks';
   selectedFolderId: number | null;
   onCloseMobile?: () => void;
   isMobile?: boolean;
   onSettingsClick?: () => void;
+  onTasksClick?: () => void;
 }
 
 const c = {
@@ -52,6 +53,7 @@ export function Sidebar({
   onCloseMobile,
   isMobile,
   onSettingsClick,
+  onTasksClick,
 }: SidebarProps) {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -199,6 +201,23 @@ export function Sidebar({
             <span className="flex-1 text-left">All Notes</span>
           </button>
         </div>
+
+        {/* Tasks */}
+        {onTasksClick && (
+          <div className="px-2">
+            <button
+              onClick={onTasksClick}
+              className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                transition-colors min-h-[44px]
+                ${currentView === 'tasks' ? c.active : `${c.text} ${c.hover}`}
+              `}
+            >
+              <CheckSquare size={18} />
+              <span className="flex-1 text-left">Tasks</span>
+            </button>
+          </div>
+        )}
 
         {/* Folders Section */}
         <div>

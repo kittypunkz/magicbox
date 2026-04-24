@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TasksPage } from './pages/TasksPage';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
@@ -20,7 +21,7 @@ import './App.css';
 import { Agentation } from 'agentation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-type ViewType = 'home' | 'folder' | 'note' | 'settings';
+type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'tasks';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -163,6 +164,10 @@ function AppContent() {
         setView('folder');
         setSelectedFolderId(id);
       }
+    } else if (location.pathname === '/tasks') {
+      setView('tasks');
+      setSelectedFolderId(null);
+      setSelectedNoteId(null);
     } else if (location.pathname === '/') {
       setView('home');
       setSelectedFolderId(null);
@@ -203,6 +208,13 @@ function AppContent() {
     setSelectedFolderId(null);
     setSelectedNoteId(null);
   }, []);
+
+  const showTasks = useCallback(() => {
+    setView('tasks');
+    setSelectedFolderId(null);
+    setSelectedNoteId(null);
+    navigate('/tasks', { replace: true });
+  }, [navigate]);
 
   const showFolder = useCallback((folderId: number) => {
     setView('folder');
@@ -317,6 +329,7 @@ function AppContent() {
           onCloseMobile={() => setSidebarOpen(false)}
           isMobile={isMobile}
           onSettingsClick={showSettings}
+          onTasksClick={showTasks}
         />
       </div>
 
@@ -353,6 +366,7 @@ function AppContent() {
             {view === 'folder' && getFolderName(selectedFolderId)}
             {view === 'note' && (selectedNote?.title || 'Untitled')}
             {view === 'settings' && 'Settings'}
+            {view === 'tasks' && 'Tasks'}
           </h1>
 
           <div className="flex-1" />
@@ -431,6 +445,10 @@ function AppContent() {
           {view === 'settings' && (
             <SettingsPage />
           )}
+
+          {view === 'tasks' && (
+            <TasksPage onNoteClick={showNote} />
+          )}
         </main>
 
         {/* Mobile Navigation */}
@@ -499,6 +517,11 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       <Route path="/note/:noteId" element={
+        <ProtectedRoute>
+          <AppContent />
+        </ProtectedRoute>
+      } />
+      <Route path="/tasks" element={
         <ProtectedRoute>
           <AppContent />
         </ProtectedRoute>

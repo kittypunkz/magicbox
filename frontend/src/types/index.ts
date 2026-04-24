@@ -75,6 +75,15 @@ export interface ApiResponse<T> {
   details?: unknown;
 }
 
+export interface Task {
+  id: number;
+  note_id: number | null;
+  title: string;
+  status: 'pending' | 'done';
+  created_at: string;
+  completed_at: string | null;
+}
+
 export interface OpenRouterModel {
   id: string;
   name: string;
