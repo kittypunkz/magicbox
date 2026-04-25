@@ -5,27 +5,26 @@ test.describe('Sidebar', () => {
     await page.goto('/');
   });
 
-  test('should display logo and version', async ({ page }) => {
-    // Use heading role to be specific
-    await expect(page.getByRole('heading', { name: 'MagicBox' })).toBeVisible();
+  test('should display navigation buttons', async ({ page }) => {
+    // Desktop sidebar shows icon-only nav buttons by default (collapsed)
+    await expect(page.getByRole('button', { name: /new note/i }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /tasks/i }).first()).toBeVisible();
   });
 
-  test('should display folder list', async ({ page }) => {
-    // Use button role to match sidebar button specifically
-    await expect(page.getByRole('button', { name: 'All Notes' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Inbox' })).toBeVisible();
+  test('should show folder list when expanded', async ({ page }) => {
+    await page.getByRole('button', { name: /expand sidebar/i }).click();
+    await expect(page.getByRole('button', { name: 'Inbox', exact: true })).toBeVisible();
   });
 
   test('should navigate to folder', async ({ page }) => {
-    await page.getByRole('button', { name: 'Inbox' }).click();
-    // Heading should show Inbox (folder page)
-    await expect(page.getByRole('heading', { name: 'Inbox' })).toBeVisible();
+    await page.getByRole('button', { name: /expand sidebar/i }).click();
+    await page.getByRole('button', { name: 'Inbox', exact: true }).click();
+    await expect(page.locator('[data-area-id="folderpage-name"]')).toBeVisible();
   });
 
-  test('should highlight active folder', async ({ page }) => {
-    await page.getByRole('button', { name: 'Inbox' }).click();
-    const inboxBtn = page.getByRole('button', { name: 'Inbox' });
-    await expect(inboxBtn).toBeVisible();
+  test('should navigate to tasks page', async ({ page }) => {
+    await page.getByRole('button', { name: /tasks/i }).first().click();
+    await expect(page.getByRole('main').getByRole('heading', { name: 'Tasks' })).toBeVisible();
   });
 
   test('should show search', async ({ page }) => {
@@ -33,7 +32,6 @@ test.describe('Sidebar', () => {
   });
 
   test('should have new note button', async ({ page }) => {
-    // New Note button is at the top of sidebar
-    await expect(page.getByRole('button', { name: /new note/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /new note/i }).first()).toBeVisible();
   });
 });
