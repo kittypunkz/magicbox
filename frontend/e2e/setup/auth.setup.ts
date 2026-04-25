@@ -1,5 +1,8 @@
 import { test as setup, expect } from '@playwright/test';
+import { fileURLToPath } from 'url';
 import path from 'path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const API_URL = 'http://localhost:8787';
 const E2E_PASSWORD = process.env.E2E_PASSWORD || 'testpass123!';
