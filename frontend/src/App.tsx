@@ -18,7 +18,7 @@ import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
 import type { Note, Folder } from './types';
 import { useMinLoading } from './hooks/useMinLoading';
-import { ArrowLeft, MoreVertical, LogOut, Shield } from 'lucide-react';
+import { ArrowLeft, MoreVertical } from 'lucide-react';
 import { SearchBar } from './components/SearchBar';
 import './App.css';
 import { Agentation } from 'agentation';
@@ -85,44 +85,13 @@ function SetupRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function SettingsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { logout } = useAuth();
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#202020] border border-[#2f2f2f] rounded-xl w-full max-w-md">
-        <div className="flex items-center justify-between p-4 border-b border-[#2f2f2f]">
-          <h2 className="text-lg font-semibold text-[#e6e6e6]">Settings</h2>
-          <button onClick={onClose} className="text-[#6b6b6b] hover:text-[#e6e6e6] transition-colors">
-            ✕
-          </button>
-        </div>
-        <div className="p-4">
-          <button
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 p-3 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
-          >
-            <LogOut size={16} />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { folderId, noteId } = useParams<{ folderId?: string; noteId?: string }>();
-  // Logout is available via useAuth in SettingsModal
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
   // View state
   const [view, setView] = useState<ViewType>('home');
-  const [previousView, setPreviousView] = useState<ViewType>('home');
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | undefined>(undefined);
@@ -205,72 +174,38 @@ function AppContent() {
     }
   }, [selectedNoteId, notes]);
 
-  const updateURL = useCallback((view: ViewType, folderId?: number | null, noteId?: number | null) => {
-    if (view === 'note' && noteId) {
-      navigate(`/note/${noteId}`, { replace: true });
-    } else if (view === 'folder' && folderId) {
-      navigate(`/folder/${folderId}`, { replace: true });
-    } else {
-      navigate('/', { replace: true });
-    }
+  // Navigation handlers — only call navigate(); URL-sync effect drives view state
+  const showAllNotes = useCallback(() => {
+    navigate('/');
   }, [navigate]);
 
-  // Navigation handlers
-  const showAllNotes = useCallback(() => {
-    setView('home');
-    setSelectedFolderId(null);
-    setSelectedNoteId(null);
-    updateURL('home');
-  }, [updateURL]);
-
   const showSettings = useCallback(() => {
-    setView('settings');
-    setSelectedFolderId(null);
-    setSelectedNoteId(null);
-    navigate('/settings', { replace: true });
+    navigate('/settings');
   }, [navigate]);
 
   const showTasks = useCallback(() => {
-    setView('tasks');
-    setSelectedFolderId(null);
-    setSelectedNoteId(null);
-    navigate('/tasks', { replace: true });
+    navigate('/tasks');
   }, [navigate]);
 
   const showAsk = useCallback(() => {
-    setView('ask');
-    setSelectedFolderId(null);
-    setSelectedNoteId(null);
-    navigate('/ask', { replace: true });
+    navigate('/ask');
   }, [navigate]);
 
   const showBrief = useCallback(() => {
-    setView('brief');
-    setSelectedFolderId(null);
-    setSelectedNoteId(null);
-    navigate('/brief', { replace: true });
+    navigate('/brief');
   }, [navigate]);
 
   const showBookmarks = useCallback(() => {
-    setView('bookmarks');
-    setSelectedFolderId(null);
-    setSelectedNoteId(null);
-    navigate('/bookmarks', { replace: true });
+    navigate('/bookmarks');
   }, [navigate]);
 
   const showFolder = useCallback((folderId: number) => {
-    setView('folder');
-    setSelectedFolderId(folderId);
-    setSelectedNoteId(null);
-    updateURL('folder', folderId);
-  }, [updateURL]);
+    navigate(`/folder/${folderId}`);
+  }, [navigate]);
 
   const showNote = useCallback((noteId: number) => {
-    setPreviousView(view);
-    setView('note');
-    setSelectedNoteId(noteId);
-    updateURL('note', selectedFolderId, noteId);
-  }, [view, selectedFolderId, updateURL]);
+    navigate(`/note/${noteId}`);
+  }, [navigate]);
 
   const handleNoteClick = useCallback((note: Note) => {
     showNote(note.id);
@@ -323,14 +258,8 @@ function AppContent() {
   }, []);
 
   const handleBack = useCallback(() => {
-    if (selectedFolderId) {
-      showFolder(selectedFolderId);
-    } else if (previousView === 'bookmarks') {
-      showBookmarks();
-    } else {
-      showAllNotes();
-    }
-  }, [selectedFolderId, previousView, showFolder, showBookmarks, showAllNotes]);
+    navigate(-1);
+  }, [navigate]);
 
   const getFolderName = useCallback((folderId: number | null) => {
     if (!folderId) return 'All Notes';
@@ -401,7 +330,7 @@ function AppContent() {
           {view === 'note' && (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all lg:hidden"
+              className="p-2 -ml-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all"
               aria-label="Back"
             >
               <ArrowLeft size={20} />
@@ -422,15 +351,6 @@ function AppContent() {
           <div className="flex-1" />
 
           <SearchBar onNoteClick={showNote} onFolderClick={showFolder} />
-
-          {/* Settings Button */}
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all"
-            aria-label="Settings"
-          >
-            <Shield size={20} />
-          </button>
 
           {view === 'note' && selectedNote && (
             <div className="relative">
@@ -512,6 +432,11 @@ function AppContent() {
         <MobileNav
           onShowAllNotes={showAllNotes}
           onCreateNote={handleCreateNote}
+          onTasksClick={showTasks}
+          onAskClick={showAsk}
+          onBriefClick={showBrief}
+          onBookmarksClick={showBookmarks}
+          onSettingsClick={showSettings}
           currentView={view}
         />
       </div>
@@ -542,10 +467,6 @@ function AppContent() {
         defaultFolderName={selectedFolderId ? folders.find(f => f.id === selectedFolderId)?.name : undefined}
       />
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
     </div>
   );
 }
@@ -553,56 +474,19 @@ function AppContent() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/login" element={
-        <AuthRoute>
-          <LoginPage />
-        </AuthRoute>
-      } />
-      <Route path="/setup" element={
-        <SetupRoute>
-          <SetupPage />
-        </SetupRoute>
-      } />
-      <Route path="/" element={
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
-      } />
-      <Route path="/folder/:folderId" element={
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
-      } />
-      <Route path="/note/:noteId" element={
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
-      } />
-      <Route path="/tasks" element={
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
-      } />
-      <Route path="/ask" element={
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
-      } />
-      <Route path="/brief" element={
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
-      } />
-      <Route path="/bookmarks" element={
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
-      } />
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <AppContent />
-        </ProtectedRoute>
-      } />
+      <Route path="/login" element={<AuthRoute><LoginPage /></AuthRoute>} />
+      <Route path="/setup" element={<SetupRoute><SetupPage /></SetupRoute>} />
+      <Route element={<ProtectedRoute><AppContent /></ProtectedRoute>}>
+        <Route path="/" />
+        <Route path="/folder/:folderId" />
+        <Route path="/note/:noteId" />
+        <Route path="/tasks" />
+        <Route path="/ask" />
+        <Route path="/brief" />
+        <Route path="/bookmarks" />
+        <Route path="/settings" />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

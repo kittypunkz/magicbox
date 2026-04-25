@@ -1,6 +1,6 @@
 {
   "name": "magicbox-api",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
@@ -16,6 +16,6 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231218.0",
     "typescript": "^6.0.2",
-    "wrangler": "^3.22.0"
+    "wrangler": "^4.85.0"
   }
 }
