@@ -1,12 +1,14 @@
 {
   "name": "magicbox-api",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:create": "wrangler d1 create magicbox-db",
-    "db:migrate": "wrangler d1 migrations apply magicbox-db"
+    "db:migrate": "wrangler d1 migrations apply magicbox-db",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@tsndr/cloudflare-worker-jwt": "^2.5.3",
@@ -14,8 +16,10 @@
     "zod": "^3.22.3"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.15.0",
     "@cloudflare/workers-types": "^4.20231218.0",
     "typescript": "^6.0.2",
+    "vitest": "^4.1.5",
     "wrangler": "^4.85.0"
   }
 }

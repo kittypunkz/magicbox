@@ -17,6 +17,12 @@ build/
 .wrangler/
 wrangler.toml.bak
 
+# Local dev secrets — never commit
+backend/.dev.vars
+
+# Playwright auth state
+frontend/playwright/.auth/
+
 # IDE
 .vscode/
 .idea/

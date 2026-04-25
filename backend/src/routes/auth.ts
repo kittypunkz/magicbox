@@ -47,7 +47,11 @@ async function hashPassword(password: string, saltHex?: string): Promise<{ hash:
   return { hash: toHex(bits), salt: toHex(salt.buffer) };
 }
 
-function sessionCookie(value: string, maxAge: number): string {
+function sessionCookie(value: string, maxAge: number, host = ''): string {
+  const isLocal = host.includes('localhost') || host.includes('127.0.0.1');
+  if (isLocal) {
+    return `sessionId=${value}; HttpOnly; SameSite=Lax; Max-Age=${maxAge}; Path=/`;
+  }
   return `sessionId=${value}; HttpOnly; Secure; Domain=.bankapirak.com; SameSite=None; Max-Age=${maxAge}; Path=/`;
 }
 
@@ -105,7 +109,7 @@ app.post('/setup', async (c) => {
     ).bind(sessionId, getSessionExpiry()).run();
 
     return c.json({ success: true }, 200, {
-      'Set-Cookie': sessionCookie(sessionId, SESSION_DURATION_DAYS * 24 * 60 * 60),
+      'Set-Cookie': sessionCookie(sessionId, SESSION_DURATION_DAYS * 24 * 60 * 60, c.req.header('host')),
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -143,7 +147,7 @@ app.post('/login', async (c) => {
   ).bind(sessionId, getSessionExpiry()).run();
 
   return c.json({ success: true }, 200, {
-    'Set-Cookie': sessionCookie(sessionId, SESSION_DURATION_DAYS * 24 * 60 * 60),
+    'Set-Cookie': sessionCookie(sessionId, SESSION_DURATION_DAYS * 24 * 60 * 60, c.req.header('host')),
   });
 });
 
@@ -157,7 +161,7 @@ app.post('/logout', async (c) => {
   }
 
   return c.json({ success: true }, 200, {
-    'Set-Cookie': sessionCookie('', 0),
+    'Set-Cookie': sessionCookie('', 0, c.req.header('host')),
   });
 });
 

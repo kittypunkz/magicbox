@@ -1,0 +1,8 @@
+# Copy this file to .dev.vars and fill in values before running wrangler dev
+# .dev.vars is gitignored — never commit it
+
+# Required for session auth
+JWT_SECRET=any-random-string-for-local-dev
+
+# Optional — AI features (chat, brief, process) won't work without it
+OPENROUTER_API_KEY=
