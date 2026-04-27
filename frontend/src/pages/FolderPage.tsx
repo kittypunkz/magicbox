@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square, Pin, Download, Upload } from 'lucide-react';
+import { Folder, FileText, Clock, Trash2, Plus, X, CheckSquare, Square, Pin, Download, Upload, Sparkles, Loader2 } from 'lucide-react';
 import { formatDate } from '../lib/dates';
 import ReactMarkdown from 'react-markdown';
 import { exportNotesAsMarkdown, importMarkdownFile } from '../utils/exportImport';
 import { useFolder, useFolders } from '../hooks/useFolders';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { CreateNoteModal } from '../components/CreateNoteModal';
+import { TaskConfirmModal } from '../components/TaskConfirmModal';
 import { SkeletonCard } from '../components/Skeleton';
 import { useMinLoading } from '../hooks/useMinLoading';
-import { notesAPI, foldersAPI } from '../api/client';
+import { notesAPI, foldersAPI, processAPI, tasksAPI } from '../api/client';
 import type { Note, Folder as FolderType } from '../types';
 
 // Dark mode colors
@@ -49,6 +50,27 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
   // New Note Modal state
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   
+  // Extract tasks state
+  const [extractingNoteId, setExtractingNoteId] = useState<number | null>(null);
+  const [extractModal, setExtractModal] = useState<{ noteId: number; noteTitle: string; suggestions: { title: string }[] } | null>(null);
+
+  const handleExtract = async (e: React.MouseEvent, note: Note) => {
+    e.stopPropagation();
+    setExtractingNoteId(note.id);
+    try {
+      const { tasks } = await processAPI.note(note.id);
+      setExtractModal({ noteId: note.id, noteTitle: note.title, suggestions: tasks });
+    } catch {
+      // silent
+    } finally {
+      setExtractingNoteId(null);
+    }
+  };
+
+  const handleExtractConfirm = async (titles: string[], noteId: number) => {
+    await Promise.all(titles.map(title => tasksAPI.create(title, noteId)));
+  };
+
   // View mode toggle — remember preference per folder
   const [viewMode, setViewMode] = useState<'grid' | 'timeline'>(() => {
     const saved = localStorage.getItem(`folder-view-${folderId}`);
@@ -442,6 +464,21 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                     <ReactMarkdown>{note.content || ''}</ReactMarkdown>
                   </div>
                 )}
+
+                {/* Extract Tasks */}
+                {!note.bookmark_url && !isBulkDeleteMode && (
+                  <button
+                    onClick={(e) => handleExtract(e, note as Note)}
+                    disabled={extractingNoteId === note.id}
+                    className={`mt-3 flex items-center gap-1.5 px-2.5 py-1.5 text-xs ${c.gray} hover:text-[#e6e6e6] border ${c.border} hover:border-[#4f4f4f] rounded-lg transition-colors disabled:opacity-50`}
+                  >
+                    {extractingNoteId === note.id
+                      ? <Loader2 size={12} className="animate-spin" />
+                      : <Sparkles size={12} />
+                    }
+                    Extract Tasks
+                  </button>
+                )}
               </div>
             ))}
 
@@ -547,6 +584,21 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                   <Clock size={12} />
                   {formatDate(note.updated_at)}
                 </div>
+
+                {/* Extract Tasks */}
+                {!note.bookmark_url && !isBulkDeleteMode && (
+                  <button
+                    onClick={(e) => handleExtract(e, note as Note)}
+                    disabled={extractingNoteId === note.id}
+                    className={`mt-3 flex items-center gap-1.5 px-2.5 py-1.5 text-xs ${c.gray} hover:text-[#e6e6e6] border ${c.border} hover:border-[#4f4f4f] rounded-lg transition-colors disabled:opacity-50`}
+                  >
+                    {extractingNoteId === note.id
+                      ? <Loader2 size={12} className="animate-spin" />
+                      : <Sparkles size={12} />
+                    }
+                    Extract Tasks
+                  </button>
+                )}
               </div>
             ))}
             
@@ -603,6 +655,18 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
           folders={propFolders}
           onCreateNote={handleCreateNote}
           defaultFolderName={folder?.name}
+        />
+      )}
+
+      {/* Extract Tasks Modal */}
+      {extractModal && (
+        <TaskConfirmModal
+          isOpen={true}
+          noteId={extractModal.noteId}
+          noteTitle={extractModal.noteTitle}
+          suggestions={extractModal.suggestions}
+          onConfirm={handleExtractConfirm}
+          onClose={() => setExtractModal(null)}
         />
       )}
     </div>

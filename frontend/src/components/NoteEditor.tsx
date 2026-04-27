@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Maximize2, Minimize2, Search, Download } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Search, Download, Sparkles, Loader2 } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
 import { ConfirmModal } from './ConfirmModal';
+import { TaskConfirmModal } from './TaskConfirmModal';
 import { BlockNoteEditor } from './BlockNoteEditor';
 import { EditorSearch } from './EditorSearch';
 import { exportNoteAsMarkdown } from '../utils/exportImport';
+import { processAPI, tasksAPI } from '../api/client';
 import type { Note } from '../types';
 
 // Dark mode colors - Obsidian style
@@ -42,9 +44,11 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [showNoteMenu, setShowNoteMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  const [isFullWidth, setIsFullWidth] = useState(false);
+  const isFullWidth = true;
   const [showSearch, setShowSearch] = useState(false);
   const [blockNoteEditor, setBlockNoteEditor] = useState<any>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractModal, setExtractModal] = useState<{ suggestions: { title: string }[] } | null>(null);
 
   // Ctrl+F to open search
   useEffect(() => {
@@ -98,6 +102,24 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
     
     return () => clearTimeout(timer);
   }, [title, content, folderId, save]);
+
+  // Handle extract tasks
+  const handleExtract = async () => {
+    if (!note) return;
+    setExtracting(true);
+    try {
+      const { tasks } = await processAPI.note(note.id);
+      setExtractModal({ suggestions: tasks });
+    } catch {
+      // silent
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const handleExtractConfirm = async (titles: string[], noteId: number) => {
+    await Promise.all(titles.map(title => tasksAPI.create(title, noteId)));
+  };
 
   // Handle delete
   const handleDelete = async () => {
@@ -220,18 +242,6 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
             {isPinned ? <Pin size={18} fill="currentColor" /> : <PinOff size={18} />}
           </button>
 
-          {/* Width Toggle */}
-          <button
-            onClick={() => setIsFullWidth(!isFullWidth)}
-            className={`p-2 rounded-lg transition-colors ${
-              isFullWidth ? 'text-blue-400' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
-            }`}
-            title={isFullWidth ? 'Default width' : 'Full width'}
-            aria-label={isFullWidth ? 'Default width' : 'Full width'}
-          >
-            {isFullWidth ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-          </button>
-
           {/* Search Toggle */}
           <button
             onClick={() => setShowSearch(!showSearch)}
@@ -243,6 +253,19 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
           >
             <Search size={18} />
           </button>
+
+          {/* Extract Tasks */}
+          {!note?.bookmark_url && (
+            <button
+              onClick={handleExtract}
+              disabled={extracting}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#6b6b6b] hover:text-[#e6e6e6] border border-[#2f2f2f] hover:border-[#4f4f4f] rounded-lg transition-colors disabled:opacity-50"
+              title="Extract tasks from note"
+            >
+              {extracting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+              Extract Tasks
+            </button>
+          )}
         </div>
 
         {/* Note Menu */}
@@ -372,6 +395,18 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
         cancelText="Cancel"
         variant="danger"
       />
+
+      {/* Extract Tasks Modal */}
+      {extractModal && note && (
+        <TaskConfirmModal
+          isOpen={true}
+          noteId={note.id}
+          noteTitle={note.title}
+          suggestions={extractModal.suggestions}
+          onConfirm={handleExtractConfirm}
+          onClose={() => setExtractModal(null)}
+        />
+      )}
     </div>
   );
 }
