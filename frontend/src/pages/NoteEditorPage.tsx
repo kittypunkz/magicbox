@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Pin, PinOff, Folder, Loader2, CheckCircle } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
+import { useSettings } from '../hooks/useSettings';
 import { MarkdownEditor } from '../components/MarkdownEditor';
 import type { Note } from '../types';
 
@@ -22,6 +23,7 @@ interface NoteEditorPageProps {
 export function NoteEditorPage({ noteId, onBack, onUpdate, onDelete }: NoteEditorPageProps) {
   const { note, loading, error, updateNote } = useNote(noteId);
   const { folders } = useFolders();
+  const { settings } = useSettings();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -57,11 +59,11 @@ export function NoteEditorPage({ noteId, onBack, onUpdate, onDelete }: NoteEdito
     if (updated) onUpdate?.(updated);
   }, [note, title, content, folderId, isPinned, updateNote, onUpdate]);
 
-  // Auto-save 2s debounce
+  // Auto-save with configurable debounce
   useEffect(() => {
-    const t = setTimeout(() => save(), 2000);
+    const t = setTimeout(() => save(), settings.autosaveDelayMs);
     return () => clearTimeout(t);
-  }, [title, content, folderId, isPinned, save]);
+  }, [title, content, folderId, isPinned, save, settings.autosaveDelayMs]);
 
   const togglePin = useCallback(async () => {
     const next = !isPinned;

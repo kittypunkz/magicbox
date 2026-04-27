@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { sessionAuthMiddleware } from '../middleware/auth';
-import { getAIConfig } from '../lib/settings';
+import { getAIConfig, getUserPrefs } from '../lib/settings';
 
 interface NoteResult {
   id: number;
@@ -66,7 +66,7 @@ app.post('/', async (c) => {
   const db = c.env.DB as D1Database;
   const history = (body.history ?? []).slice(-10); // keep last 10 turns max
 
-  const aiCfg = await getAIConfig(c.env);
+  const [aiCfg, prefs] = await Promise.all([getAIConfig(c.env), getUserPrefs(c.env)]);
   if (!aiCfg) return c.json({ error: 'OpenRouter API key not configured' }, 400);
   const { apiKey, model } = aiCfg;
 
@@ -126,7 +126,7 @@ app.post('/', async (c) => {
     `[Note ${n.id} | #${n.folder_name} | updated ${relativeTime(n.updated_at)}]\nTitle: ${n.title}\n${n.content?.slice(0, 600)}`
   ).join('\n\n---\n\n');
 
-  const systemPrompt = `You are a personal knowledge assistant. You help the user recall, connect, and reason about their own notes.
+  const DEFAULT_CHAT_SYSTEM_PROMPT = `You are a personal knowledge assistant. You help the user recall, connect, and reason about their own notes.
 
 Guidelines:
 - Answer based on the notes provided. Cite relevant notes as [Note ID].
@@ -137,6 +137,10 @@ Guidelines:
 
 User's notes:
 ${context}`;
+
+  const systemPrompt = prefs.promptChat
+    ? prefs.promptChat.replace('{{notes}}', context)
+    : DEFAULT_CHAT_SYSTEM_PROMPT;
 
   // Step 5: Call OpenRouter with conversation history
   const upstreamRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {

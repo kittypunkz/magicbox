@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { sessionAuthMiddleware } from '../middleware/auth';
-import { getAIConfig } from '../lib/settings';
+import { getAIConfig, getUserPrefs } from '../lib/settings';
 
 interface Note {
   id: number;
@@ -65,12 +65,8 @@ Rules:
   return suggestions;
 }
 
-async function extractTasksFromNote(note: Note, apiKey: string, model: string, existingTitles: string[] = []): Promise<SuggestedTask[]> {
-  const exclusionBlock = existingTitles.length > 0
-    ? `\nAlready created tasks for this note (do NOT suggest these again, including semantically similar ones):\n${existingTitles.map(t => `- ${t}`).join('\n')}\n`
-    : '';
-
-  const prompt = `You are a task extraction assistant. Read the note below and extract every actionable task or to-do item.
+const DEFAULT_TASK_EXTRACT_PROMPT = (note: Note, exclusionBlock: string) =>
+  `You are a task extraction assistant. Read the note below and extract every actionable task or to-do item.
 
 Rules:
 - Return a JSON array of objects, each with a "title" field (string)
@@ -83,6 +79,18 @@ Note title: ${note.title}
 Note content:
 ${note.content}`;
 
+async function extractTasksFromNote(note: Note, apiKey: string, model: string, existingTitles: string[] = [], taskTemperature = 0.2, customPrompt: string | null = null): Promise<SuggestedTask[]> {
+  const exclusionBlock = existingTitles.length > 0
+    ? `\nAlready created tasks for this note (do NOT suggest these again, including semantically similar ones):\n${existingTitles.map(t => `- ${t}`).join('\n')}\n`
+    : '';
+
+  const prompt = customPrompt
+    ? customPrompt
+        .replace('{{title}}', note.title)
+        .replace('{{content}}', note.content)
+        .replace('{{exclusions}}', exclusionBlock)
+    : DEFAULT_TASK_EXTRACT_PROMPT(note, exclusionBlock);
+
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -92,7 +100,7 @@ ${note.content}`;
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.2,
+      temperature: taskTemperature,
     }),
   });
 
@@ -123,7 +131,7 @@ app.post('/notes/:id', async (c) => {
 
   const db = c.env.DB as D1Database;
 
-  const cfg = await getAIConfig(c.env);
+  const [cfg, prefs] = await Promise.all([getAIConfig(c.env), getUserPrefs(c.env)]);
   if (!cfg) return c.json({ error: 'OpenRouter API key not configured' }, 400);
 
   const note = await db.prepare(
@@ -137,27 +145,27 @@ app.post('/notes/:id', async (c) => {
   ).bind(id).all<{ title: string }>();
   const existingTitles = existingRes.results?.map(t => t.title) ?? [];
 
-  const rawTasks = await extractTasksFromNote(note, cfg.apiKey, cfg.model, existingTitles);
+  const rawTasks = await extractTasksFromNote(note, cfg.apiKey, cfg.model, existingTitles, prefs.taskTemperature, prefs.promptTaskExtract);
   const tasks = await semanticDedup(rawTasks, existingTitles, cfg.apiKey, cfg.model);
 
   return c.json({ tasks, note_id: note.id });
 });
 
-// POST /process/recent — extract tasks from notes created in last 24h
+// POST /process/recent — extract tasks from notes created in last N hours
 app.post('/recent', async (c) => {
   const db = c.env.DB as D1Database;
 
-  const cfg = await getAIConfig(c.env);
+  const [cfg, prefs] = await Promise.all([getAIConfig(c.env), getUserPrefs(c.env)]);
   if (!cfg) return c.json({ error: 'OpenRouter API key not configured' }, 400);
 
   const notes = await db.prepare(
-    "SELECT id, title, content FROM notes WHERE created_at >= datetime('now', '-24 hours') ORDER BY created_at DESC LIMIT 10"
+    `SELECT id, title, content FROM notes WHERE created_at >= datetime('now', '-${prefs.briefTimeWindowHours} hours') ORDER BY created_at DESC LIMIT 10`
   ).all<Note>();
 
   const results = [];
   for (const note of notes.results ?? []) {
     try {
-      const tasks = await extractTasksFromNote(note, cfg.apiKey, cfg.model);
+      const tasks = await extractTasksFromNote(note, cfg.apiKey, cfg.model, [], prefs.taskTemperature, prefs.promptTaskExtract);
       if (tasks.length > 0) {
         results.push({ note_id: note.id, note_title: note.title, tasks });
       }

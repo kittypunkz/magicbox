@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { sessionAuthMiddleware } from '../middleware/auth';
-import { getAIConfig } from '../lib/settings';
+import { getAIConfig, getUserPrefs } from '../lib/settings';
+import type { UserPrefs } from '../lib/settings';
 
 interface Brief {
   id: number;
@@ -26,29 +27,8 @@ const app = new Hono<{ Bindings: Env }>();
 
 app.use('*', sessionAuthMiddleware);
 
-async function generateBrief(
-  db: D1Database,
-  apiKey: string,
-  model: string,
-  date: string
-): Promise<string> {
-  // Get yesterday's notes (created or updated in last 24h)
-  const { results: notes } = await db.prepare(
-    "SELECT id, title, content FROM notes WHERE updated_at >= datetime('now', '-24 hours') ORDER BY updated_at DESC LIMIT 20"
-  ).all<Note>();
-
-  // Get pending tasks
-  const { results: tasks } = await db.prepare(
-    "SELECT id, title, status FROM tasks WHERE status = 'pending' ORDER BY created_at DESC LIMIT 20"
-  ).all<Task>();
-
-  const notesSummary = (notes ?? []).map(n =>
-    `- Note ${n.id}: "${n.title}"\n  ${n.content?.slice(0, 200)}`
-  ).join('\n');
-
-  const tasksSummary = (tasks ?? []).map(t => `- [${t.id}] ${t.title}`).join('\n');
-
-  const prompt = `Generate a brief daily summary for ${date}.
+const DEFAULT_BRIEF_PROMPT = (date: string, notesSummary: string, tasksSummary: string) =>
+  `Generate a brief daily summary for ${date}.
 
 Recent notes (last 24h):
 ${notesSummary || '(none)'}
@@ -57,6 +37,34 @@ Pending tasks:
 ${tasksSummary || '(none)'}
 
 Write a concise, markdown-formatted daily brief (2-3 paragraphs + a task list). Be encouraging and actionable. Start directly with the content, no title needed.`;
+
+async function generateBrief(
+  db: D1Database,
+  apiKey: string,
+  model: string,
+  date: string,
+  prefs: UserPrefs
+): Promise<string> {
+  const { results: notes } = await db.prepare(
+    `SELECT id, title, content FROM notes WHERE updated_at >= datetime('now', '-${prefs.briefTimeWindowHours} hours') ORDER BY updated_at DESC LIMIT ${prefs.briefMaxNotes}`
+  ).all<Note>();
+
+  const { results: tasks } = await db.prepare(
+    `SELECT id, title, status FROM tasks WHERE status = 'pending' ORDER BY created_at DESC LIMIT ${prefs.briefMaxTasks}`
+  ).all<Task>();
+
+  const notesSummary = (notes ?? []).map(n =>
+    `- Note ${n.id}: "${n.title}"\n  ${n.content?.slice(0, 200)}`
+  ).join('\n');
+
+  const tasksSummary = (tasks ?? []).map(t => `- [${t.id}] ${t.title}`).join('\n');
+
+  const prompt = prefs.promptBrief
+    ? prefs.promptBrief
+        .replace('{{date}}', date)
+        .replace('{{notes}}', notesSummary || '(none)')
+        .replace('{{tasks}}', tasksSummary || '(none)')
+    : DEFAULT_BRIEF_PROMPT(date, notesSummary, tasksSummary);
 
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -67,7 +75,7 @@ Write a concise, markdown-formatted daily brief (2-3 paragraphs + a task list). 
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
+      temperature: prefs.briefTemperature,
     }),
   });
 
@@ -85,13 +93,13 @@ app.get('/', async (c) => {
   let brief = await db.prepare('SELECT * FROM daily_briefs WHERE date = ?').bind(today).first<Brief>();
 
   if (!brief) {
-    const aiCfg = await getAIConfig(c.env);
+    const [aiCfg, prefs] = await Promise.all([getAIConfig(c.env), getUserPrefs(c.env)]);
     if (!aiCfg) {
       return c.json({ error: 'OpenRouter API key not configured — set it in Settings or as a Worker secret' }, 400);
     }
 
     try {
-      const content = await generateBrief(db, aiCfg.apiKey, aiCfg.model, today);
+      const content = await generateBrief(db, aiCfg.apiKey, aiCfg.model, today, prefs);
       brief = await db.prepare(
         'INSERT INTO daily_briefs (date, content) VALUES (?, ?) RETURNING *'
       ).bind(today, content).first<Brief>();

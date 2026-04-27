@@ -23,7 +23,13 @@ app.put('/', async (c) => {
   const db = c.env.DB as D1Database;
   const body = await c.req.json<Record<string, string>>();
 
-  const allowed = ['openrouter_api_key', 'preferred_model'];
+  const allowed = [
+    'openrouter_api_key', 'preferred_model',
+    'brief_temperature', 'task_temperature',
+    'brief_time_window_hours', 'brief_max_notes', 'brief_max_tasks',
+    'timezone', 'autosave_delay_ms',
+    'prompt_chat', 'prompt_brief', 'prompt_task_extract',
+  ];
   const entries = Object.entries(body).filter(([k]) => allowed.includes(k));
 
   if (entries.length === 0) {
@@ -31,9 +37,14 @@ app.put('/', async (c) => {
   }
 
   for (const [key, value] of entries) {
-    await db.prepare(
-      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-    ).bind(key, value).run();
+    if (value === '') {
+      // Empty string = reset to default — remove from DB
+      await db.prepare('DELETE FROM settings WHERE key = ?').bind(key).run();
+    } else {
+      await db.prepare(
+        'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+      ).bind(key, value).run();
+    }
   }
 
   return c.json({ success: true });

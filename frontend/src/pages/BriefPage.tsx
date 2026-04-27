@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Loader2, RefreshCw, Calendar, AlertCircle, ChevronRight } from 'lucide-react';
+import { Loader2, RefreshCw, Calendar, AlertCircle, ChevronRight, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { briefAPI } from '../api/client';
@@ -59,6 +59,18 @@ export function BriefPage() {
     weekday: 'long', month: 'long', day: 'numeric',
   });
 
+  function handleExport() {
+    if (!brief) return;
+    const md = `# Daily Brief — ${brief.date}\n\n${brief.content}`;
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `brief-${brief.date}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className={`h-full overflow-y-auto ${c.bg}`}>
       {/* Header */}
@@ -76,6 +88,15 @@ export function BriefPage() {
               <Calendar size={14} />
               History
             </button>
+            {brief && !loading && (
+              <button
+                onClick={handleExport}
+                className={`flex items-center gap-1.5 px-3 py-1.5 border ${c.border} rounded-lg text-xs ${c.gray} hover:text-[#e6e6e6] transition-colors`}
+              >
+                <Download size={14} />
+                Export .md
+              </button>
+            )}
             <button
               onClick={() => load()}
               disabled={loading}

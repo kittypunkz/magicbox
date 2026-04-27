@@ -7,22 +7,22 @@ function parseDB(iso: string): Date {
   return new Date(iso.replace(' ', 'T') + 'Z');
 }
 
-const BKK = 'Asia/Bangkok';
+const DEFAULT_TZ = 'Asia/Bangkok';
 
-export function formatDate(iso: string): string {
+export function formatDate(iso: string, tz = DEFAULT_TZ): string {
   return parseDB(iso).toLocaleDateString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric', timeZone: BKK,
+    month: 'short', day: 'numeric', year: 'numeric', timeZone: tz,
   });
 }
 
-export function formatDateTime(iso: string): string {
+export function formatDateTime(iso: string, tz = DEFAULT_TZ): string {
   return parseDB(iso).toLocaleString(undefined, {
     month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit', timeZone: BKK,
+    hour: 'numeric', minute: '2-digit', timeZone: tz,
   });
 }
 
-export function formatRelativeTime(iso: string): string {
+export function formatRelativeTime(iso: string, tz = DEFAULT_TZ): string {
   const diff = Date.now() - parseDB(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
@@ -31,5 +31,5 @@ export function formatRelativeTime(iso: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return formatDate(iso);
+  return formatDate(iso, tz);
 }

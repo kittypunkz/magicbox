@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, GitBranch, Calendar, Server, Info, Key, Bot, Loader2, CheckCircle, AlertCircle, Eye, EyeOff, FlaskConical } from 'lucide-react';
+import { Settings, GitBranch, Calendar, Server, Info, Key, Bot, Loader2, CheckCircle, AlertCircle, Eye, EyeOff, FlaskConical, Globe, Clock, Cpu, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { settingsAPI } from '../api/client';
 import type { OpenRouterModel } from '../types';
 
@@ -18,11 +18,33 @@ const environment = isDev ? 'Development' : 'Production';
 const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
 export function SettingsPage() {
+  // OpenRouter
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [preferredModel, setPreferredModel] = useState('');
   const [models, setModels] = useState<OpenRouterModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
+
+  // AI Behavior
+  const [briefTemperature, setBriefTemperature] = useState(0.7);
+  const [taskTemperature, setTaskTemperature] = useState(0.2);
+
+  // Daily Brief Scope
+  const [briefTimeWindow, setBriefTimeWindow] = useState(24);
+  const [briefMaxNotes, setBriefMaxNotes] = useState(20);
+  const [briefMaxTasks, setBriefMaxTasks] = useState(20);
+
+  // App Preferences
+  const [timezone, setTimezone] = useState('Asia/Bangkok');
+  const [autosaveDelay, setAutosaveDelay] = useState('2000');
+
+  // System Prompts
+  const [promptChat, setPromptChat] = useState('');
+  const [promptBrief, setPromptBrief] = useState('');
+  const [promptTaskExtract, setPromptTaskExtract] = useState('');
+  const [showPrompts, setShowPrompts] = useState(false);
+
+  // Save state
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +53,16 @@ export function SettingsPage() {
     settingsAPI.getAll().then(s => {
       if (s.openrouter_api_key) setApiKey(s.openrouter_api_key);
       if (s.preferred_model) setPreferredModel(s.preferred_model);
+      if (s.brief_temperature) setBriefTemperature(parseFloat(s.brief_temperature));
+      if (s.task_temperature) setTaskTemperature(parseFloat(s.task_temperature));
+      if (s.brief_time_window_hours) setBriefTimeWindow(parseInt(s.brief_time_window_hours, 10));
+      if (s.brief_max_notes) setBriefMaxNotes(parseInt(s.brief_max_notes, 10));
+      if (s.brief_max_tasks) setBriefMaxTasks(parseInt(s.brief_max_tasks, 10));
+      if (s.timezone) setTimezone(s.timezone);
+      if (s.autosave_delay_ms) setAutosaveDelay(s.autosave_delay_ms);
+      if (s.prompt_chat) setPromptChat(s.prompt_chat);
+      if (s.prompt_brief) setPromptBrief(s.prompt_brief);
+      if (s.prompt_task_extract) setPromptTaskExtract(s.prompt_task_extract);
     }).catch(() => {});
   }, []);
 
@@ -56,6 +88,16 @@ export function SettingsPage() {
       await settingsAPI.update({
         openrouter_api_key: apiKey,
         preferred_model: preferredModel,
+        brief_temperature: String(briefTemperature),
+        task_temperature: String(taskTemperature),
+        brief_time_window_hours: String(briefTimeWindow),
+        brief_max_notes: String(briefMaxNotes),
+        brief_max_tasks: String(briefMaxTasks),
+        timezone,
+        autosave_delay_ms: autosaveDelay,
+        prompt_chat: promptChat,
+        prompt_brief: promptBrief,
+        prompt_task_extract: promptTaskExtract,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -169,6 +211,190 @@ export function SettingsPage() {
             )}
           </button>
         </form>
+
+        {/* AI Behavior */}
+        <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
+          <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
+            <Cpu size={16} />
+            AI Behavior
+          </h2>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className={`text-xs font-medium ${c.gray}`}>Brief Tone</label>
+              <span className={`text-xs font-mono ${c.text}`}>{briefTemperature.toFixed(1)}</span>
+            </div>
+            <input
+              type="range" min="0" max="1" step="0.1"
+              value={briefTemperature}
+              onChange={e => setBriefTemperature(parseFloat(e.target.value))}
+              className="w-full accent-blue-500"
+            />
+            <div className={`flex justify-between text-xs ${c.gray} mt-0.5`}>
+              <span>Precise</span><span>Creative</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className={`text-xs font-medium ${c.gray}`}>Task Extraction</label>
+              <span className={`text-xs font-mono ${c.text}`}>{taskTemperature.toFixed(1)}</span>
+            </div>
+            <input
+              type="range" min="0" max="0.5" step="0.1"
+              value={taskTemperature}
+              onChange={e => setTaskTemperature(parseFloat(e.target.value))}
+              className="w-full accent-blue-500"
+            />
+            <div className={`flex justify-between text-xs ${c.gray} mt-0.5`}>
+              <span>Strict</span><span>Flexible</span>
+            </div>
+          </div>
+
+          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
+          </button>
+        </form>
+
+        {/* Daily Brief Scope */}
+        <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
+          <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
+            <Calendar size={16} />
+            Daily Brief Scope
+          </h2>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Time Window (hrs)</label>
+              <input
+                type="number" min="1" max="168"
+                value={briefTimeWindow}
+                onChange={e => setBriefTimeWindow(parseInt(e.target.value, 10))}
+                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+              />
+            </div>
+            <div>
+              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Max Notes</label>
+              <input
+                type="number" min="5" max="50"
+                value={briefMaxNotes}
+                onChange={e => setBriefMaxNotes(parseInt(e.target.value, 10))}
+                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+              />
+            </div>
+            <div>
+              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Max Tasks</label>
+              <input
+                type="number" min="5" max="50"
+                value={briefMaxTasks}
+                onChange={e => setBriefMaxTasks(parseInt(e.target.value, 10))}
+                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+              />
+            </div>
+          </div>
+
+          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
+          </button>
+        </form>
+
+        {/* App Preferences */}
+        <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
+          <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
+            <Globe size={16} />
+            App Preferences
+          </h2>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className={`text-xs font-medium ${c.gray} flex items-center gap-1`}><Globe size={12} />Timezone</label>
+              <button
+                type="button"
+                onClick={() => setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)}
+                className={`text-xs ${c.gray} hover:text-blue-400 transition-colors`}
+              >
+                Use browser timezone
+              </button>
+            </div>
+            <input
+              type="text"
+              value={timezone}
+              onChange={e => setTimezone(e.target.value)}
+              placeholder="e.g. Asia/Bangkok"
+              className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#4b4b4b] text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+            />
+          </div>
+
+          <div>
+            <label className={`block text-xs font-medium ${c.gray} mb-1.5 flex items-center gap-1`}><Clock size={12} />Auto-save Delay</label>
+            <select
+              value={autosaveDelay}
+              onChange={e => setAutosaveDelay(e.target.value)}
+              className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+            >
+              <option value="500">500 ms</option>
+              <option value="1000">1 s</option>
+              <option value="2000">2 s (default)</option>
+              <option value="5000">5 s</option>
+            </select>
+          </div>
+
+          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
+          </button>
+        </form>
+
+        {/* System Prompts (Advanced) */}
+        <div className={`${c.input} border ${c.border} rounded-xl overflow-hidden`}>
+          <button
+            type="button"
+            onClick={() => setShowPrompts(v => !v)}
+            className={`w-full flex items-center justify-between p-4 sm:p-5 ${c.text} hover:bg-[#222] transition-colors`}
+          >
+            <span className="text-sm font-semibold flex items-center gap-2">
+              <FileText size={16} />
+              System Prompts
+              <span className={`text-xs font-normal ${c.gray} ml-1`}>Advanced</span>
+            </span>
+            {showPrompts ? <ChevronUp size={16} className={c.gray} /> : <ChevronDown size={16} className={c.gray} />}
+          </button>
+
+          {showPrompts && (
+            <form onSubmit={handleSave} className="px-4 sm:px-5 pb-5 space-y-4 border-t border-[#2f2f2f]">
+              <p className={`text-xs ${c.gray} pt-3`}>
+                Override AI prompts. Use <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{notes}}'}</code>, <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{date}}'}</code>, <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{tasks}}'}</code>, <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{title}}'}</code>, <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{content}}'}</code> as placeholders. Leave blank to use defaults.
+              </p>
+
+              {[
+                { label: 'Chat Assistant', value: promptChat, set: setPromptChat, placeholder: 'You are a personal knowledge assistant...' },
+                { label: 'Daily Brief', value: promptBrief, set: setPromptBrief, placeholder: 'Generate a brief daily summary for {{date}}...\n\nRecent notes:\n{{notes}}\n\nPending tasks:\n{{tasks}}' },
+                { label: 'Task Extraction', value: promptTaskExtract, set: setPromptTaskExtract, placeholder: 'Extract tasks from:\nTitle: {{title}}\nContent: {{content}}{{exclusions}}' },
+              ].map(({ label, value, set, placeholder }) => (
+                <div key={label}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className={`text-xs font-medium ${c.gray}`}>{label}</label>
+                    {value && (
+                      <button type="button" onClick={() => set('')} className={`text-xs ${c.gray} hover:text-red-400 transition-colors`}>
+                        Reset to default
+                      </button>
+                    )}
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={value}
+                    onChange={e => set(e.target.value)}
+                    placeholder={placeholder}
+                    className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#3a3a3a] text-xs font-mono resize-y focus:outline-none focus:border-blue-500 transition-colors`}
+                  />
+                </div>
+              ))}
+
+              <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+                {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
+              </button>
+            </form>
+          )}
+        </div>
 
         {/* App Info */}
         <div className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5`}>

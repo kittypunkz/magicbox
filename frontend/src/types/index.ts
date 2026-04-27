@@ -75,17 +75,32 @@ export interface ApiResponse<T> {
   details?: unknown;
 }
 
+export interface Subtask {
+  id: number;
+  task_id: number;
+  title: string;
+  done: number;
+  created_at: string;
+}
+
 export interface Task {
   id: number;
   note_id: number | null;
+  note_title: string | null;
+  description: string | null;
   title: string;
   status: 'backlog' | 'doing' | 'done';
   created_at: string;
   completed_at: string | null;
+  subtask_count: number;
+  subtask_done_count: number;
+  subtasks?: Subtask[];
 }
 
 export interface TaskSummary {
   date: string;
+  from: string;
+  to: string;
   backlog: Task[];
   doing: Task[];
   done_today: Task[];
@@ -99,4 +114,14 @@ export interface OpenRouterModel {
 export interface Settings {
   openrouter_api_key?: string;
   preferred_model?: string;
+  brief_temperature?: string;
+  task_temperature?: string;
+  brief_time_window_hours?: string;
+  brief_max_notes?: string;
+  brief_max_tasks?: string;
+  timezone?: string;
+  autosave_delay_ms?: string;
+  prompt_chat?: string;
+  prompt_brief?: string;
+  prompt_task_extract?: string;
 }
