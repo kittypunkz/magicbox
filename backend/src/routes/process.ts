@@ -28,7 +28,11 @@ function extractJSON(text: string): string {
   return text.trim();
 }
 
-async function extractTasksFromNote(note: Note, apiKey: string, model: string): Promise<SuggestedTask[]> {
+async function extractTasksFromNote(note: Note, apiKey: string, model: string, existingTitles: string[] = []): Promise<SuggestedTask[]> {
+  const exclusionBlock = existingTitles.length > 0
+    ? `\nAlready created tasks for this note (do NOT suggest these again):\n${existingTitles.map(t => `- ${t}`).join('\n')}\n`
+    : '';
+
   const prompt = `You are a task extraction assistant. Read the note below and extract every actionable task or to-do item.
 
 Rules:
@@ -36,7 +40,7 @@ Rules:
 - A task is something that needs to be done: "call John", "fix the bug", "buy groceries"
 - Do NOT include general statements or facts as tasks
 - If there are no tasks, return an empty array: []
-- Return ONLY the JSON array, nothing else
+- Return ONLY the JSON array, nothing else${exclusionBlock}
 
 Note title: ${note.title}
 Note content:
@@ -91,7 +95,16 @@ app.post('/notes/:id', async (c) => {
 
   if (!note) return c.json({ error: 'Note not found' }, 404);
 
-  const tasks = await extractTasksFromNote(note, cfg.apiKey, cfg.model);
+  const existingRes = await db.prepare(
+    'SELECT title FROM tasks WHERE note_id = ?'
+  ).bind(id).all<{ title: string }>();
+  const existingTitles = existingRes.results?.map(t => t.title) ?? [];
+
+  const rawTasks = await extractTasksFromNote(note, cfg.apiKey, cfg.model, existingTitles);
+
+  const lowerExisting = new Set(existingTitles.map(t => t.toLowerCase()));
+  const tasks = rawTasks.filter(t => !lowerExisting.has(t.title.toLowerCase()));
+
   return c.json({ tasks, note_id: note.id });
 });
 

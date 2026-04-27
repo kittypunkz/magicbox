@@ -56,15 +56,30 @@ export const CreateTaskSchema = z.object({
   title: z.string().trim().min(1).max(500),
   note_id: z.number().int().positive().optional(),
   status: z.enum(['backlog', 'doing', 'done']).optional(),
+  description: z.string().max(5000).optional(),
 });
 
 export const UpdateTaskSchema = z.object({
   title: z.string().trim().min(1).max(500).optional(),
   status: z.enum(['backlog', 'doing', 'done']).optional(),
+  note_id: z.number().int().positive().nullable().optional(),
+  description: z.string().max(5000).nullable().optional(),
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'At least one field must be provided',
+});
+
+export const CreateSubtaskSchema = z.object({
+  title: z.string().trim().min(1).max(500),
+});
+
+export const UpdateSubtaskSchema = z.object({
+  title: z.string().trim().min(1).max(500).optional(),
+  done: z.boolean().optional(),
 }).refine(data => Object.keys(data).length > 0, {
   message: 'At least one field must be provided',
 });
 
 export const TaskQuerySchema = z.object({
   status: z.enum(['backlog', 'doing', 'done']).optional(),
+  note_id: z.coerce.number().int().positive().optional(),
 });

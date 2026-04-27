@@ -1,4 +1,4 @@
-import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse, Settings, OpenRouterModel, Task, TaskSummary } from '../types';
+import type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, PaginatedResponse, Settings, OpenRouterModel, Task, TaskSummary, Subtask } from '../types';
 
 // API Base URL - Uses environment variable or localhost:8787 for development
 const isDev = import.meta.env.DEV;
@@ -104,20 +104,40 @@ export const processAPI = {
 
 export const tasksAPI = {
   getSummary: () => fetchAPI<TaskSummary>('/tasks/summary'),
-  getAll: (status?: Task['status']) => {
-    const query = status ? `?status=${status}` : '';
-    return fetchAPI<{ tasks: Task[] }>(`/tasks${query}`).then(r => r.tasks);
+  getAll: (params?: { status?: Task['status']; note_id?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    if (params?.note_id) query.set('note_id', String(params.note_id));
+    const qs = query.toString() ? `?${query}` : '';
+    return fetchAPI<{ tasks: Task[] }>(`/tasks${qs}`).then(r => r.tasks);
   },
   create: (title: string, note_id?: number, status?: Task['status']) => fetchAPI<{ task: Task }>('/tasks', {
     method: 'POST',
     body: JSON.stringify({ title, note_id, status }),
   }).then(r => r.task),
-  update: (id: number, data: { title?: string; status?: Task['status'] }) =>
+  getById: (id: number) =>
+    fetchAPI<{ task: Task & { subtasks: Subtask[] } }>(`/tasks/${id}`).then(r => r.task),
+  update: (id: number, data: { title?: string; status?: Task['status']; note_id?: number | null; description?: string | null }) =>
     fetchAPI<{ task: Task }>(`/tasks/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     }).then(r => r.task),
   delete: (id: number) => fetchAPI<{ success: boolean }>(`/tasks/${id}`, { method: 'DELETE' }),
+};
+
+export const subtasksAPI = {
+  create: (taskId: number, title: string) =>
+    fetchAPI<{ subtask: Subtask }>(`/tasks/${taskId}/subtasks`, {
+      method: 'POST',
+      body: JSON.stringify({ title }),
+    }).then(r => r.subtask),
+  update: (taskId: number, subId: number, data: { title?: string; done?: boolean }) =>
+    fetchAPI<{ subtask: Subtask }>(`/tasks/${taskId}/subtasks/${subId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }).then(r => r.subtask),
+  delete: (taskId: number, subId: number) =>
+    fetchAPI<{ success: boolean }>(`/tasks/${taskId}/subtasks/${subId}`, { method: 'DELETE' }),
 };
 
 export const settingsAPI = {
@@ -129,4 +149,4 @@ export const settingsAPI = {
   getModels: () => fetchAPI<{ models: OpenRouterModel[] }>('/settings/models').then(r => r.models),
 };
 
-export type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, Settings, OpenRouterModel, Task };
+export type { Folder, FolderWithNotes, Note, CreateNoteRequest, UpdateNoteRequest, SearchResult, Settings, OpenRouterModel, Task, Subtask };

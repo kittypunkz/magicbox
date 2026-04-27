@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Search, Download, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Search, Download, Sparkles, Loader2, Check, CheckSquare } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
@@ -9,7 +9,7 @@ import { BlockNoteEditor } from './BlockNoteEditor';
 import { EditorSearch } from './EditorSearch';
 import { exportNoteAsMarkdown } from '../utils/exportImport';
 import { processAPI, tasksAPI } from '../api/client';
-import type { Note } from '../types';
+import type { Note, Task } from '../types';
 
 // Dark mode colors - Obsidian style
 const c = {
@@ -49,6 +49,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [blockNoteEditor, setBlockNoteEditor] = useState<any>(null);
   const [extracting, setExtracting] = useState(false);
   const [extractModal, setExtractModal] = useState<{ suggestions: { title: string }[] } | null>(null);
+  const [linkedTasks, setLinkedTasks] = useState<Task[]>([]);
 
   // Ctrl+F to open search
   useEffect(() => {
@@ -72,6 +73,12 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
       addRecentNote(note);
     }
   }, [note, addRecentNote]);
+
+  // Load tasks linked to this note
+  useEffect(() => {
+    if (!note) return;
+    tasksAPI.getAll({ note_id: note.id }).then(setLinkedTasks).catch(() => {});
+  }, [note?.id]);
 
   // Auto-save
   const save = useCallback(async () => {
@@ -119,6 +126,14 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
 
   const handleExtractConfirm = async (titles: string[], noteId: number) => {
     await Promise.all(titles.map(title => tasksAPI.create(title, noteId)));
+    const updated = await tasksAPI.getAll({ note_id: noteId });
+    setLinkedTasks(updated);
+  };
+
+  const handleToggleTask = async (task: Task) => {
+    const next: Task['status'] = task.status === 'done' ? 'backlog' : 'done';
+    const updated = await tasksAPI.update(task.id, { status: next });
+    setLinkedTasks(prev => prev.map(t => t.id === task.id ? updated : t));
   };
 
   // Handle delete
@@ -328,6 +343,39 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
             className={`noteeditor-title w-full text-4xl font-bold bg-transparent outline-none ${c.placeholder} ${c.text} mb-6`}
           />
           
+          {/* Linked Tasks */}
+          {linkedTasks.length > 0 && (
+            <div className="mb-6 border border-[#2f2f2f] rounded-lg overflow-hidden">
+              <div className="px-4 py-2 bg-[#202020] text-xs text-[#6b6b6b] flex items-center gap-2">
+                <CheckSquare size={12} />
+                Tasks from this note ({linkedTasks.length})
+              </div>
+              <ul className="divide-y divide-[#2f2f2f]">
+                {linkedTasks.map(task => (
+                  <li
+                    key={task.id}
+                    onClick={() => handleToggleTask(task)}
+                    className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-[#222] transition-colors"
+                  >
+                    <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                      task.status === 'done' ? 'bg-blue-500 border-blue-500' : 'border-[#4b4b4b]'
+                    }`}>
+                      {task.status === 'done' && <Check size={10} className="text-white" />}
+                    </span>
+                    <span className={`text-sm flex-1 transition-colors ${
+                      task.status === 'done' ? 'line-through text-[#6b6b6b]' : 'text-[#e6e6e6]'
+                    }`}>
+                      {task.title}
+                    </span>
+                    {task.status === 'doing' && (
+                      <span className="text-xs text-yellow-500 px-1.5 py-0.5 bg-yellow-500/10 rounded">doing</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Bookmark View or Content Textarea */}
           {note?.bookmark_url ? (
             <div className="noteeditor-bookmark flex flex-col items-center gap-4 py-8">
