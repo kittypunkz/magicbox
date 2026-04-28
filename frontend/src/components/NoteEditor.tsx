@@ -8,19 +8,19 @@ import { TaskConfirmModal } from './TaskConfirmModal';
 import { BlockNoteEditor } from './BlockNoteEditor';
 import { EditorSearch } from './EditorSearch';
 import { exportNoteAsMarkdown } from '../utils/exportImport';
-import { processAPI, tasksAPI } from '../api/client';
+import { processAPI, tasksAPI, subtasksAPI } from '../api/client';
 import type { Note, Task } from '../types';
 
 // Dark mode colors - Obsidian style
 const c = {
-  bg: 'bg-[#191919]',
-  sidebar: 'bg-[#202020]',
-  hover: 'hover:bg-[#2a2a2a]',
+  bg: 'bg-[#0a0a0a]',
+  sidebar: 'bg-[#1a1a1a]',
+  hover: 'hover:bg-[#242424]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
   input: 'bg-transparent',
-  placeholder: 'placeholder-[#4b5563]',
+  placeholder: 'placeholder-[#3a3a3a]',
 };
 
 interface NoteEditorProps {
@@ -48,7 +48,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [showSearch, setShowSearch] = useState(false);
   const [blockNoteEditor, setBlockNoteEditor] = useState<any>(null);
   const [extracting, setExtracting] = useState(false);
-  const [extractModal, setExtractModal] = useState<{ suggestions: { title: string }[] } | null>(null);
+  const [extractModal, setExtractModal] = useState<{ suggestions: { title: string; subtasks?: string[] }[] } | null>(null);
   const [linkedTasks, setLinkedTasks] = useState<Task[]>([]);
 
   // Ctrl+F to open search
@@ -124,8 +124,13 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
     }
   };
 
-  const handleExtractConfirm = async (titles: string[], noteId: number) => {
-    await Promise.all(titles.map(title => tasksAPI.create(title, noteId)));
+  const handleExtractConfirm = async (tasks: { title: string; subtasks: string[] }[], noteId: number) => {
+    await Promise.all(tasks.map(async ({ title, subtasks }) => {
+      const task = await tasksAPI.create(title, noteId);
+      if (subtasks.length > 0) {
+        await Promise.all(subtasks.map(s => subtasksAPI.create(task.id, s)));
+      }
+    }));
     const updated = await tasksAPI.getAll({ note_id: noteId });
     setLinkedTasks(updated);
   };
@@ -151,9 +156,9 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
     return (
       <div 
         data-area-id="noteeditor"
-        className="noteeditor flex items-center justify-center h-full bg-[#191919]"
+        className="noteeditor flex items-center justify-center h-full bg-[#0a0a0a]"
       >
-        <div className="noteeditor-loading animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="noteeditor-loading animate-spin rounded-full h-8 w-8 border-b-2 border-[#faff69]" />
       </div>
     );
   }
@@ -162,13 +167,13 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
     return (
       <div 
         data-area-id="noteeditor"
-        className={`noteeditor-error flex flex-col items-center justify-center h-full ${c.gray} bg-[#191919]`}
+        className={`noteeditor-error flex flex-col items-center justify-center h-full ${c.gray} bg-[#0a0a0a]`}
       >
         <p>Error loading note</p>
         <button 
           data-area-id="noteeditor-back-btn"
           onClick={onBack} 
-          className="noteeditor-back-btn mt-4 text-blue-500 hover:underline"
+          className="noteeditor-back-btn mt-4 text-[#faff69] hover:underline"
         >
           Go back
         </button>
@@ -230,7 +235,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                         setShowFolderMenu(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm ${c.hover} transition-colors ${
-                        folder.id === folderId ? 'text-blue-400' : c.text
+                        folder.id === folderId ? 'text-[#faff69]' : c.text
                       }`}
                     >
                       {folder.name}
@@ -249,7 +254,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               // Let debounced auto-save handle the update - no direct call here
             }}
             className={`p-2 rounded-lg transition-colors ${
-              isPinned ? 'text-yellow-500' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
+              isPinned ? 'text-yellow-500' : 'text-[#888888] hover:text-[#e6e6e6]'
             }`}
             title={isPinned ? 'Unpin note' : 'Pin note'}
             aria-label={isPinned ? 'Unpin note' : 'Pin note'}
@@ -261,7 +266,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
           <button
             onClick={() => setShowSearch(!showSearch)}
             className={`p-2 rounded-lg transition-colors ${
-              showSearch ? 'text-blue-400' : 'text-[#6b6b6b] hover:text-[#e6e6e6]'
+              showSearch ? 'text-[#faff69]' : 'text-[#888888] hover:text-[#e6e6e6]'
             }`}
             title="Search in note (Ctrl+F)"
             aria-label="Search in note"
@@ -274,7 +279,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
             <button
               onClick={handleExtract}
               disabled={extracting}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#6b6b6b] hover:text-[#e6e6e6] border border-[#2f2f2f] hover:border-[#4f4f4f] rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#888888] hover:text-[#e6e6e6] border border-[#2a2a2a] hover:border-[#4f4f4f] rounded-lg transition-colors disabled:opacity-50"
               title="Extract tasks from note"
             >
               {extracting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
@@ -345,12 +350,12 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
           
           {/* Linked Tasks */}
           {linkedTasks.length > 0 && (
-            <div className="mb-6 border border-[#2f2f2f] rounded-lg overflow-hidden">
-              <div className="px-4 py-2 bg-[#202020] text-xs text-[#6b6b6b] flex items-center gap-2">
+            <div className="mb-6 border border-[#2a2a2a] rounded-lg overflow-hidden">
+              <div className="px-4 py-2 bg-[#1a1a1a] text-xs text-[#888888] flex items-center gap-2">
                 <CheckSquare size={12} />
                 Tasks from this note ({linkedTasks.length})
               </div>
-              <ul className="divide-y divide-[#2f2f2f]">
+              <ul className="divide-y divide-[#2a2a2a]">
                 {linkedTasks.map(task => (
                   <li
                     key={task.id}
@@ -358,12 +363,12 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                     className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-[#222] transition-colors"
                   >
                     <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                      task.status === 'done' ? 'bg-blue-500 border-blue-500' : 'border-[#4b4b4b]'
+                      task.status === 'done' ? 'bg-[#faff69] border-[#faff69]' : 'border-[#5a5a5a]'
                     }`}>
-                      {task.status === 'done' && <Check size={10} className="text-white" />}
+                      {task.status === 'done' && <Check size={10} className="text-[#0a0a0a]" />}
                     </span>
                     <span className={`text-sm flex-1 transition-colors ${
-                      task.status === 'done' ? 'line-through text-[#6b6b6b]' : 'text-[#e6e6e6]'
+                      task.status === 'done' ? 'line-through text-[#888888]' : 'text-[#e6e6e6]'
                     }`}>
                       {task.title}
                     </span>
@@ -387,7 +392,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-[#6b6b6b] mb-1">Bookmark</div>
+                  <div className="text-sm text-[#888888] mb-1">Bookmark</div>
                   <a
                     href={note.bookmark_url}
                     target="_blank"
@@ -396,7 +401,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                   >
                     {note.bookmark_title || (() => { try { return new URL(note.bookmark_url).hostname; } catch { return note.bookmark_url; } })()}
                   </a>
-                  <div className="text-xs text-[#4b5563] mt-0.5 truncate">
+                  <div className="text-xs text-[#3a3a3a] mt-0.5 truncate">
                     {(() => { try { return new URL(note.bookmark_url).hostname; } catch { return ''; } })()}
                   </div>
                 </div>

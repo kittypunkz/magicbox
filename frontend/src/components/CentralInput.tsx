@@ -4,11 +4,11 @@ import type { Folder } from '../types';
 
 // Dark mode colors
 const c = {
-  bg: 'bg-[#191919]',
-  input: 'bg-[#2a2a2a]',
+  bg: 'bg-[#0a0a0a]',
+  input: 'bg-[#242424]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
   hover: 'hover:bg-[#3a3a3a]',
 };
 
@@ -197,7 +197,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
           onKeyDown={handleKeyDown}
           placeholder="What's on your mind? Use #folder to organize"
           rows={3}
-          className={`central-input-field w-full px-4 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text} resize-none`}
+          className={`central-input-field w-full px-4 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text} resize-none`}
         />
         
         {/* Clear button */}
@@ -216,7 +216,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
           data-area-id="central-input-submit"
           onClick={handleSubmit}
           disabled={!input.trim()}
-          className="central-input-submit-btn absolute bottom-3 right-3 p-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:bg-[#4b5563] disabled:cursor-not-allowed transition-colors"
+          className="central-input-submit-btn absolute bottom-3 right-3 p-2 text-[#0a0a0a] bg-[#faff69] rounded-lg hover:bg-[#e6eb52] disabled:bg-[#3a3a3a] disabled:cursor-not-allowed transition-colors"
         >
           <CornerDownLeft size={18} />
         </button>
@@ -227,7 +227,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
             data-area-id="central-input-suggestions"
             className={`central-input-suggestions absolute top-full left-0 right-0 mt-2 ${c.input} border ${c.border} rounded-xl shadow-lg z-50 overflow-hidden`}
           >
-            <div className={`central-input-suggestions-header px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
+            <div className={`central-input-suggestions-header px-3 py-2 text-xs font-medium ${c.gray} bg-[#1a1a1a] border-b ${c.border}`}>
               Select folder (Enter or Tab to select, ↑↓ to navigate)
             </div>
             {filteredFolders.map((folder, index) => (
@@ -237,18 +237,18 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
                 onClick={() => handleFolderSelect(folder)}
                 onMouseEnter={() => setHighlightedIndex(index)}
                 className={`central-input-suggestion-item w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${
-                  index === highlightedIndex ? 'bg-blue-900/20' : c.hover
+                  index === highlightedIndex ? 'bg-[#faff69]/5' : c.hover
                 }`}
               >
-                <Hash size={16} className="text-blue-500" />
+                <Hash size={16} className="text-[#faff69]" />
                 <span className={`text-sm font-medium ${c.text}`}>{folder.name}</span>
                 {folder.id === 1 && (
                   <span className={`ml-auto text-xs ${c.gray}`}>default</span>
                 )}
                 {index === highlightedIndex && (
                   <div className="ml-auto flex gap-2">
-                    <span className="text-xs text-blue-400 font-medium">Tab</span>
-                    <span className="text-xs text-blue-400 font-medium">Enter</span>
+                    <span className="text-xs text-[#faff69] font-medium">Tab</span>
+                    <span className="text-xs text-[#faff69] font-medium">Enter</span>
                   </div>
                 )}
               </button>

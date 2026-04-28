@@ -6,11 +6,11 @@ import type { OpenRouterModel } from '../types';
 const API_BASE = import.meta.env.VITE_API_URL || (window.location.hostname.includes('localhost') ? 'http://localhost:8787' : '/api');
 
 const c = {
-  bg: 'bg-[#191919]',
+  bg: 'bg-[#0a0a0a]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
-  input: 'bg-[#2a2a2a]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
+  input: 'bg-[#242424]',
 };
 
 const isDev = window.location.hostname.includes('develop') || window.location.hostname.includes('dev');
@@ -111,10 +111,10 @@ export function SettingsPage() {
   return (
     <div data-area-id="settingspage" className={`settingspage h-full overflow-y-auto ${c.bg}`}>
       {/* Header */}
-      <div className={`sticky top-0 bg-[#202020] border-b ${c.border} px-4 sm:px-8 py-4 sm:py-6 z-10`}>
+      <div className={`sticky top-0 bg-[#1a1a1a] border-b ${c.border} px-4 sm:px-8 py-4 sm:py-6 z-10`}>
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#2a2a2a] rounded-xl flex items-center justify-center flex-shrink-0">
-            <Settings size={24} className="text-[#6b6b6b]" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#242424] rounded-xl flex items-center justify-center flex-shrink-0">
+            <Settings size={24} className="text-[#888888]" />
           </div>
           <div>
             <h1 className={`text-lg sm:text-2xl font-bold ${c.text}`}>Settings</h1>
@@ -147,7 +147,7 @@ export function SettingsPage() {
                 value={apiKey}
                 onChange={e => setApiKey(e.target.value)}
                 placeholder="sk-or-..."
-                className={`w-full px-3 py-2.5 pr-10 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#4b4b4b] text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+                className={`w-full px-3 py-2.5 pr-10 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
               />
               <button
                 type="button"
@@ -169,7 +169,7 @@ export function SettingsPage() {
                 type="button"
                 onClick={fetchModels}
                 disabled={loadingModels || !apiKey}
-                className={`text-xs ${c.gray} hover:text-blue-400 disabled:opacity-40 transition-colors flex items-center gap-1`}
+                className={`text-xs ${c.gray} hover:text-[#faff69] disabled:opacity-40 transition-colors flex items-center gap-1`}
               >
                 {loadingModels ? <Loader2 size={12} className="animate-spin" /> : null}
                 {loadingModels ? 'Loading...' : 'Load models'}
@@ -179,7 +179,7 @@ export function SettingsPage() {
               <select
                 value={preferredModel}
                 onChange={e => setPreferredModel(e.target.value)}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
               >
                 <option value="">— select a model —</option>
                 {models.map(m => (
@@ -192,7 +192,7 @@ export function SettingsPage() {
                 value={preferredModel}
                 onChange={e => setPreferredModel(e.target.value)}
                 placeholder="e.g. openai/gpt-4o-mini"
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#4b4b4b] text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
               />
             )}
           </div>
@@ -200,7 +200,7 @@ export function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
           >
             {saving ? (
               <><Loader2 size={14} className="animate-spin" /> Saving...</>
@@ -228,7 +228,7 @@ export function SettingsPage() {
               type="range" min="0" max="1" step="0.1"
               value={briefTemperature}
               onChange={e => setBriefTemperature(parseFloat(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-[#faff69]"
             />
             <div className={`flex justify-between text-xs ${c.gray} mt-0.5`}>
               <span>Precise</span><span>Creative</span>
@@ -244,14 +244,14 @@ export function SettingsPage() {
               type="range" min="0" max="0.5" step="0.1"
               value={taskTemperature}
               onChange={e => setTaskTemperature(parseFloat(e.target.value))}
-              className="w-full accent-blue-500"
+              className="w-full accent-[#faff69]"
             />
             <div className={`flex justify-between text-xs ${c.gray} mt-0.5`}>
               <span>Strict</span><span>Flexible</span>
             </div>
           </div>
 
-          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors">
             {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
           </button>
         </form>
@@ -270,7 +270,7 @@ export function SettingsPage() {
                 type="number" min="1" max="168"
                 value={briefTimeWindow}
                 onChange={e => setBriefTimeWindow(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
               />
             </div>
             <div>
@@ -279,7 +279,7 @@ export function SettingsPage() {
                 type="number" min="5" max="50"
                 value={briefMaxNotes}
                 onChange={e => setBriefMaxNotes(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
               />
             </div>
             <div>
@@ -288,12 +288,12 @@ export function SettingsPage() {
                 type="number" min="5" max="50"
                 value={briefMaxTasks}
                 onChange={e => setBriefMaxTasks(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
               />
             </div>
           </div>
 
-          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors">
             {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
           </button>
         </form>
@@ -311,7 +311,7 @@ export function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)}
-                className={`text-xs ${c.gray} hover:text-blue-400 transition-colors`}
+                className={`text-xs ${c.gray} hover:text-[#faff69] transition-colors`}
               >
                 Use browser timezone
               </button>
@@ -321,7 +321,7 @@ export function SettingsPage() {
               value={timezone}
               onChange={e => setTimezone(e.target.value)}
               placeholder="e.g. Asia/Bangkok"
-              className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#4b4b4b] text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+              className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
             />
           </div>
 
@@ -330,7 +330,7 @@ export function SettingsPage() {
             <select
               value={autosaveDelay}
               onChange={e => setAutosaveDelay(e.target.value)}
-              className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+              className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
             >
               <option value="500">500 ms</option>
               <option value="1000">1 s</option>
@@ -339,7 +339,7 @@ export function SettingsPage() {
             </select>
           </div>
 
-          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors">
             {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
           </button>
         </form>
@@ -360,7 +360,7 @@ export function SettingsPage() {
           </button>
 
           {showPrompts && (
-            <form onSubmit={handleSave} className="px-4 sm:px-5 pb-5 space-y-4 border-t border-[#2f2f2f]">
+            <form onSubmit={handleSave} className="px-4 sm:px-5 pb-5 space-y-4 border-t border-[#2a2a2a]">
               <p className={`text-xs ${c.gray} pt-3`}>
                 Override AI prompts. Use <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{notes}}'}</code>, <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{date}}'}</code>, <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{tasks}}'}</code>, <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{title}}'}</code>, <code className="bg-[#1a1a1a] px-1 rounded text-xs">{'{{content}}'}</code> as placeholders. Leave blank to use defaults.
               </p>
@@ -384,12 +384,12 @@ export function SettingsPage() {
                     value={value}
                     onChange={e => set(e.target.value)}
                     placeholder={placeholder}
-                    className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#3a3a3a] text-xs font-mono resize-y focus:outline-none focus:border-blue-500 transition-colors`}
+                    className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#3a3a3a] text-xs font-mono resize-y focus:outline-none focus:border-[#faff69] transition-colors`}
                   />
                 </div>
               ))}
 
-              <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
+              <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors">
                 {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
               </button>
             </form>
@@ -459,7 +459,7 @@ function DebugPanel() {
   };
 
   return (
-    <div className={`bg-[#2a2a2a] border border-[#2f2f2f] rounded-xl p-4 sm:p-5`}>
+    <div className={`bg-[#242424] border border-[#2a2a2a] rounded-xl p-4 sm:p-5`}>
       <div className="flex items-center justify-between mb-3">
         <h2 className={`text-sm font-semibold text-[#e6e6e6] flex items-center gap-2`}>
           <FlaskConical size={16} />
@@ -468,7 +468,7 @@ function DebugPanel() {
         <button
           onClick={run}
           disabled={running}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-xs font-medium transition-colors"
         >
           {running ? <Loader2 size={12} className="animate-spin" /> : <FlaskConical size={12} />}
           {running ? 'Testing...' : 'Run Test'}
@@ -481,7 +481,7 @@ function DebugPanel() {
             {result.ok ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
             {result.ok ? `OpenRouter OK — replied: "${result.reply}"` : `Failed: ${result.error}`}
           </div>
-          <pre className="text-xs text-[#6b6b6b] bg-[#191919] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+          <pre className="text-xs text-[#888888] bg-[#0a0a0a] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap leading-relaxed">
             {result.log.join('\n')}
           </pre>
         </div>

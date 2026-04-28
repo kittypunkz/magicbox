@@ -32,16 +32,16 @@ export function SetupPage() {
 
   if (isSetup && !success) {
     return (
-      <div className="min-h-screen bg-[#191919] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
         <div className="text-center">
           <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-green-400" />
           </div>
           <h1 className="text-2xl font-semibold text-[#e6e6e6] mb-2">Already Configured</h1>
-          <p className="text-[#6b6b6b] mb-6">Your MagicBox already has a master password.</p>
+          <p className="text-[#888888] mb-6">Your MagicBox already has a master password.</p>
           <a
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] rounded-lg transition-colors"
           >
             Go to Login
           </a>
@@ -52,16 +52,16 @@ export function SetupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#191919] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
         <div className="text-center">
           <div className="w-20 h-20 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-400" />
           </div>
           <h1 className="text-3xl font-semibold text-[#e6e6e6] mb-2">Setup Complete!</h1>
-          <p className="text-[#6b6b6b] mb-8">Your master password has been set.</p>
+          <p className="text-[#888888] mb-8">Your master password has been set.</p>
           <a
             href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors font-medium"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] rounded-xl transition-colors font-medium"
           >
             Continue to MagicBox
           </a>
@@ -71,14 +71,14 @@ export function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#191919] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Shield className="w-10 h-10 text-blue-400" />
+          <div className="w-20 h-20 bg-[#faff69]/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-10 h-10 text-[#faff69]" />
           </div>
           <h1 className="text-3xl font-semibold text-[#e6e6e6] mb-2">Setup MagicBox</h1>
-          <p className="text-[#6b6b6b]">Create a master password to secure your notes</p>
+          <p className="text-[#888888]">Create a master password to secure your notes</p>
         </div>
 
         {error && (
@@ -98,12 +98,12 @@ export function SetupPage() {
               autoFocus
               required
               minLength={8}
-              className="w-full px-4 py-3 pr-12 bg-[#202020] border border-[#2f2f2f] rounded-xl text-[#e6e6e6] placeholder-[#4b4b4b] focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 pr-12 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-[#e6e6e6] placeholder-[#5a5a5a] focus:outline-none focus:border-[#faff69] transition-colors"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4b4b4b] hover:text-[#6b6b6b]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5a5a5a] hover:text-[#888888]"
             >
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
@@ -115,13 +115,13 @@ export function SetupPage() {
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="Confirm password"
             required
-            className="w-full px-4 py-3 bg-[#202020] border border-[#2f2f2f] rounded-xl text-[#e6e6e6] placeholder-[#4b4b4b] focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full px-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-[#e6e6e6] placeholder-[#5a5a5a] focus:outline-none focus:border-[#faff69] transition-colors"
           />
 
           <button
             type="submit"
             disabled={isLoading || !password || !confirm}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-all font-medium text-lg"
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-xl transition-all font-medium text-lg"
           >
             {isLoading ? (
               <>

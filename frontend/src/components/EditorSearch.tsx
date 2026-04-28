@@ -157,8 +157,8 @@ export function EditorSearch({ editor, onClose }: EditorSearchProps) {
   };
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-[#202020] border-b border-[#2f2f2f]">
-      <Search size={14} className="text-[#6b6b6b] flex-shrink-0" />
+    <div className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] border-b border-[#2a2a2a]">
+      <Search size={14} className="text-[#888888] flex-shrink-0" />
       <input
         ref={inputRef}
         type="text"
@@ -168,20 +168,20 @@ export function EditorSearch({ editor, onClose }: EditorSearchProps) {
           searchContent(e.target.value);
         }}
         placeholder="Search in note..."
-        className="flex-1 bg-transparent text-[#e6e6e6] text-sm outline-none placeholder-[#4b5563]"
+        className="flex-1 bg-transparent text-[#e6e6e6] text-sm outline-none placeholder-[#3a3a3a]"
       />
       {query && (
-        <span className="text-xs text-[#6b6b6b]">
+        <span className="text-xs text-[#888888]">
           {matchCount > 0 ? `${currentMatch}/${matchCount}` : 'No results'}
         </span>
       )}
-      <button onClick={goToPrev} className="p-1 hover:bg-[#2a2a2a] rounded text-[#6b6b6b] hover:text-[#e6e6e6]" title="Previous">
+      <button onClick={goToPrev} className="p-1 hover:bg-[#242424] rounded text-[#888888] hover:text-[#e6e6e6]" title="Previous">
         <ChevronUp size={14} />
       </button>
-      <button onClick={goToNext} className="p-1 hover:bg-[#2a2a2a] rounded text-[#6b6b6b] hover:text-[#e6e6e6]" title="Next">
+      <button onClick={goToNext} className="p-1 hover:bg-[#242424] rounded text-[#888888] hover:text-[#e6e6e6]" title="Next">
         <ChevronDown size={14} />
       </button>
-      <button onClick={() => { clearHighlights(); onClose(); }} className="p-1 hover:bg-[#2a2a2a] rounded text-[#6b6b6b] hover:text-[#e6e6e6]" title="Close">
+      <button onClick={() => { clearHighlights(); onClose(); }} className="p-1 hover:bg-[#242424] rounded text-[#888888] hover:text-[#e6e6e6]" title="Close">
         <X size={14} />
       </button>
     </div>

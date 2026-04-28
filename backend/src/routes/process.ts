@@ -11,6 +11,7 @@ interface Note {
 
 interface SuggestedTask {
   title: string;
+  subtasks?: string[];
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -31,7 +32,7 @@ function extractJSON(text: string): string {
 async function semanticDedup(suggestions: SuggestedTask[], existingTitles: string[], apiKey: string, model: string): Promise<SuggestedTask[]> {
   if (existingTitles.length === 0 || suggestions.length === 0) return suggestions;
 
-  const prompt = `You are a task deduplication assistant. Given a list of already-created tasks and new suggestions, return only the suggestions that represent genuinely NEW work not already covered.
+  const prompt = `You are a task deduplication assistant. Given a list of already-created tasks and new suggestions, return only the suggestion titles that represent genuinely NEW work not already covered.
 
 Already created tasks:
 ${existingTitles.map(t => `- ${t}`).join('\n')}
@@ -40,11 +41,11 @@ New suggestions to filter:
 ${suggestions.map(t => `- ${t.title}`).join('\n')}
 
 Rules:
-- Return a JSON array of objects with a "title" field
+- Return a JSON array of title strings (not objects)
 - Exclude any suggestion that is semantically equivalent to an already-created task, even if worded differently
   (e.g. "Call John" and "Phone John" are duplicates; "Buy groceries" and "Purchase food items" are duplicates)
 - Keep suggestions that represent distinct new work
-- Return ONLY the JSON array, nothing else`;
+- Return ONLY the JSON array of strings, nothing else`;
 
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -59,7 +60,12 @@ Rules:
   try {
     const parsed = JSON.parse(text);
     if (Array.isArray(parsed)) {
-      return parsed.filter((t): t is SuggestedTask => typeof t?.title === 'string' && t.title.trim().length > 0);
+      const approved = new Set(
+        parsed
+          .filter((t): t is string => typeof t === 'string')
+          .map(t => t.toLowerCase().trim())
+      );
+      return suggestions.filter(s => approved.has(s.title.toLowerCase().trim()));
     }
   } catch { /* fallback below */ }
   return suggestions;
@@ -69,8 +75,12 @@ const DEFAULT_TASK_EXTRACT_PROMPT = (note: Note, exclusionBlock: string) =>
   `You are a task extraction assistant. Read the note below and extract every actionable task or to-do item.
 
 Rules:
-- Return a JSON array of objects, each with a "title" field (string)
+- Return a JSON array of objects, each with:
+  - "title": the main parent task (string)
+  - "subtasks": array of related sub-steps or details (string array, empty [] if none)
+- Group closely related steps under one parent: e.g. "Plan trip to Tokyo" → subtasks ["Book flights", "Reserve hotel"]
 - A task is something that needs to be done: "call John", "fix the bug", "buy groceries"
+- Use subtasks only when there are clearly related, dependent, or sequential steps that belong together
 - Do NOT include general statements or facts as tasks
 - If there are no tasks, return an empty array: []
 - Return ONLY the JSON array, nothing else${exclusionBlock}
@@ -115,7 +125,14 @@ async function extractTasksFromNote(note: Note, apiKey: string, model: string, e
   try {
     const parsed = JSON.parse(text);
     if (Array.isArray(parsed)) {
-      return parsed.filter((t): t is SuggestedTask => typeof t?.title === 'string' && t.title.trim().length > 0);
+      return parsed
+        .filter((t) => typeof t?.title === 'string' && t.title.trim().length > 0)
+        .map((t) => ({
+          title: t.title.trim(),
+          subtasks: Array.isArray(t.subtasks)
+            ? t.subtasks.filter((s: unknown) => typeof s === 'string' && (s as string).trim().length > 0)
+            : [],
+        }));
     }
     return [];
   } catch {

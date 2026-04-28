@@ -5,13 +5,13 @@ import type { Note } from '../types';
 
 // Dark mode colors
 const c = {
-  bg: 'bg-[#191919]',
-  sidebar: 'bg-[#202020]',
-  hover: 'hover:bg-[#2a2a2a]',
+  bg: 'bg-[#0a0a0a]',
+  sidebar: 'bg-[#1a1a1a]',
+  hover: 'hover:bg-[#242424]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
-  input: 'bg-[#2a2a2a]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
+  input: 'bg-[#242424]',
 };
 
 interface RecentNotesProps {

@@ -38,8 +38,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#191919] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#faff69]" />
       </div>
     );
   }
@@ -57,8 +57,8 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#191919] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#faff69]" />
       </div>
     );
   }
@@ -76,8 +76,8 @@ function SetupRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#191919] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#faff69]" />
       </div>
     );
   }
@@ -268,7 +268,7 @@ function AppContent() {
   }, [folders]);
 
   return (
-    <div className="flex h-screen bg-[#191919] overflow-hidden">
+    <div className="flex h-screen bg-[#0a0a0a] overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
         <div
@@ -312,11 +312,11 @@ function AppContent() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="flex items-center gap-3 px-4 lg:px-6 py-3 border-b border-[#2f2f2f] bg-[#202020]/50 backdrop-blur-sm sticky top-0 z-30">
+        <header className="flex items-center gap-3 px-4 lg:px-6 py-3 border-b border-[#2a2a2a] bg-[#1a1a1a]/50 backdrop-blur-sm sticky top-0 z-30">
           {isMobile && (
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 -ml-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all"
+              className="p-2 -ml-2 text-[#888888] hover:text-[#e6e6e6] active:scale-95 transition-all"
               aria-label="Open menu"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -330,7 +330,7 @@ function AppContent() {
           {view === 'note' && (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all"
+              className="p-2 -ml-2 text-[#888888] hover:text-[#e6e6e6] active:scale-95 transition-all"
               aria-label="Back"
             >
               <ArrowLeft size={20} />
@@ -356,18 +356,18 @@ function AppContent() {
             <div className="relative">
               <button
                 onClick={() => setNoteDropdownOpen(noteDropdownOpen === selectedNote.id ? null : selectedNote.id)}
-                className="p-2 text-[#6b6b6b] hover:text-[#e6e6e6] active:scale-95 transition-all"
+                className="p-2 text-[#888888] hover:text-[#e6e6e6] active:scale-95 transition-all"
               >
                 <MoreVertical size={20} />
               </button>
               {noteDropdownOpen === selectedNote.id && (
-                <div className="absolute right-0 mt-1 w-48 bg-[#202020] border border-[#2f2f2f] rounded-lg shadow-lg py-1 z-50">
+                <div className="absolute right-0 mt-1 w-48 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-lg py-1 z-50">
                   <button
                     onClick={() => {
                       handleNoteDeleted(selectedNote.id);
                       setNoteDropdownOpen(null);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-[#2f2f2f]"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-[#242424]"
                   >
                     Delete
                   </button>

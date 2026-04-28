@@ -5,10 +5,10 @@ import remarkGfm from 'remark-gfm';
 import { briefAPI } from '../api/client';
 
 const c = {
-  bg: 'bg-[#191919]',
+  bg: 'bg-[#0a0a0a]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
 };
 
 interface Brief {
@@ -74,7 +74,7 @@ export function BriefPage() {
   return (
     <div className={`h-full overflow-y-auto ${c.bg}`}>
       {/* Header */}
-      <div className={`sticky top-0 bg-[#202020]/95 backdrop-blur border-b ${c.border} px-4 sm:px-8 py-4 z-10`}>
+      <div className={`sticky top-0 bg-[#1a1a1a]/95 backdrop-blur border-b ${c.border} px-4 sm:px-8 py-4 z-10`}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className={`text-xl font-bold ${c.text}`}>Daily Brief</h1>
@@ -136,14 +136,14 @@ export function BriefPage() {
           <div className="prose prose-invert prose-sm max-w-none
             prose-headings:text-[#e6e6e6] prose-headings:font-semibold
             prose-p:text-[#c9c9c9] prose-p:leading-relaxed
-            prose-a:text-blue-400
-            prose-code:text-[#e6e6e6] prose-code:bg-[#2a2a2a] prose-code:px-1 prose-code:rounded prose-code:text-xs
-            prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-[#2f2f2f] prose-pre:rounded-lg
-            prose-blockquote:border-l-blue-500 prose-blockquote:text-[#6b6b6b]
+            prose-a:text-[#faff69]
+            prose-code:text-[#e6e6e6] prose-code:bg-[#242424] prose-code:px-1 prose-code:rounded prose-code:text-xs
+            prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-[#2a2a2a] prose-pre:rounded-lg
+            prose-blockquote:border-l-[#faff69] prose-blockquote:text-[#888888]
             prose-strong:text-[#e6e6e6]
             prose-ul:text-[#c9c9c9] prose-ol:text-[#c9c9c9]
-            prose-hr:border-[#2f2f2f]
-            prose-li:marker:text-[#6b6b6b]
+            prose-hr:border-[#2a2a2a]
+            prose-li:marker:text-[#888888]
           ">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{brief.content}</ReactMarkdown>
           </div>
@@ -155,7 +155,7 @@ export function BriefPage() {
             <h2 className={`text-sm font-semibold ${c.text} mb-3`}>Past Briefs</h2>
             <div className="space-y-2">
               {history.map(item => (
-                <div key={item.id} className={`flex items-center justify-between p-3 border ${c.border} rounded-xl bg-[#202020] hover:bg-[#222] transition-colors cursor-pointer`}>
+                <div key={item.id} className={`flex items-center justify-between p-3 border ${c.border} rounded-xl bg-[#1a1a1a] hover:bg-[#222] transition-colors cursor-pointer`}>
                   <div>
                     <p className={`text-sm font-medium ${c.text}`}>{item.date}</p>
                     <p className={`text-xs ${c.gray} mt-0.5 line-clamp-1`}>{item.preview}</p>

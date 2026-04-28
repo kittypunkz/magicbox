@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { sessionAuthMiddleware } from '../middleware/auth';
-import { CreateTaskSchema, UpdateTaskSchema, TaskQuerySchema, CreateSubtaskSchema, UpdateSubtaskSchema } from '../validators/schemas';
+import { CreateTaskSchema, UpdateTaskSchema, TaskQuerySchema, CreateSubtaskSchema, UpdateSubtaskSchema, SummaryQuerySchema } from '../validators/schemas';
 
 interface Task {
   id: number;
@@ -49,6 +49,22 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', sessionAuthMiddleware);
 
 // GET /tasks?status=pending|done
+const attachSubtasks = async (db: D1Database, tasks: Task[]) => {
+  const ids = tasks.filter(t => t.subtask_count > 0).map(t => t.id);
+  const subtaskMap: Record<number, Subtask[]> = {};
+  if (ids.length > 0) {
+    const ph = ids.map(() => '?').join(',');
+    const res = await db.prepare(
+      `SELECT * FROM subtasks WHERE task_id IN (${ph}) ORDER BY created_at ASC`
+    ).bind(...ids).all<Subtask>();
+    for (const s of res.results ?? []) {
+      if (!subtaskMap[s.task_id]) subtaskMap[s.task_id] = [];
+      subtaskMap[s.task_id].push(s);
+    }
+  }
+  return tasks.map(t => ({ ...t, subtasks: subtaskMap[t.id] ?? [] }));
+};
+
 app.get('/', async (c) => {
   const query = TaskQuerySchema.safeParse(c.req.query());
   if (!query.success) {
@@ -67,27 +83,53 @@ app.get('/', async (c) => {
   sql += ' GROUP BY t.id ORDER BY t.created_at DESC';
 
   const result = await db.prepare(sql).bind(...params).all<Task>();
-  return c.json({ tasks: result.results ?? [] });
+  const tasks = await attachSubtasks(db, result.results ?? []);
+  return c.json({ tasks });
 });
 
-// GET /tasks/summary — today's snapshot (Bangkok UTC+7) — must be before /:id
+// GET /tasks/summary — today's or custom-range snapshot (Bangkok UTC+7) — must be before /:id
 app.get('/summary', async (c) => {
+  const query = SummaryQuerySchema.safeParse(c.req.query());
+  if (!query.success) return c.json({ error: query.error.flatten() }, 400);
+
   const db = c.env.DB as D1Database;
+  const todayBKK = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const { from, to } = query.data;
+  const effectiveFrom = from ?? todayBKK;
+  const effectiveTo   = to   ?? todayBKK;
+  const isPeriod = !!(from || to);
+
+  const DONE_SQL = `${LIST_SQL}
+    WHERE t.status = 'done'
+      AND date(t.completed_at, '+7 hours') >= ?
+      AND date(t.completed_at, '+7 hours') <= ?
+    GROUP BY t.id ORDER BY t.completed_at ASC`;
+
+  if (isPeriod) {
+    const doneRes = await db.prepare(DONE_SQL).bind(effectiveFrom, effectiveTo).all<Task>();
+    return c.json({
+      date: effectiveTo,
+      from: effectiveFrom,
+      to: effectiveTo,
+      backlog: [],
+      doing: [],
+      done_today: await attachSubtasks(db, doneRes.results ?? []),
+    });
+  }
 
   const [backlogRes, doingRes, doneRes] = await Promise.all([
     db.prepare(`${LIST_SQL} WHERE t.status = 'backlog' GROUP BY t.id ORDER BY t.created_at DESC`).all<Task>(),
     db.prepare(`${LIST_SQL} WHERE t.status = 'doing' GROUP BY t.id ORDER BY t.created_at DESC`).all<Task>(),
-    db.prepare(`${LIST_SQL} WHERE t.status = 'done' AND date(t.completed_at, '+7 hours') = date('now', '+7 hours') GROUP BY t.id ORDER BY t.completed_at DESC`).all<Task>(),
+    db.prepare(DONE_SQL).bind(todayBKK, todayBKK).all<Task>(),
   ]);
 
-  const today = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const [backlog, doing, done_today] = await Promise.all([
+    attachSubtasks(db, backlogRes.results ?? []),
+    attachSubtasks(db, doingRes.results ?? []),
+    attachSubtasks(db, doneRes.results ?? []),
+  ]);
 
-  return c.json({
-    date: today,
-    backlog: backlogRes.results ?? [],
-    doing: doingRes.results ?? [],
-    done_today: doneRes.results ?? [],
-  });
+  return c.json({ date: todayBKK, from: todayBKK, to: todayBKK, backlog, doing, done_today });
 });
 
 // GET /tasks/:id — single task with subtasks

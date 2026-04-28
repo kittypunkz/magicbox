@@ -94,16 +94,22 @@ export const briefAPI = {
 };
 
 export const processAPI = {
-  note: (id: number) => fetchAPI<{ tasks: { title: string }[]; note_id: number }>(`/process/notes/${id}`, {
+  note: (id: number) => fetchAPI<{ tasks: { title: string; subtasks?: string[] }[]; note_id: number }>(`/process/notes/${id}`, {
     method: 'POST',
   }),
-  recent: () => fetchAPI<{ results: { note_id: number; note_title: string; tasks: { title: string }[] }[] }>('/process/recent', {
+  recent: () => fetchAPI<{ results: { note_id: number; note_title: string; tasks: { title: string; subtasks?: string[] }[] }[] }>('/process/recent', {
     method: 'POST',
   }),
 };
 
 export const tasksAPI = {
-  getSummary: () => fetchAPI<TaskSummary>('/tasks/summary'),
+  getSummary: (params?: { from?: string; to?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.from) query.set('from', params.from);
+    if (params?.to)   query.set('to',   params.to);
+    const qs = query.toString() ? `?${query}` : '';
+    return fetchAPI<TaskSummary>(`/tasks/summary${qs}`);
+  },
   getAll: (params?: { status?: Task['status']; note_id?: number }) => {
     const query = new URLSearchParams();
     if (params?.status) query.set('status', params.status);

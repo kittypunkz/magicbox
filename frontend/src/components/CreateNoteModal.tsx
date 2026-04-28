@@ -7,14 +7,14 @@ import { bookmarksAPI } from '../api/client';
 // Dark mode colors
 const c = {
   overlay: 'bg-black/60',
-  modal: 'bg-[#202020]',
-  input: 'bg-[#2a2a2a]',
+  modal: 'bg-[#1a1a1a]',
+  input: 'bg-[#242424]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
   hover: 'hover:bg-[#3a3a3a]',
-  primary: 'bg-blue-600 hover:bg-blue-700',
-  secondary: 'bg-[#2a2a2a] hover:bg-[#3a3a3a]',
+  primary: 'bg-[#faff69] hover:bg-[#e6eb52]',
+  secondary: 'bg-[#242424] hover:bg-[#3a3a3a]',
 };
 
 interface CreateNoteModalProps {
@@ -311,7 +311,7 @@ export function CreateNoteModal({
             {isBookmark ? (
               <LinkIcon size={20} className="text-emerald-500" />
             ) : (
-              <FileText size={20} className="text-blue-500" />
+              <FileText size={20} className="text-[#faff69]" />
             )}
             <h2 className={`text-lg font-semibold ${c.text}`}>
               {isBookmark ? 'Save Bookmark' : 'Create New Note'}
@@ -342,7 +342,7 @@ export function CreateNoteModal({
               onFocus={() => setActiveInput('title')}
 
               placeholder="Note title... #work !today"
-              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text}`}
+              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text}`}
             />
           </div>
 
@@ -389,7 +389,7 @@ export function CreateNoteModal({
 
               placeholder="What's on your mind? #ideas !today"
               rows={4}
-              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${c.text} resize-none`}
+              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text} resize-none`}
             />
           </div>
           )}
@@ -400,7 +400,7 @@ export function CreateNoteModal({
               data-area-id="create-note-folder-suggestions"
               className={`${c.input} border ${c.border} rounded-lg overflow-hidden`}
             >
-              <div className={`px-3 py-2 text-xs font-medium ${c.gray} bg-[#202020] border-b ${c.border}`}>
+              <div className={`px-3 py-2 text-xs font-medium ${c.gray} bg-[#1a1a1a] border-b ${c.border}`}>
                 {searchTerm ? `Folders matching "${searchTerm}"` : 'Select folder (Enter or Tab to select, ↑↓ to navigate)'}
               </div>
               <div className="max-h-40 overflow-y-auto">
@@ -411,16 +411,16 @@ export function CreateNoteModal({
                     onClick={() => handleFolderSelect(folder)}
                     onMouseEnter={() => setHighlightedIndex(index)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                      index === highlightedIndex ? 'bg-blue-900/20' : c.hover
+                      index === highlightedIndex ? 'bg-[#faff69]/5' : c.hover
                     }`}
                   >
-                    <Hash size={16} className="text-blue-500" />
+                    <Hash size={16} className="text-[#faff69]" />
                     <span className={`text-sm ${c.text}`}>{folder.name}</span>
                     {folder.id === 1 && (
                       <span className={`ml-auto text-xs ${c.gray}`}>default</span>
                     )}
                     {index === highlightedIndex && (
-                      <span className="ml-auto text-xs text-blue-400">Enter</span>
+                      <span className="ml-auto text-xs text-[#faff69]">Enter</span>
                     )}
                   </button>
                 ))}
@@ -430,25 +430,25 @@ export function CreateNoteModal({
 
           {/* Create New Folder Option */}
           {showSuggestions && searchTerm && !filteredFolders.find(f => f.name.toLowerCase() === searchTerm.toLowerCase()) && (
-            <div className={`flex items-center gap-2 text-xs ${c.gray} px-3 py-2 bg-blue-900/10 rounded-lg`}>
-              <Hash size={12} className="text-blue-500" />
+            <div className={`flex items-center gap-2 text-xs ${c.gray} px-3 py-2 bg-[#faff69]/5 rounded-lg`}>
+              <Hash size={12} className="text-[#faff69]" />
               <span>
-                Will create new folder: <span className="text-blue-400 font-medium">#{searchTerm}</span>
+                Will create new folder: <span className="text-[#faff69] font-medium">#{searchTerm}</span>
               </span>
             </div>
           )}
 
           {/* Folder Hint */}
-          <div className={`flex items-center gap-2 text-xs ${c.gray} bg-[#2a2a2a] px-3 py-2 rounded-lg`}>
-            <Hash size={12} className="text-blue-500" />
+          <div className={`flex items-center gap-2 text-xs ${c.gray} bg-[#242424] px-3 py-2 rounded-lg`}>
+            <Hash size={12} className="text-[#faff69]" />
             <span>
-              Type <code className="text-blue-400">#foldername</code> to organize. 
+              Type <code className="text-[#faff69]">#foldername</code> to organize. 
               If folder doesn't exist, it will be created automatically.
             </span>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#2f2f2f]">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#2a2a2a]">
             <button
               type="button"
               onClick={onClose}

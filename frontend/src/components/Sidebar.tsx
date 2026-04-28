@@ -27,13 +27,13 @@ interface SidebarProps {
   onBookmarksClick?: () => void;
 }
 
-const bg = 'bg-[#202020]';
+const bg = 'bg-[#1a1a1a]';
 const text = 'text-[#e6e6e6]';
-const gray = 'text-[#6b6b6b]';
-const border = 'border-[#2f2f2f]';
-const hover = 'hover:bg-[#2f2f2f]';
-const active = 'bg-[#2f2f2f] text-blue-500';
-const primary = 'text-blue-500';
+const gray = 'text-[#888888]';
+const border = 'border-[#2a2a2a]';
+const hover = 'hover:bg-[#242424]';
+const active = 'bg-[#242424] text-[#faff69]';
+const primary = 'text-[#faff69]';
 
 export function Sidebar({
   folders,
@@ -221,7 +221,7 @@ export function Sidebar({
               <span className={`text-xs font-semibold uppercase tracking-wider ${gray}`}>Folders</span>
               <button
                 onClick={() => setIsCreatingFolder(true)}
-                className={`p-1 rounded ${gray} hover:${text} hover:bg-[#2f2f2f] transition-colors`}
+                className={`p-1 rounded ${gray} hover:${text} hover:bg-[#242424] transition-colors`}
               >
                 <Plus size={12} />
               </button>
@@ -232,7 +232,7 @@ export function Sidebar({
               ) : (
                 <>
                   {isCreatingFolder && (
-                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[#2f2f2f]">
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[#2a2a2a]">
                       <Folder size={14} className={gray} />
                       <input
                         type="text"
@@ -241,7 +241,7 @@ export function Sidebar({
                         onKeyDown={handleKeyDown}
                         onBlur={() => { if (!newFolderName.trim()) setIsCreatingFolder(false); }}
                         placeholder="Folder name"
-                        className="flex-1 bg-transparent text-xs text-[#e6e6e6] placeholder-[#6b6b6b] outline-none"
+                        className="flex-1 bg-transparent text-xs text-[#e6e6e6] placeholder-[#888888] outline-none"
                         autoFocus
                       />
                     </div>
@@ -249,7 +249,7 @@ export function Sidebar({
                   {folders.map(folder => (
                     <div key={folder.id} className="group relative">
                       {editingFolder?.id === folder.id ? (
-                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[#2f2f2f]">
+                        <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-[#2a2a2a]">
                           <Folder size={14} className={primary} />
                           <input
                             type="text"
@@ -272,7 +272,7 @@ export function Sidebar({
                           <span className="flex-1 text-left truncate">{folder.name}</span>
                           <button
                             onClick={e => { e.stopPropagation(); setFolderDropdownOpen(folderDropdownOpen === folder.id ? null : folder.id); }}
-                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[#3f3f3f]"
+                            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-[#3a3a3a]"
                           >
                             <MoreHorizontal size={12} className={gray} />
                           </button>
@@ -326,7 +326,7 @@ export function Sidebar({
         <button
           onClick={toggle}
           title={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
-          className={`w-full flex items-center px-3 py-2.5 transition-colors ${gray} hover:text-[#e6e6e6] hover:bg-[#2f2f2f]`}
+          className={`w-full flex items-center px-3 py-2.5 transition-colors ${gray} hover:text-[#e6e6e6] hover:bg-[#242424]`}
         >
           <ChevronRight
             size={18}
@@ -376,18 +376,18 @@ function FolderDropdown({
 }) {
   return (
     <div
-      className="absolute right-0 top-full mt-1 w-36 bg-[#202020] border border-[#2f2f2f] rounded-lg shadow-lg py-1 z-50"
+      className="absolute right-0 top-full mt-1 w-36 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-lg py-1 z-50"
       onClick={e => e.stopPropagation()}
     >
       <button
         onClick={onEdit}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#e6e6e6] hover:bg-[#2f2f2f]"
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#e6e6e6] hover:bg-[#242424]"
       >
         <Pencil size={14} />Rename
       </button>
       <button
         onClick={onDelete}
-        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-[#2f2f2f]"
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-[#242424]"
       >
         <Trash2 size={14} />Delete
       </button>
@@ -436,7 +436,7 @@ function MobileContent({
     <div className="flex-1 overflow-y-auto py-2 space-y-1 px-2">
       <button
         onClick={onCreateNote}
-        className="w-full flex items-center gap-3 px-3 py-2.5 mb-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+        className="w-full flex items-center gap-3 px-3 py-2.5 mb-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] rounded-lg text-sm font-medium transition-colors"
       >
         <Plus size={18} /><span>New Note</span>
       </button>
@@ -470,15 +470,15 @@ function MobileContent({
           {loading ? <><SkeletonFolderItem /><SkeletonFolderItem /></> : (
             <>
               {isCreatingFolder && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#2f2f2f]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#2a2a2a]">
                   <Folder size={16} className={gray} />
-                  <input type="text" value={newFolderName} onChange={e => onNewFolderNameChange(e.target.value)} onKeyDown={onKeyDown} onBlur={() => { if (!newFolderName.trim()) onNewFolderNameChange(''); }} placeholder="Folder name" className="flex-1 bg-transparent text-sm text-[#e6e6e6] placeholder-[#6b6b6b] outline-none" autoFocus />
+                  <input type="text" value={newFolderName} onChange={e => onNewFolderNameChange(e.target.value)} onKeyDown={onKeyDown} onBlur={() => { if (!newFolderName.trim()) onNewFolderNameChange(''); }} placeholder="Folder name" className="flex-1 bg-transparent text-sm text-[#e6e6e6] placeholder-[#888888] outline-none" autoFocus />
                 </div>
               )}
               {folders.map(folder => (
                 <div key={folder.id} className="group relative">
                   {editingFolder?.id === folder.id ? (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#2f2f2f]">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#2a2a2a]">
                       <Folder size={16} className={primary} />
                       <input type="text" value={editingName} onChange={e => onEditingNameChange(e.target.value)} onKeyDown={onKeyDown} onBlur={onFolderUpdateBlur} className="flex-1 bg-transparent text-sm text-[#e6e6e6] outline-none" autoFocus />
                     </div>
@@ -486,7 +486,7 @@ function MobileContent({
                     <button onClick={() => onFolderClick(folder)} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors min-h-[44px] ${selectedFolderId === folder.id ? active : `${text} ${hover}`}`}>
                       <Folder size={16} className={selectedFolderId === folder.id ? primary : gray} />
                       <span className="flex-1 text-left truncate">{folder.name}</span>
-                      <button onClick={e => { e.stopPropagation(); setFolderDropdownOpen(folderDropdownOpen === folder.id ? null : folder.id); }} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-[#3f3f3f]">
+                      <button onClick={e => { e.stopPropagation(); setFolderDropdownOpen(folderDropdownOpen === folder.id ? null : folder.id); }} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-[#3a3a3a]">
                         <MoreHorizontal size={14} className={gray} />
                       </button>
                     </button>

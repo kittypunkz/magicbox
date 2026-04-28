@@ -6,7 +6,7 @@ import { useCallback, useRef } from "react";
 const theme = {
   colors: {
     editor: {
-      background: "#191919",
+      background: "#0a0a0a",
     },
   },
 };

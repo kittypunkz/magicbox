@@ -9,13 +9,13 @@ import type { Folder as FolderType, Note } from '../types';
 
 // Dark mode colors
 const c = {
-  bg: 'bg-[#191919]',
-  sidebar: 'bg-[#202020]',
-  hover: 'hover:bg-[#2a2a2a]',
+  bg: 'bg-[#0a0a0a]',
+  sidebar: 'bg-[#1a1a1a]',
+  hover: 'hover:bg-[#242424]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
-  input: 'bg-[#2a2a2a]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
+  input: 'bg-[#242424]',
 };
 
 interface HomePageProps {
@@ -69,36 +69,18 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
         data-area-id="homepage-hero"
         className="homepage-hero flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-6 sm:py-8 min-h-[20vh] sm:min-h-[25vh] relative overflow-hidden"
       >
-        {/* Rainbow Gradient Animation Background */}
+        {/* ClickHouse-style yellow glow */}
         <div className="absolute inset-0 pointer-events-none">
-          <div 
-            className="absolute inset-0 opacity-30"
-            style={{
-              background: 'linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3)',
-              backgroundSize: '400% 400%',
-              animation: 'rainbow-shift 15s ease infinite',
-            }}
-          />
-          <div 
-            className="absolute inset-0"
-            style={{
-              background: 'radial-gradient(ellipse at center, transparent 0%, #191919 70%)',
-            }}
+          <div
+            className="absolute inset-0 opacity-10"
+            style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, #faff69, transparent)' }}
           />
         </div>
-        
-        <style>{`
-          @keyframes rainbow-shift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-        `}</style>
 
         <div className="homepage-hero-content text-center mb-8 sm:mb-12 relative z-10">
-          <div className="homepage-hero-icon inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-blue-500 rounded-2xl mb-4 sm:mb-6 shadow-lg">
-            <Sparkles size={28} className="text-white sm:hidden" />
-            <Sparkles size={32} className="text-white hidden sm:block" />
+          <div className="homepage-hero-icon inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-[#faff69] rounded-2xl mb-4 sm:mb-6">
+            <Sparkles size={28} className="text-[#0a0a0a] sm:hidden" />
+            <Sparkles size={32} className="text-[#0a0a0a] hidden sm:block" />
           </div>
           <h1 className={`homepage-hero-title text-2xl sm:text-4xl font-bold ${c.text} mb-2 sm:mb-3`}>
             Welcome to MagicBox
@@ -141,7 +123,7 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
                 data-area-id={`homepage-recent-${note.id}`}
                 onClick={() => onSelectNote(note)}
                 className={`homepage-recent-card group relative flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md transition-all cursor-pointer touch-manipulation active:scale-[0.98] ${
-                  note.bookmark_url ? 'border-l-4 border-l-emerald-500 hover:border-emerald-700' : 'hover:border-blue-700'
+                  note.bookmark_url ? 'border-l-4 border-l-emerald-500 hover:border-emerald-500' : 'hover:border-[#faff69]'
                 }`}
               >
                 {/* Delete button - appears on hover for desktop, always visible on touch */}
@@ -197,16 +179,16 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
             className="homepage-empty-state max-w-4xl mx-auto w-full px-4 sm:px-8 pb-12 sm:pb-16 text-center"
           >
             <div className={`p-6 sm:p-8 border-2 border-dashed ${c.border} rounded-2xl`}>
-              <div className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center`}>
-                <FileText size={28} className="text-blue-400 sm:hidden" />
-                <FileText size={32} className="text-blue-400 hidden sm:block" />
+              <div className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-[#faff69]/20 flex items-center justify-center`}>
+                <FileText size={28} className="text-[#faff69] sm:hidden" />
+                <FileText size={32} className="text-[#faff69] hidden sm:block" />
               </div>
               <h3 className={`text-base sm:text-lg font-semibold ${c.text} mb-2`}>No notes yet</h3>
               <p className={`text-sm ${c.gray} mb-4 sm:mb-6`}>Create your first note to get started</p>
               <button
                 data-area-id="homepage-create-note-btn"
                 onClick={() => onCreateNote('New Note', '', 1)}
-                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] text-sm sm:text-base font-medium rounded-lg transition-colors"
               >
                 <Plus size={18} className="sm:hidden" />
                 <Plus size={20} className="hidden sm:block" />

@@ -4,10 +4,10 @@ import { useNotes } from '../hooks/useNotes';
 import type { Note } from '../types';
 
 const c = {
-  bg: 'bg-[#191919]',
+  bg: 'bg-[#0a0a0a]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
 };
 
 interface BookmarksPageProps {
@@ -30,9 +30,9 @@ export function BookmarksPage({ onSelectNote }: BookmarksPageProps) {
   return (
     <div className={`h-full overflow-y-auto ${c.bg}`}>
       {/* Header */}
-      <div className={`sticky top-0 bg-[#202020]/95 backdrop-blur border-b ${c.border} px-4 sm:px-8 py-4 z-10`}>
+      <div className={`sticky top-0 bg-[#1a1a1a]/95 backdrop-blur border-b ${c.border} px-4 sm:px-8 py-4 z-10`}>
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 bg-[#2a2a2a] rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 bg-[#242424] rounded-xl flex items-center justify-center flex-shrink-0">
             <Bookmark size={20} className={c.gray} />
           </div>
           <div>
@@ -45,7 +45,7 @@ export function BookmarksPage({ onSelectNote }: BookmarksPageProps) {
           value={filter}
           onChange={e => setFilter(e.target.value)}
           placeholder="Filter bookmarks..."
-          className={`w-full px-3 py-2 bg-[#2a2a2a] border ${c.border} rounded-lg ${c.text} placeholder-[#4b4b4b] text-sm focus:outline-none focus:border-blue-500 transition-colors`}
+          className={`w-full px-3 py-2 bg-[#242424] border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
         />
       </div>
 
@@ -76,7 +76,7 @@ export function BookmarksPage({ onSelectNote }: BookmarksPageProps) {
                 <div
                   key={note.id}
                   onClick={() => onSelectNote(note)}
-                  className={`p-4 bg-[#202020] border ${c.border} rounded-xl cursor-pointer hover:border-[#3f3f3f] hover:bg-[#222] transition-colors group`}
+                  className={`p-4 bg-[#1a1a1a] border ${c.border} rounded-xl cursor-pointer hover:border-[#3a3a3a] hover:bg-[#222] transition-colors group`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -93,7 +93,7 @@ export function BookmarksPage({ onSelectNote }: BookmarksPageProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}
-                      className={`flex-shrink-0 p-1.5 rounded-lg ${c.gray} hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all`}
+                      className={`flex-shrink-0 p-1.5 rounded-lg ${c.gray} hover:text-[#faff69] opacity-0 group-hover:opacity-100 transition-all`}
                     >
                       <ExternalLink size={16} />
                     </a>

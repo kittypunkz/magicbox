@@ -83,3 +83,8 @@ export const TaskQuerySchema = z.object({
   status: z.enum(['backlog', 'doing', 'done']).optional(),
   note_id: z.coerce.number().int().positive().optional(),
 });
+
+export const SummaryQuerySchema = z.object({
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  to:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});

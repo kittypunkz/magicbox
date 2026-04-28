@@ -2,13 +2,13 @@ import { AlertTriangle, X } from 'lucide-react';
 
 // Dark mode colors
 const c = {
-  bg: 'bg-[#191919]',
-  sidebar: 'bg-[#202020]',
-  hover: 'hover:bg-[#2a2a2a]',
+  bg: 'bg-[#0a0a0a]',
+  sidebar: 'bg-[#1a1a1a]',
+  hover: 'hover:bg-[#242424]',
   text: 'text-[#e6e6e6]',
-  gray: 'text-[#6b6b6b]',
-  border: 'border-[#2f2f2f]',
-  input: 'bg-[#2a2a2a]',
+  gray: 'text-[#888888]',
+  border: 'border-[#2a2a2a]',
+  input: 'bg-[#242424]',
 };
 
 interface ConfirmModalProps {
@@ -41,16 +41,19 @@ export function ConfirmModal({
       icon: 'text-red-500',
       iconBg: 'bg-red-500/10',
       button: 'bg-red-500 hover:bg-red-600',
+      buttonText: 'text-white',
     },
     warning: {
       icon: 'text-yellow-500',
       iconBg: 'bg-yellow-500/10',
       button: 'bg-yellow-500 hover:bg-yellow-600',
+      buttonText: 'text-[#0a0a0a]',
     },
     info: {
-      icon: 'text-blue-500',
-      iconBg: 'bg-blue-500/10',
-      button: 'bg-blue-500 hover:bg-blue-600',
+      icon: 'text-[#faff69]',
+      iconBg: 'bg-[#faff69]/10',
+      button: 'bg-[#faff69] hover:bg-[#e6eb52]',
+      buttonText: 'text-[#0a0a0a]',
     },
   };
 
@@ -123,7 +126,7 @@ export function ConfirmModal({
               data-area-id="confirm-modal-confirm"
               onClick={onConfirm}
               disabled={isLoading}
-              className={`confirm-modal-confirm-btn flex items-center gap-2 px-4 py-2 text-sm text-white ${styles.button} rounded-lg transition-colors disabled:opacity-50`}
+              className={`confirm-modal-confirm-btn flex items-center gap-2 px-4 py-2 text-sm ${styles.buttonText} ${styles.button} rounded-lg transition-colors disabled:opacity-50`}
             >
               {isLoading && (
                 <div className="confirm-modal-loading animate-spin rounded-full h-3 w-3 border-b border-white" />

@@ -7,24 +7,41 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+      },
       colors: {
+        ch: {
+          primary: '#faff69',
+          'primary-active': '#e6eb52',
+          'primary-disabled': '#3a3a1f',
+          'on-primary': '#0a0a0a',
+          canvas: '#0a0a0a',
+          'surface-soft': '#121212',
+          'surface-card': '#1a1a1a',
+          'surface-elevated': '#242424',
+          hairline: '#2a2a2a',
+          'hairline-strong': '#3a3a3a',
+          ink: '#ffffff',
+          body: '#cccccc',
+          'body-strong': '#e6e6e6',
+          muted: '#888888',
+          'muted-soft': '#5a5a5a',
+          emerald: '#22c55e',
+          rose: '#ef4444',
+          blue: '#3b82f6',
+          warning: '#f59e0b',
+        },
         notion: {
-          // Light mode
-          bg: '#ffffff',
-          sidebar: '#f7f6f3',
-          hover: '#efefef',
-          text: '#37352f',
-          gray: '#9ca3af',
-          border: '#e5e5e5',
-          // Dark mode
           dark: {
-            bg: '#191919',
-            sidebar: '#202020',
-            hover: '#2a2a2a',
+            bg: '#0a0a0a',
+            sidebar: '#1a1a1a',
+            hover: '#242424',
             text: '#e6e6e6',
-            gray: '#6b6b6b',
-            border: '#2f2f2f',
-            input: '#2a2a2a',
+            gray: '#888888',
+            border: '#2a2a2a',
+            input: '#1a1a1a',
           }
         }
       },

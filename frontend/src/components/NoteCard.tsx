@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pin, Loader2, Sparkles } from 'lucide-react';
 import { processAPI } from '../api/client';
 import { TaskConfirmModal } from './TaskConfirmModal';
-import { tasksAPI } from '../api/client';
+import { tasksAPI, subtasksAPI } from '../api/client';
 import { formatRelativeTime } from '../lib/dates';
 import type { Note } from '../types';
 
@@ -14,7 +14,7 @@ interface NoteCardProps {
 export function NoteCard({ note, onClick }: NoteCardProps) {
   const [extracting, setExtracting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [suggestions, setSuggestions] = useState<{ title: string }[]>([]);
+  const [suggestions, setSuggestions] = useState<{ title: string; subtasks?: string[] }[]>([]);
 
   const handleExtract = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -30,8 +30,13 @@ export function NoteCard({ note, onClick }: NoteCardProps) {
     }
   };
 
-  const handleConfirm = async (titles: string[], noteId: number) => {
-    await Promise.all(titles.map(title => tasksAPI.create(title, noteId)));
+  const handleConfirm = async (tasks: { title: string; subtasks: string[] }[], noteId: number) => {
+    await Promise.all(tasks.map(async ({ title, subtasks }) => {
+      const task = await tasksAPI.create(title, noteId);
+      if (subtasks.length > 0) {
+        await Promise.all(subtasks.map(s => subtasksAPI.create(task.id, s)));
+      }
+    }));
   };
 
   const preview = note.content?.slice(0, 120) || '';
@@ -42,28 +47,28 @@ export function NoteCard({ note, onClick }: NoteCardProps) {
     <>
       <div
         onClick={onClick}
-        className="bg-[#202020] border border-[#2f2f2f] rounded-xl p-4 cursor-pointer hover:border-[#3f3f3f] hover:bg-[#222] transition-colors group"
+        className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 cursor-pointer hover:border-[#3a3a3a] hover:bg-[#222] transition-colors group"
       >
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex items-center gap-1.5 min-w-0">
-            {!!note.is_pinned && <Pin size={12} className="text-blue-400 flex-shrink-0" />}
+            {!!note.is_pinned && <Pin size={12} className="text-[#faff69] flex-shrink-0" />}
             {folderName && (
-              <span className="text-xs text-[#6b6b6b] flex-shrink-0">#{folderName}</span>
+              <span className="text-xs text-[#888888] flex-shrink-0">#{folderName}</span>
             )}
-            <span className="text-xs text-[#4b4b4b] flex-shrink-0">{relTime}</span>
+            <span className="text-xs text-[#5a5a5a] flex-shrink-0">{relTime}</span>
           </div>
         </div>
 
         <h3 className="text-sm font-medium text-[#e6e6e6] mb-1 line-clamp-1">{note.title}</h3>
 
         {preview && (
-          <p className="text-xs text-[#6b6b6b] line-clamp-2 mb-3">{preview}</p>
+          <p className="text-xs text-[#888888] line-clamp-2 mb-3">{preview}</p>
         )}
 
         <button
           onClick={handleExtract}
           disabled={extracting}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#6b6b6b] hover:text-[#e6e6e6] border border-[#2f2f2f] hover:border-[#4f4f4f] rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#888888] hover:text-[#e6e6e6] border border-[#2a2a2a] hover:border-[#4f4f4f] rounded-lg transition-colors disabled:opacity-50"
         >
           {extracting
             ? <Loader2 size={12} className="animate-spin" />

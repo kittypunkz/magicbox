@@ -43,7 +43,7 @@ export function MarkdownEditor({
         onKeyDown={handleKeyDown}
         onBlur={() => setEditing(false)}
         placeholder={placeholder}
-        className={`w-full bg-transparent text-[#e6e6e6] placeholder-[#4b4b4b] resize-none outline-none font-mono text-sm leading-relaxed ${className}`}
+        className={`w-full bg-transparent text-[#e6e6e6] placeholder-[#5a5a5a] resize-none outline-none font-mono text-sm leading-relaxed ${className}`}
         style={{ minHeight: '200px', height: 'auto' }}
         rows={Math.max(10, value.split('\n').length + 2)}
       />
@@ -60,19 +60,19 @@ export function MarkdownEditor({
         <div className="prose prose-invert prose-sm max-w-none text-[#e6e6e6]
           prose-headings:text-[#e6e6e6] prose-headings:font-semibold
           prose-p:text-[#c9c9c9] prose-p:leading-relaxed
-          prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
-          prose-code:text-[#e6e6e6] prose-code:bg-[#2a2a2a] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
-          prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-[#2f2f2f] prose-pre:rounded-lg
-          prose-blockquote:border-l-blue-500 prose-blockquote:text-[#6b6b6b]
+          prose-a:text-[#faff69] prose-a:no-underline hover:prose-a:underline
+          prose-code:text-[#e6e6e6] prose-code:bg-[#242424] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
+          prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-[#2a2a2a] prose-pre:rounded-lg
+          prose-blockquote:border-l-[#faff69] prose-blockquote:text-[#888888]
           prose-strong:text-[#e6e6e6]
           prose-ul:text-[#c9c9c9] prose-ol:text-[#c9c9c9]
-          prose-hr:border-[#2f2f2f]
+          prose-hr:border-[#2a2a2a]
           prose-table:text-[#c9c9c9]
         ">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
         </div>
       ) : (
-        <p className="text-[#4b4b4b] text-sm italic">{placeholder}</p>
+        <p className="text-[#5a5a5a] text-sm italic">{placeholder}</p>
       )}
     </div>
   );
