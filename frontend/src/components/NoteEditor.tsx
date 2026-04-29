@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Search, Download, Sparkles, Loader2, Check, CheckSquare } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ArrowLeft, MoreVertical, Trash2, Pin, PinOff, ExternalLink, Search, Download, Sparkles, Loader2, Check, CheckSquare, ImagePlus } from 'lucide-react';
 import { useNote } from '../hooks/useNotes';
 import { useFolders } from '../hooks/useFolders';
 import { useRecentNotes } from '../hooks/useRecentNotes';
@@ -8,7 +8,8 @@ import { TaskConfirmModal } from './TaskConfirmModal';
 import { BlockNoteEditor } from './BlockNoteEditor';
 import { EditorSearch } from './EditorSearch';
 import { exportNoteAsMarkdown } from '../utils/exportImport';
-import { processAPI, tasksAPI, subtasksAPI } from '../api/client';
+import { processAPI, tasksAPI, subtasksAPI, uploadsAPI } from '../api/client';
+import { compressImage } from '../utils/imageCompress';
 import type { Note, Task } from '../types';
 
 // Dark mode colors - Obsidian style
@@ -50,6 +51,8 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
   const [extracting, setExtracting] = useState(false);
   const [extractModal, setExtractModal] = useState<{ suggestions: { title: string; subtasks?: string[] }[] } | null>(null);
   const [linkedTasks, setLinkedTasks] = useState<Task[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Ctrl+F to open search
   useEffect(() => {
@@ -133,6 +136,34 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
     }));
     const updated = await tasksAPI.getAll({ note_id: noteId });
     setLinkedTasks(updated);
+  };
+
+  const uploadFile = useCallback(async (file: File): Promise<string> => {
+    if (!note) throw new Error('No note');
+    const compressed = await compressImage(file);
+    return uploadsAPI.upload(compressed, note.id);
+  }, [note]);
+
+  const handleImageButtonClick = () => imageInputRef.current?.click();
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !blockNoteEditor) return;
+    e.target.value = '';
+    setUploading(true);
+    try {
+      const url = await uploadFile(file);
+      const currentBlock = blockNoteEditor.getTextCursorPosition().block;
+      blockNoteEditor.insertBlocks(
+        [{ type: 'image', props: { url } }],
+        currentBlock,
+        'after'
+      );
+    } catch (err) {
+      console.error('Image upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleToggleTask = async (task: Task) => {
@@ -286,6 +317,28 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
               Extract Tasks
             </button>
           )}
+
+          {/* Image Upload */}
+          {!note?.bookmark_url && (
+            <>
+              <button
+                onClick={handleImageButtonClick}
+                disabled={uploading}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#888888] hover:text-[#e6e6e6] border border-[#2a2a2a] hover:border-[#4f4f4f] rounded-lg transition-colors disabled:opacity-50"
+                title="Upload image (or paste / drag-drop)"
+              >
+                {uploading ? <Loader2 size={12} className="animate-spin" /> : <ImagePlus size={12} />}
+                Image
+              </button>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={handleImageFileChange}
+              />
+            </>
+          )}
         </div>
 
         {/* Note Menu */}
@@ -431,6 +484,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                 initialContent={content}
                 onChange={setContent}
                 onEditorReady={setBlockNoteEditor}
+                uploadFile={uploadFile}
               />
             </>
           )}

@@ -58,6 +58,7 @@ export interface User {
 
 export interface Env {
   DB: D1Database;
+  IMAGES: R2Bucket;
   JWT_SECRET: string;
   OPENROUTER_API_KEY?: string;
   NODE_ENV?: string;

@@ -15,10 +15,13 @@ interface BlockNoteEditorProps {
   initialContent: string;
   onChange: (markdown: string) => void;
   onEditorReady?: (editor: any) => void;
+  uploadFile?: (file: File) => Promise<string>;
 }
 
-export function BlockNoteEditor({ initialContent, onChange, onEditorReady }: BlockNoteEditorProps) {
-  const editor = useCreateBlockNote();
+export function BlockNoteEditor({ initialContent, onChange, onEditorReady, uploadFile }: BlockNoteEditorProps) {
+  const editor = useCreateBlockNote({
+    uploadFile: uploadFile ?? undefined,
+  });
   const loaded = useRef(false);
   const notifiedReady = useRef(false);
 

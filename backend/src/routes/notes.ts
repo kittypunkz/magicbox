@@ -239,24 +239,34 @@ notes.patch('/:id', async (c) => {
   return c.json({ success: true, data: result });
 });
 
-// Delete note (TODO: Add authMiddleware when frontend has auth)
 notes.delete('/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  
+
   if (isNaN(id)) {
     return c.json({ success: false, error: 'Invalid note ID' }, 400);
   }
-  
+
   const db = c.env.DB;
-  
+
+  // Collect R2 keys before deleting — CASCADE removes note_images rows automatically
+  const imageRows = await db
+    .prepare('SELECT r2_key FROM note_images WHERE note_id = ?1')
+    .bind(id)
+    .all<{ r2_key: string }>();
+
   const result = await db.prepare('DELETE FROM notes WHERE id = ?1 RETURNING *')
     .bind(id)
     .first();
-  
+
   if (!result) {
     return c.json({ success: false, error: 'Note not found' }, 404);
   }
-  
+
+  // Hard-delete R2 objects after note is confirmed deleted
+  if (imageRows.results.length > 0) {
+    await Promise.all(imageRows.results.map(row => c.env.IMAGES.delete(row.r2_key)));
+  }
+
   return c.json({ success: true, data: { id } });
 });
 

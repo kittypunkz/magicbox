@@ -11,6 +11,7 @@ import tasks from './routes/tasks';
 import process from './routes/process';
 import chat from './routes/chat';
 import brief, { generateBrief } from './routes/brief';
+import uploads from './routes/uploads';
 import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -38,7 +39,7 @@ app.get('/', (c) => {
   return c.json({
     success: true,
     name: 'MagicBox API',
-    version: '2.10.0',
+    version: '2.11.0',
     status: 'running',
   });
 });
@@ -54,6 +55,7 @@ app.route('/tasks', tasks);
 app.route('/process', process);
 app.route('/chat', chat);
 app.route('/brief', brief);
+app.route('/uploads', uploads);
 
 // Cloudflare Cron trigger — nightly brief generation at midnight UTC
 export default {

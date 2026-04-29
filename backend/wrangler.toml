@@ -9,6 +9,11 @@ binding = "DB"
 database_name = "magicbox-db"
 database_id = "846b28b9-2aac-49a5-a3fa-8ad7cf925d9f"
 
+# Production R2 bucket for image uploads
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "magicbox-images"
+
 # Cron trigger: generate daily brief at midnight UTC
 [triggers]
 crons = ["0 0 * * *"]
@@ -21,3 +26,7 @@ name = "magicbox-api-dev"
 binding = "DB"
 database_name = "magicbox-db-dev"
 database_id = "006e7b29-1c9b-471f-9605-5162838b1292"
+
+[[env.dev.r2_buckets]]
+binding = "IMAGES"
+bucket_name = "magicbox-images-dev"

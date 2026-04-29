@@ -146,6 +146,24 @@ export const subtasksAPI = {
     fetchAPI<{ success: boolean }>(`/tasks/${taskId}/subtasks/${subId}`, { method: 'DELETE' }),
 };
 
+export const uploadsAPI = {
+  upload: async (file: File, noteId: number): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${API_BASE}/uploads?note_id=${noteId}`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Upload failed' }));
+      throw new Error(err.error || `HTTP ${response.status}`);
+    }
+    const result: { success: boolean; data: { url: string; key: string } } = await response.json();
+    return result.data.url;
+  },
+};
+
 export const settingsAPI = {
   getAll: () => fetchAPI<{ settings: Settings }>('/settings').then(r => r.settings),
   update: (data: Partial<Settings>) => fetchAPI<{ success: boolean }>('/settings', {
