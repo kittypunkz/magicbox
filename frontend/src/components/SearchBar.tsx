@@ -73,7 +73,7 @@ export function SearchBar({ onNoteClick, onFolderClick }: SearchBarProps) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => query.trim() && setShowDropdown(true)}
-        className="w-full lg:w-64 bg-[#1a1a1a] text-[#e6e6e6] text-sm rounded-lg pl-10 pr-4 py-2.5 border border-[#2a2a2a] placeholder-[#888888] focus:outline-none focus:border-[#faff69]"
+        className="w-full lg:w-64 bg-[#1a1a1a] text-[#e6e6e6] text-sm rounded-lg pl-10 pr-4 py-2.5 border border-[#2a2a2a] placeholder-[#888888] focus:outline-none focus:border-[#6366f1]"
       />
       {query && (
         <button

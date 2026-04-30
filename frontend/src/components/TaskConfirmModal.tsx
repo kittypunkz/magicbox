@@ -78,12 +78,12 @@ export function TaskConfirmModal({
                 onClick={() => toggle(i)}
                 className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${
                   task.selected
-                    ? 'border-[#faff69]/40 bg-[#faff69]/10'
+                    ? 'border-[#6366f1]/40 bg-[#6366f1]/10'
                     : 'border-[#2a2a2a] bg-[#0a0a0a] opacity-60'
                 }`}
               >
                 {task.selected
-                  ? <CheckSquare size={16} className="text-[#faff69] flex-shrink-0 mt-0.5" />
+                  ? <CheckSquare size={16} className="text-[#6366f1] flex-shrink-0 mt-0.5" />
                   : <Square size={16} className="text-[#888888] flex-shrink-0 mt-0.5" />
                 }
                 <div className="flex-1 min-w-0">
@@ -121,7 +121,7 @@ export function TaskConfirmModal({
           <button
             onClick={handleConfirm}
             disabled={saving || selected.length === 0}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
           >
             {saving ? (
               <><Loader2 size={14} className="animate-spin" /> Saving...</>

@@ -189,7 +189,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
         data-area-id="noteeditor"
         className="noteeditor flex items-center justify-center h-full bg-[#0a0a0a]"
       >
-        <div className="noteeditor-loading animate-spin rounded-full h-8 w-8 border-b-2 border-[#faff69]" />
+        <div className="noteeditor-loading animate-spin rounded-full h-8 w-8 border-b-2 border-[#6366f1]" />
       </div>
     );
   }
@@ -204,7 +204,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
         <button 
           data-area-id="noteeditor-back-btn"
           onClick={onBack} 
-          className="noteeditor-back-btn mt-4 text-[#faff69] hover:underline"
+          className="noteeditor-back-btn mt-4 text-[#6366f1] hover:underline"
         >
           Go back
         </button>
@@ -266,7 +266,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                         setShowFolderMenu(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm ${c.hover} transition-colors ${
-                        folder.id === folderId ? 'text-[#faff69]' : c.text
+                        folder.id === folderId ? 'text-[#6366f1]' : c.text
                       }`}
                     >
                       {folder.name}
@@ -297,7 +297,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
           <button
             onClick={() => setShowSearch(!showSearch)}
             className={`p-2 rounded-lg transition-colors ${
-              showSearch ? 'text-[#faff69]' : 'text-[#888888] hover:text-[#e6e6e6]'
+              showSearch ? 'text-[#6366f1]' : 'text-[#888888] hover:text-[#e6e6e6]'
             }`}
             title="Search in note (Ctrl+F)"
             aria-label="Search in note"
@@ -416,7 +416,7 @@ export function NoteEditor({ noteId, onBack, onUpdate, onDelete }: NoteEditorPro
                     className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-[#222] transition-colors"
                   >
                     <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                      task.status === 'done' ? 'bg-[#faff69] border-[#faff69]' : 'border-[#5a5a5a]'
+                      task.status === 'done' ? 'bg-[#6366f1] border-[#6366f1]' : 'border-[#5a5a5a]'
                     }`}>
                       {task.status === 'done' && <Check size={10} className="text-[#0a0a0a]" />}
                     </span>

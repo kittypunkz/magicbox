@@ -13,7 +13,7 @@ const c = {
   gray: 'text-[#888888]',
   border: 'border-[#2a2a2a]',
   hover: 'hover:bg-[#3a3a3a]',
-  primary: 'bg-[#faff69] hover:bg-[#e6eb52]',
+  primary: 'bg-[#6366f1] hover:bg-[#4f46e5]',
   secondary: 'bg-[#242424] hover:bg-[#3a3a3a]',
 };
 
@@ -311,7 +311,7 @@ export function CreateNoteModal({
             {isBookmark ? (
               <LinkIcon size={20} className="text-emerald-500" />
             ) : (
-              <FileText size={20} className="text-[#faff69]" />
+              <FileText size={20} className="text-[#6366f1]" />
             )}
             <h2 className={`text-lg font-semibold ${c.text}`}>
               {isBookmark ? 'Save Bookmark' : 'Create New Note'}
@@ -342,7 +342,7 @@ export function CreateNoteModal({
               onFocus={() => setActiveInput('title')}
 
               placeholder="Note title... #work !today"
-              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text}`}
+              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-transparent transition-all ${c.text}`}
             />
           </div>
 
@@ -389,7 +389,7 @@ export function CreateNoteModal({
 
               placeholder="What's on your mind? #ideas !today"
               rows={4}
-              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text} resize-none`}
+              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-transparent transition-all ${c.text} resize-none`}
             />
           </div>
           )}
@@ -411,16 +411,16 @@ export function CreateNoteModal({
                     onClick={() => handleFolderSelect(folder)}
                     onMouseEnter={() => setHighlightedIndex(index)}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                      index === highlightedIndex ? 'bg-[#faff69]/5' : c.hover
+                      index === highlightedIndex ? 'bg-[#6366f1]/5' : c.hover
                     }`}
                   >
-                    <Hash size={16} className="text-[#faff69]" />
+                    <Hash size={16} className="text-[#6366f1]" />
                     <span className={`text-sm ${c.text}`}>{folder.name}</span>
                     {folder.id === 1 && (
                       <span className={`ml-auto text-xs ${c.gray}`}>default</span>
                     )}
                     {index === highlightedIndex && (
-                      <span className="ml-auto text-xs text-[#faff69]">Enter</span>
+                      <span className="ml-auto text-xs text-[#6366f1]">Enter</span>
                     )}
                   </button>
                 ))}
@@ -430,19 +430,19 @@ export function CreateNoteModal({
 
           {/* Create New Folder Option */}
           {showSuggestions && searchTerm && !filteredFolders.find(f => f.name.toLowerCase() === searchTerm.toLowerCase()) && (
-            <div className={`flex items-center gap-2 text-xs ${c.gray} px-3 py-2 bg-[#faff69]/5 rounded-lg`}>
-              <Hash size={12} className="text-[#faff69]" />
+            <div className={`flex items-center gap-2 text-xs ${c.gray} px-3 py-2 bg-[#6366f1]/5 rounded-lg`}>
+              <Hash size={12} className="text-[#6366f1]" />
               <span>
-                Will create new folder: <span className="text-[#faff69] font-medium">#{searchTerm}</span>
+                Will create new folder: <span className="text-[#6366f1] font-medium">#{searchTerm}</span>
               </span>
             </div>
           )}
 
           {/* Folder Hint */}
           <div className={`flex items-center gap-2 text-xs ${c.gray} bg-[#242424] px-3 py-2 rounded-lg`}>
-            <Hash size={12} className="text-[#faff69]" />
+            <Hash size={12} className="text-[#6366f1]" />
             <span>
-              Type <code className="text-[#faff69]">#foldername</code> to organize. 
+              Type <code className="text-[#6366f1]">#foldername</code> to organize. 
               If folder doesn't exist, it will be created automatically.
             </span>
           </div>

@@ -19,7 +19,7 @@ const c = {
 
 const COLUMNS: { status: Task['status']; label: string; color: string }[] = [
   { status: 'backlog', label: 'Backlog', color: 'text-[#888888]' },
-  { status: 'doing',   label: 'Doing',   color: 'text-[#faff69]'  },
+  { status: 'doing',   label: 'Doing',   color: 'text-[#6366f1]'  },
   { status: 'done',    label: 'Done',    color: 'text-green-400' },
 ];
 
@@ -132,8 +132,8 @@ function TaskCard({
                   onClick={() => handleToggleSubtask(sub)}
                   className={`flex-shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${
                     sub.done
-                      ? 'bg-[#faff69] border-[#faff69]'
-                      : 'border-[#5a5a5a] hover:border-[#faff69]'
+                      ? 'bg-[#6366f1] border-[#6366f1]'
+                      : 'border-[#5a5a5a] hover:border-[#6366f1]'
                   }`}
                 >
                   {sub.done ? <Check size={9} className="text-[#0a0a0a]" strokeWidth={3} /> : null}
@@ -150,7 +150,7 @@ function TaskCard({
         {onOpenDetail && !isDone && (
           <button
             onClick={onOpenDetail}
-            className={`flex items-center gap-1 text-xs ${c.gray} hover:text-[#faff69] transition-colors`}
+            className={`flex items-center gap-1 text-xs ${c.gray} hover:text-[#6366f1] transition-colors`}
           >
             <Plus size={10} /> Add subtask
           </button>
@@ -160,7 +160,7 @@ function TaskCard({
           {task.note_id && onNoteClick ? (
             <button
               onClick={() => onNoteClick(task.note_id!)}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs border border-[#2a2a2a] text-[#888888] hover:text-[#faff69] hover:border-[#faff69]/40 transition-colors"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs border border-[#2a2a2a] text-[#888888] hover:text-[#6366f1] hover:border-[#6366f1]/40 transition-colors"
             >
               <FileText size={10} />
               {task.note_title ?? 'Source note'}
@@ -168,7 +168,7 @@ function TaskCard({
           ) : !task.note_id && onLinkNote ? (
             <button
               onClick={onLinkNote}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs border border-dashed border-[#2a2a2a] text-[#5a5a5a] hover:text-[#faff69] hover:border-[#faff69]/40 transition-colors"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs border border-dashed border-[#2a2a2a] text-[#5a5a5a] hover:text-[#6366f1] hover:border-[#6366f1]/40 transition-colors"
               title="Link a note"
             >
               <Link size={10} />
@@ -266,12 +266,12 @@ function AddTaskInput({
         onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setValue(''); } }}
         onBlur={() => { if (!value.trim()) setOpen(false); }}
         placeholder="Task title…"
-        className={`flex-1 px-3 py-2 ${c.input} border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
+        className={`flex-1 px-3 py-2 ${c.input} border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#6366f1] transition-colors`}
       />
       <button
         type="submit"
         disabled={loading || !value.trim()}
-        className="px-3 py-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm transition-colors"
+        className="px-3 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm transition-colors"
       >
         {loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
       </button>

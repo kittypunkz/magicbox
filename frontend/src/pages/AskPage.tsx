@@ -48,7 +48,7 @@ function renderWithNoteButtons(
       <button
         key={`${id}-${m.index}`}
         onClick={() => onNoteClick?.(id)}
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs border border-[#2a2a2a] text-[#888888] hover:text-[#faff69] hover:border-[#faff69]/40 transition-colors align-middle mx-0.5"
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs border border-[#2a2a2a] text-[#888888] hover:text-[#6366f1] hover:border-[#6366f1]/40 transition-colors align-middle mx-0.5"
       >
         <FileText size={10} />
         {title}
@@ -172,7 +172,7 @@ export function AskPage({ onNoteClick }: AskPageProps) {
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={msg.role === 'user' ? 'max-w-[70%]' : 'w-full'}>
               {msg.role === 'user' ? (
-                <div className="bg-[#faff69] text-[#0a0a0a] px-4 py-3 rounded-2xl rounded-tr-sm text-sm">
+                <div className="bg-[#6366f1] text-[#0a0a0a] px-4 py-3 rounded-2xl rounded-tr-sm text-sm">
                   {msg.content}
                 </div>
               ) : (
@@ -192,7 +192,7 @@ export function AskPage({ onNoteClick }: AskPageProps) {
                         <button
                           key={s.id}
                           onClick={() => onNoteClick?.(s.id)}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs border ${c.border} ${c.gray} hover:text-[#faff69] hover:border-[#faff69]/40 transition-colors`}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs border ${c.border} ${c.gray} hover:text-[#6366f1] hover:border-[#6366f1]/40 transition-colors`}
                         >
                           <FileText size={10} />
                           {s.title}
@@ -233,12 +233,12 @@ export function AskPage({ onNoteClick }: AskPageProps) {
             onChange={e => setInput(e.target.value)}
             placeholder="Ask about your notes..."
             disabled={loading}
-            className={`flex-1 px-4 py-2.5 bg-[#242424] border ${c.border} rounded-xl ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#faff69] transition-colors disabled:opacity-50`}
+            className={`flex-1 px-4 py-2.5 bg-[#242424] border ${c.border} rounded-xl ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#6366f1] transition-colors disabled:opacity-50`}
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="flex items-center justify-center w-10 h-10 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-xl transition-colors flex-shrink-0"
+            className="flex items-center justify-center w-10 h-10 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] disabled:opacity-50 rounded-xl transition-colors flex-shrink-0"
           >
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
           </button>

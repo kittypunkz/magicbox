@@ -50,9 +50,9 @@ export function ConfirmModal({
       buttonText: 'text-[#0a0a0a]',
     },
     info: {
-      icon: 'text-[#faff69]',
-      iconBg: 'bg-[#faff69]/10',
-      button: 'bg-[#faff69] hover:bg-[#e6eb52]',
+      icon: 'text-[#6366f1]',
+      iconBg: 'bg-[#6366f1]/10',
+      button: 'bg-[#6366f1] hover:bg-[#4f46e5]',
       buttonText: 'text-[#0a0a0a]',
     },
   };

@@ -73,12 +73,12 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
         <div className="absolute inset-0 pointer-events-none">
           <div
             className="absolute inset-0 opacity-10"
-            style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, #faff69, transparent)' }}
+            style={{ background: 'radial-gradient(ellipse 60% 40% at 50% 0%, #6366f1, transparent)' }}
           />
         </div>
 
         <div className="homepage-hero-content text-center mb-8 sm:mb-12 relative z-10">
-          <div className="homepage-hero-icon inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-[#faff69] rounded-2xl mb-4 sm:mb-6">
+          <div className="homepage-hero-icon inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 bg-[#6366f1] rounded-2xl mb-4 sm:mb-6">
             <Sparkles size={28} className="text-[#0a0a0a] sm:hidden" />
             <Sparkles size={32} className="text-[#0a0a0a] hidden sm:block" />
           </div>
@@ -123,7 +123,7 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
                 data-area-id={`homepage-recent-${note.id}`}
                 onClick={() => onSelectNote(note)}
                 className={`homepage-recent-card group relative flex items-start gap-3 p-4 ${c.input} border ${c.border} rounded-xl hover:shadow-md transition-all cursor-pointer touch-manipulation active:scale-[0.98] ${
-                  note.bookmark_url ? 'border-l-4 border-l-emerald-500 hover:border-emerald-500' : 'hover:border-[#faff69]'
+                  note.bookmark_url ? 'border-l-4 border-l-emerald-500 hover:border-emerald-500' : 'hover:border-[#6366f1]'
                 }`}
               >
                 {/* Delete button - appears on hover for desktop, always visible on touch */}
@@ -179,16 +179,16 @@ export function HomePage({ folders: _folders, onSelectNote, onCreateNote }: Home
             className="homepage-empty-state max-w-4xl mx-auto w-full px-4 sm:px-8 pb-12 sm:pb-16 text-center"
           >
             <div className={`p-6 sm:p-8 border-2 border-dashed ${c.border} rounded-2xl`}>
-              <div className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-[#faff69]/20 flex items-center justify-center`}>
-                <FileText size={28} className="text-[#faff69] sm:hidden" />
-                <FileText size={32} className="text-[#faff69] hidden sm:block" />
+              <div className={`w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-4 rounded-full bg-[#6366f1]/20 flex items-center justify-center`}>
+                <FileText size={28} className="text-[#6366f1] sm:hidden" />
+                <FileText size={32} className="text-[#6366f1] hidden sm:block" />
               </div>
               <h3 className={`text-base sm:text-lg font-semibold ${c.text} mb-2`}>No notes yet</h3>
               <p className={`text-sm ${c.gray} mb-4 sm:mb-6`}>Create your first note to get started</p>
               <button
                 data-area-id="homepage-create-note-btn"
                 onClick={() => onCreateNote('New Note', '', 1)}
-                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] text-sm sm:text-base font-medium rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] text-sm sm:text-base font-medium rounded-lg transition-colors"
               >
                 <Plus size={18} className="sm:hidden" />
                 <Plus size={20} className="hidden sm:block" />

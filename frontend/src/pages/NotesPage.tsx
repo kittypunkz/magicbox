@@ -35,7 +35,7 @@ export function NotesPage({ folders, onSelectNote, onCreateNote }: NotesPageProp
           <h1 className={`text-xl font-bold ${c.text}`}>Notes</h1>
           <button
             onClick={onCreateNote}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] rounded-lg text-sm font-medium transition-colors"
           >
             <Plus size={16} />
             New Note
@@ -48,7 +48,7 @@ export function NotesPage({ folders, onSelectNote, onCreateNote }: NotesPageProp
             onClick={() => setActiveFolder('all')}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               activeFolder === 'all'
-                ? 'bg-[#faff69] text-[#0a0a0a]'
+                ? 'bg-[#6366f1] text-[#0a0a0a]'
                 : `${c.gray} hover:text-[#e6e6e6] hover:bg-[#242424]`
             }`}
           >
@@ -60,7 +60,7 @@ export function NotesPage({ folders, onSelectNote, onCreateNote }: NotesPageProp
               onClick={() => setActiveFolder(f.id)}
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 activeFolder === f.id
-                  ? 'bg-[#faff69] text-[#0a0a0a]'
+                  ? 'bg-[#6366f1] text-[#0a0a0a]'
                   : `${c.gray} hover:text-[#e6e6e6] hover:bg-[#242424]`
               }`}
             >
@@ -88,7 +88,7 @@ export function NotesPage({ folders, onSelectNote, onCreateNote }: NotesPageProp
             <p className="text-sm mb-4">No notes yet</p>
             <button
               onClick={onCreateNote}
-              className="flex items-center gap-2 px-4 py-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] rounded-lg text-sm mx-auto transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] rounded-lg text-sm mx-auto transition-colors"
             >
               <Plus size={16} />New Note
             </button>

@@ -32,8 +32,8 @@ const text = 'text-[#e6e6e6]';
 const gray = 'text-[#888888]';
 const border = 'border-[#2a2a2a]';
 const hover = 'hover:bg-[#242424]';
-const active = 'bg-[#242424] text-[#faff69]';
-const primary = 'text-[#faff69]';
+const active = 'bg-[#242424] text-[#6366f1]';
+const primary = 'text-[#6366f1]';
 
 export function Sidebar({
   folders,
@@ -436,7 +436,7 @@ function MobileContent({
     <div className="flex-1 overflow-y-auto py-2 space-y-1 px-2">
       <button
         onClick={onCreateNote}
-        className="w-full flex items-center gap-3 px-3 py-2.5 mb-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] rounded-lg text-sm font-medium transition-colors"
+        className="w-full flex items-center gap-3 px-3 py-2.5 mb-2 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] rounded-lg text-sm font-medium transition-colors"
       >
         <Plus size={18} /><span>New Note</span>
       </button>

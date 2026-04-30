@@ -136,10 +136,10 @@ export function BriefPage() {
           <div className="prose prose-invert prose-sm max-w-none
             prose-headings:text-[#e6e6e6] prose-headings:font-semibold
             prose-p:text-[#c9c9c9] prose-p:leading-relaxed
-            prose-a:text-[#faff69]
+            prose-a:text-[#6366f1]
             prose-code:text-[#e6e6e6] prose-code:bg-[#242424] prose-code:px-1 prose-code:rounded prose-code:text-xs
             prose-pre:bg-[#1a1a1a] prose-pre:border prose-pre:border-[#2a2a2a] prose-pre:rounded-lg
-            prose-blockquote:border-l-[#faff69] prose-blockquote:text-[#888888]
+            prose-blockquote:border-l-[#6366f1] prose-blockquote:text-[#888888]
             prose-strong:text-[#e6e6e6]
             prose-ul:text-[#c9c9c9] prose-ol:text-[#c9c9c9]
             prose-hr:border-[#2a2a2a]

@@ -84,7 +84,7 @@ export function NoteEditorPage({ noteId, onBack, onUpdate, onDelete }: NoteEdito
   if (loading) {
     return (
       <div className={`flex items-center justify-center h-full ${c.bg}`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#faff69]" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6366f1]" />
       </div>
     );
   }
@@ -93,7 +93,7 @@ export function NoteEditorPage({ noteId, onBack, onUpdate, onDelete }: NoteEdito
     return (
       <div className={`flex flex-col items-center justify-center h-full ${c.gray} ${c.bg}`}>
         <p>Error loading note</p>
-        <button onClick={onBack} className="mt-4 text-[#faff69] hover:underline">Go back</button>
+        <button onClick={onBack} className="mt-4 text-[#6366f1] hover:underline">Go back</button>
       </div>
     );
   }
@@ -118,7 +118,7 @@ export function NoteEditorPage({ noteId, onBack, onUpdate, onDelete }: NoteEdito
                   key={f.id}
                   onClick={() => { setFolderId(f.id); setShowFolderPicker(false); }}
                   className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${
-                    f.id === folderId ? 'text-[#faff69] bg-[#faff69]/10' : `${c.gray} hover:text-[#e6e6e6] hover:bg-[#242424]`
+                    f.id === folderId ? 'text-[#6366f1] bg-[#6366f1]/10' : `${c.gray} hover:text-[#e6e6e6] hover:bg-[#242424]`
                   }`}
                 >
                   <Folder size={14} />
@@ -140,7 +140,7 @@ export function NoteEditorPage({ noteId, onBack, onUpdate, onDelete }: NoteEdito
         {/* Pin */}
         <button
           onClick={togglePin}
-          className={`p-1.5 rounded-lg transition-colors ${isPinned ? 'text-[#faff69]' : `${c.gray} hover:text-[#e6e6e6]`}`}
+          className={`p-1.5 rounded-lg transition-colors ${isPinned ? 'text-[#6366f1]' : `${c.gray} hover:text-[#e6e6e6]`}`}
           title={isPinned ? 'Unpin' : 'Pin'}
         >
           {isPinned ? <Pin size={16} /> : <PinOff size={16} />}

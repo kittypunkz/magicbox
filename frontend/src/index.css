@@ -2,7 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles - ClickHouse Design System */
+/* Base styles */
+:root {
+  --mb-base: #0f0f10;
+  --mb-surface: #161618;
+  --mb-hover: #1e1e21;
+  --mb-active: #252530;
+  --mb-border: #1e1e20;
+  --mb-primary: #e8e8e8;
+  --mb-muted: #666672;
+  --mb-accent: #6366f1;
+  --mb-accent-hover: #4f46e5;
+  --mb-danger: #ef4444;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -18,7 +31,7 @@ html, body {
 }
 
 html {
-  background-color: #0a0a0a;
+  background-color: var(--mb-base);
 }
 
 #root {
@@ -46,12 +59,12 @@ html {
 
 /* Selection */
 ::selection {
-  background-color: rgba(250, 255, 105, 0.2);
+  background-color: rgba(99, 102, 241, 0.28);
 }
 
-/* Focus ring — yellow */
+/* Focus ring */
 *:focus-visible {
-  outline: 2px solid #faff69;
+  outline: 2px solid var(--mb-accent);
   outline-offset: -2px;
 }
 
@@ -97,13 +110,13 @@ textarea {
 }
 
 .blocknote-editor-wrapper {
-  --mantine-color-body: #0a0a0a;
-  --mantine-color-dark-7: #0a0a0a;
+  --mantine-color-body: var(--mb-base);
+  --mantine-color-dark-7: var(--mb-base);
 }
 
 /* BlockNote link styling */
 .bn-editor a[href] {
-  color: #faff69;
+  color: var(--mb-accent);
   text-decoration: underline;
   cursor: pointer;
 }

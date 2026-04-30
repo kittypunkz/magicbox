@@ -87,7 +87,7 @@ export function NotePickerModal({ isOpen, onClose, onConfirm }: NotePickerModalP
                 onClick={() => setSelected(selected?.id === note.id ? null : note)}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors border-b border-[#2a2a2a] last:border-0 ${
                   selected?.id === note.id
-                    ? 'bg-[#faff69]/10 text-[#faff69]'
+                    ? 'bg-[#6366f1]/10 text-[#6366f1]'
                     : 'text-[#e6e6e6] hover:bg-[#242424]'
                 }`}
               >
@@ -99,7 +99,7 @@ export function NotePickerModal({ isOpen, onClose, onConfirm }: NotePickerModalP
                   )}
                 </div>
                 {selected?.id === note.id && (
-                  <div className="w-2 h-2 rounded-full bg-[#faff69] flex-shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-[#6366f1] flex-shrink-0" />
                 )}
               </button>
             ))
@@ -117,7 +117,7 @@ export function NotePickerModal({ isOpen, onClose, onConfirm }: NotePickerModalP
           <button
             onClick={() => selected && onConfirm(selected)}
             disabled={!selected}
-            className="px-4 py-1.5 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 text-sm rounded-lg transition-colors"
+            className="px-4 py-1.5 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] disabled:opacity-50 text-sm rounded-lg transition-colors"
           >
             Link note
           </button>
