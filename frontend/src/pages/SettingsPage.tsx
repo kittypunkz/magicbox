@@ -123,7 +123,8 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <div className="px-4 sm:px-8 py-4 sm:py-6 space-y-6">
+      <div className="px-4 sm:px-6 py-4 sm:py-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* OpenRouter Settings */}
         <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
           <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
@@ -344,6 +345,9 @@ export function SettingsPage() {
           </button>
         </form>
 
+        </div>{/* end grid */}
+
+        <div className="space-y-6 mt-6">
         {/* System Prompts (Advanced) */}
         <div className={`${c.input} border ${c.border} rounded-xl overflow-hidden`}>
           <button
@@ -396,6 +400,7 @@ export function SettingsPage() {
           )}
         </div>
 
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* App Info */}
         <div className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5`}>
           <h2 className={`text-sm font-semibold ${c.text} mb-4 flex items-center gap-2`}>
@@ -431,10 +436,12 @@ export function SettingsPage() {
 
         {/* Debug Panel */}
         <DebugPanel />
+        </div>{/* end app info + debug grid */}
 
         <div className={`text-center py-4 ${c.gray} text-xs`}>
           MagicBox — A markdown note-taking app
         </div>
+        </div>{/* end full-width sections */}
       </div>
     </div>
   );
