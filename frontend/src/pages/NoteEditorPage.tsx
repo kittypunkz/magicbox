@@ -34,6 +34,13 @@ export function NoteEditorPage({ noteId, onBack, onUpdate, onDelete }: NoteEdito
   const [showFolderPicker, setShowFolderPicker] = useState(false);
 
   useEffect(() => {
+    setTitle('');
+    setContent('');
+    setFolderId(1);
+    setIsPinned(false);
+  }, [noteId]);
+
+  useEffect(() => {
     if (note) {
       setTitle(note.title);
       setContent(note.content || '');
