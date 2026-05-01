@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Settings, GitBranch, Calendar, Server, Info, Key, Bot, Loader2, CheckCircle, AlertCircle, Eye, EyeOff, FlaskConical, Globe, Clock, Cpu, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings, GitBranch, Calendar, Server, Info, Loader2, CheckCircle, FlaskConical, Globe, Clock, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { settingsAPI } from '../api/client';
-import type { OpenRouterModel } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || (window.location.hostname.includes('localhost') ? 'http://localhost:8787' : '/api');
 
@@ -18,22 +17,6 @@ const environment = isDev ? 'Development' : 'Production';
 const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
 export function SettingsPage() {
-  // OpenRouter
-  const [apiKey, setApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
-  const [preferredModel, setPreferredModel] = useState('');
-  const [models, setModels] = useState<OpenRouterModel[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
-
-  // AI Behavior
-  const [briefTemperature, setBriefTemperature] = useState(0.7);
-  const [taskTemperature, setTaskTemperature] = useState(0.2);
-
-  // Daily Brief Scope
-  const [briefTimeWindow, setBriefTimeWindow] = useState(24);
-  const [briefMaxNotes, setBriefMaxNotes] = useState(20);
-  const [briefMaxTasks, setBriefMaxTasks] = useState(20);
-
   // App Preferences
   const [timezone, setTimezone] = useState('Asia/Bangkok');
   const [autosaveDelay, setAutosaveDelay] = useState('2000');
@@ -47,17 +30,9 @@ export function SettingsPage() {
   // Save state
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     settingsAPI.getAll().then(s => {
-      if (s.openrouter_api_key) setApiKey(s.openrouter_api_key);
-      if (s.preferred_model) setPreferredModel(s.preferred_model);
-      if (s.brief_temperature) setBriefTemperature(parseFloat(s.brief_temperature));
-      if (s.task_temperature) setTaskTemperature(parseFloat(s.task_temperature));
-      if (s.brief_time_window_hours) setBriefTimeWindow(parseInt(s.brief_time_window_hours, 10));
-      if (s.brief_max_notes) setBriefMaxNotes(parseInt(s.brief_max_notes, 10));
-      if (s.brief_max_tasks) setBriefMaxTasks(parseInt(s.brief_max_tasks, 10));
       if (s.timezone) setTimezone(s.timezone);
       if (s.autosave_delay_ms) setAutosaveDelay(s.autosave_delay_ms);
       if (s.prompt_chat) setPromptChat(s.prompt_chat);
@@ -66,33 +41,12 @@ export function SettingsPage() {
     }).catch(() => {});
   }, []);
 
-  const fetchModels = async () => {
-    setLoadingModels(true);
-    setError(null);
-    try {
-      const list = await settingsAPI.getModels();
-      setModels(list);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load models');
-    } finally {
-      setLoadingModels(false);
-    }
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setError(null);
     setSaved(false);
     try {
       await settingsAPI.update({
-        openrouter_api_key: apiKey,
-        preferred_model: preferredModel,
-        brief_temperature: String(briefTemperature),
-        task_temperature: String(taskTemperature),
-        brief_time_window_hours: String(briefTimeWindow),
-        brief_max_notes: String(briefMaxNotes),
-        brief_max_tasks: String(briefMaxTasks),
         timezone,
         autosave_delay_ms: autosaveDelay,
         prompt_chat: promptChat,
@@ -101,8 +55,6 @@ export function SettingsPage() {
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -123,182 +75,7 @@ export function SettingsPage() {
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* OpenRouter Settings */}
-        <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
-          <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
-            <Key size={16} />
-            OpenRouter
-          </h2>
-
-          {error && (
-            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-              <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-400">{error}</p>
-            </div>
-          )}
-
-          {/* API Key */}
-          <div>
-            <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>API Key</label>
-            <div className="relative">
-              <input
-                type={showKey ? 'text' : 'password'}
-                value={apiKey}
-                onChange={e => setApiKey(e.target.value)}
-                placeholder="sk-or-..."
-                className={`w-full px-3 py-2.5 pr-10 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#6366f1] transition-colors`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowKey(!showKey)}
-                className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${c.gray} hover:text-[#e6e6e6]`}
-              >
-                {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          {/* Model Picker */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className={`text-xs font-medium ${c.gray}`}>
-                <Bot size={12} className="inline mr-1" />Preferred Model
-              </label>
-              <button
-                type="button"
-                onClick={fetchModels}
-                disabled={loadingModels || !apiKey}
-                className={`text-xs ${c.gray} hover:text-[#6366f1] disabled:opacity-40 transition-colors flex items-center gap-1`}
-              >
-                {loadingModels ? <Loader2 size={12} className="animate-spin" /> : null}
-                {loadingModels ? 'Loading...' : 'Load models'}
-              </button>
-            </div>
-            {models.length > 0 ? (
-              <select
-                value={preferredModel}
-                onChange={e => setPreferredModel(e.target.value)}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#6366f1] transition-colors`}
-              >
-                <option value="">— select a model —</option>
-                {models.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                value={preferredModel}
-                onChange={e => setPreferredModel(e.target.value)}
-                placeholder="e.g. openai/gpt-4o-mini"
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#6366f1] transition-colors`}
-              />
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
-          >
-            {saving ? (
-              <><Loader2 size={14} className="animate-spin" /> Saving...</>
-            ) : saved ? (
-              <><CheckCircle size={14} /> Saved</>
-            ) : (
-              'Save'
-            )}
-          </button>
-        </form>
-
-        {/* AI Behavior */}
-        <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
-          <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
-            <Cpu size={16} />
-            AI Behavior
-          </h2>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className={`text-xs font-medium ${c.gray}`}>Brief Tone</label>
-              <span className={`text-xs font-mono ${c.text}`}>{briefTemperature.toFixed(1)}</span>
-            </div>
-            <input
-              type="range" min="0" max="1" step="0.1"
-              value={briefTemperature}
-              onChange={e => setBriefTemperature(parseFloat(e.target.value))}
-              className="w-full accent-[#6366f1]"
-            />
-            <div className={`flex justify-between text-xs ${c.gray} mt-0.5`}>
-              <span>Precise</span><span>Creative</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className={`text-xs font-medium ${c.gray}`}>Task Extraction</label>
-              <span className={`text-xs font-mono ${c.text}`}>{taskTemperature.toFixed(1)}</span>
-            </div>
-            <input
-              type="range" min="0" max="0.5" step="0.1"
-              value={taskTemperature}
-              onChange={e => setTaskTemperature(parseFloat(e.target.value))}
-              className="w-full accent-[#6366f1]"
-            />
-            <div className={`flex justify-between text-xs ${c.gray} mt-0.5`}>
-              <span>Strict</span><span>Flexible</span>
-            </div>
-          </div>
-
-          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors">
-            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
-          </button>
-        </form>
-
-        {/* Daily Brief Scope */}
-        <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
-          <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
-            <Calendar size={16} />
-            Daily Brief Scope
-          </h2>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Time Window (hrs)</label>
-              <input
-                type="number" min="1" max="168"
-                value={briefTimeWindow}
-                onChange={e => setBriefTimeWindow(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#6366f1] transition-colors`}
-              />
-            </div>
-            <div>
-              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Max Notes</label>
-              <input
-                type="number" min="5" max="50"
-                value={briefMaxNotes}
-                onChange={e => setBriefMaxNotes(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#6366f1] transition-colors`}
-              />
-            </div>
-            <div>
-              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Max Tasks</label>
-              <input
-                type="number" min="5" max="50"
-                value={briefMaxTasks}
-                onChange={e => setBriefMaxTasks(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#6366f1] transition-colors`}
-              />
-            </div>
-          </div>
-
-          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors">
-            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
-          </button>
-        </form>
-
+      <div className="px-4 sm:px-6 py-4 sm:py-6 space-y-6">
         {/* App Preferences */}
         <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
           <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
@@ -345,9 +122,6 @@ export function SettingsPage() {
           </button>
         </form>
 
-        </div>{/* end grid */}
-
-        <div className="space-y-6 mt-6">
         {/* System Prompts (Advanced) */}
         <div className={`${c.input} border ${c.border} rounded-xl overflow-hidden`}>
           <button
@@ -441,7 +215,6 @@ export function SettingsPage() {
         <div className={`text-center py-4 ${c.gray} text-xs`}>
           MagicBox — A markdown note-taking app
         </div>
-        </div>{/* end full-width sections */}
       </div>
     </div>
   );
