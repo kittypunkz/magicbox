@@ -21,6 +21,7 @@ export function NoteDetail({ noteId, onBack, onDelete }: NoteDetailProps) {
 
   return (
     <NoteEditor
+      key={noteId}
       noteId={noteId}
       onBack={onBack}
       onDelete={onDelete}
