@@ -45,7 +45,7 @@ export function BookmarksPage({ onSelectNote }: BookmarksPageProps) {
           value={filter}
           onChange={e => setFilter(e.target.value)}
           placeholder="Filter bookmarks..."
-          className={`w-full px-3 py-2 bg-[#242424] border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#6366f1] transition-colors`}
+          className={`w-full px-3 py-2 bg-[#242424] border ${c.border} rounded-lg ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
         />
       </div>
 
@@ -93,7 +93,7 @@ export function BookmarksPage({ onSelectNote }: BookmarksPageProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}
-                      className={`flex-shrink-0 p-1.5 rounded-lg ${c.gray} hover:text-[#6366f1] opacity-0 group-hover:opacity-100 transition-all`}
+                      className={`flex-shrink-0 p-1.5 rounded-lg ${c.gray} hover:text-[#faff69] opacity-0 group-hover:opacity-100 transition-all`}
                     >
                       <ExternalLink size={16} />
                     </a>

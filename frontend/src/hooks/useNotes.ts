@@ -95,7 +95,6 @@ export function useNote(id: number | null) {
       abortControllerRef.current.abort();
     }
 
-    setNote(null);
     const controller = new AbortController();
     abortControllerRef.current = controller;
 

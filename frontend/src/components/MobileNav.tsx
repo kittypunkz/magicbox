@@ -17,8 +17,8 @@ const c = {
   text: 'text-[#e6e6e6]',
   gray: 'text-[#888888]',
   border: 'border-[#2a2a2a]',
-  primary: 'text-[#6366f1]',
-  activeBg: 'bg-[#6366f1]/10',
+  primary: 'text-[#faff69]',
+  activeBg: 'bg-[#faff69]/10',
 };
 
 export function MobileNav({
@@ -62,7 +62,7 @@ export function MobileNav({
             onClick={nav(onCreateNote)}
             className="flex flex-col items-center gap-0.5 p-2"
           >
-            <div className="w-10 h-10 bg-[#6366f1] rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-[#faff69] rounded-full flex items-center justify-center">
               <Plus size={24} className="text-[#0a0a0a]" />
             </div>
           </button>
@@ -113,14 +113,14 @@ export function MobileNav({
             <div className="space-y-1">
               <button
                 onClick={nav(onBookmarksClick)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg ${isActive('bookmarks') ? `${c.activeBg} text-[#6366f1]` : c.gray}`}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg ${isActive('bookmarks') ? `${c.activeBg} text-[#faff69]` : c.gray}`}
               >
                 <Bookmark size={20} />
                 <span>Bookmarks</span>
               </button>
               <button
                 onClick={nav(onSettingsClick)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg ${isActive('settings') ? `${c.activeBg} text-[#6366f1]` : c.gray}`}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg ${isActive('settings') ? `${c.activeBg} text-[#faff69]` : c.gray}`}
               >
                 <Settings size={20} />
                 <span>Settings</span>

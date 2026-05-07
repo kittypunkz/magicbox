@@ -1,11 +1,11 @@
 {
   "name": "magicbox-frontend",
   "private": true,
-  "version": "2.12.4",
+  "version": "2.11.0",
   "type": "module",
   "scripts": {
     "dev": "cross-env VITE_API_URL=http://localhost:8787 vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "playwright test",
     "test:ui": "playwright test --ui",

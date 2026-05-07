@@ -250,10 +250,10 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             <div 
               data-area-id="folderpage-icon"
-              className="folderpage-icon w-10 h-10 sm:w-12 sm:h-12 bg-[#6366f1]/10 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="folderpage-icon w-10 h-10 sm:w-12 sm:h-12 bg-[#faff69]/10 rounded-xl flex items-center justify-center flex-shrink-0"
             >
-              <Folder size={20} className="text-[#6366f1] sm:hidden" />
-              <Folder size={24} className="text-[#6366f1] hidden sm:block" />
+              <Folder size={20} className="text-[#faff69] sm:hidden" />
+              <Folder size={24} className="text-[#faff69] hidden sm:block" />
             </div>
             <div className="folderpage-header-info min-w-0">
               <h1 
@@ -279,14 +279,14 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
             <div className={`flex items-center ${c.input} border ${c.border} rounded-lg overflow-hidden`}>
               <button
                 onClick={() => handleViewModeChange("grid")}
-                className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-[#4f46e5] text-[#0a0a0a]' : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}`}
+                className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-[#e6eb52] text-[#0a0a0a]' : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}`}
                 title="Grid view"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
               </button>
               <button
                 onClick={() => handleViewModeChange("timeline")}
-                className={`p-2 transition-colors ${viewMode === 'timeline' ? 'bg-[#4f46e5] text-[#0a0a0a]' : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}`}
+                className={`p-2 transition-colors ${viewMode === 'timeline' ? 'bg-[#e6eb52] text-[#0a0a0a]' : `${c.gray} ${c.hover} hover:text-[#e6e6e6]`}`}
                 title="Timeline view"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="14" height="3" rx="1"/><rect x="1" y="6" width="14" height="3" rx="1"/><rect x="1" y="11" width="14" height="3" rx="1"/></svg>
@@ -334,12 +334,12 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                   className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg ${c.hover} ${c.text} transition-colors`}
                 >
                   {selectedCount === folder.notes?.length ? (
-                    <CheckSquare size={16} className="text-[#6366f1] sm:hidden" />
+                    <CheckSquare size={16} className="text-[#faff69] sm:hidden" />
                   ) : (
                     <Square size={16} className={`${c.gray} sm:hidden`} />
                   )}
                   {selectedCount === folder.notes?.length ? (
-                    <CheckSquare size={18} className="text-[#6366f1] hidden sm:block" />
+                    <CheckSquare size={18} className="text-[#faff69] hidden sm:block" />
                   ) : (
                     <Square size={18} className={`${c.gray} hidden sm:block`} />
                   )}
@@ -397,7 +397,7 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
               <button
                 data-area-id="folderpage-create-note-btn"
                 onClick={() => setIsNoteModalOpen(true)}
-                className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#6366f1] hover:bg-[#4f46e5] text-[#0a0a0a] text-sm sm:text-base font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] text-sm sm:text-base font-medium rounded-lg transition-colors"
               >
                 <Plus size={18} className="sm:hidden" />
                 <Plus size={20} className="hidden sm:block" />
@@ -417,7 +417,7 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                 onClick={() => !isBulkDeleteMode && onSelectNote(note as Note)}
                 className={`folderpage-note-card group relative flex flex-col p-4 sm:p-5 ${c.input} border ${c.border} rounded-xl transition-all ${
                   isBulkDeleteMode ? 'cursor-default' : 'hover:shadow-md cursor-pointer touch-manipulation active:scale-[0.98]'
-                } ${selectedNotes.has(note.id) ? 'ring-2 ring-[#6366f1] border-[#6366f1]' : ''} ${
+                } ${selectedNotes.has(note.id) ? 'ring-2 ring-[#faff69] border-[#faff69]' : ''} ${
                   note.bookmark_url ? 'border-l-4 border-l-emerald-500' : ''
                 }`}
               >
@@ -491,7 +491,7 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
             {!isBulkDeleteMode && onCreateNote && (
               <button
                 onClick={() => setIsNoteModalOpen(true)}
-                className={`flex items-center justify-center gap-2 p-4 border-2 border-dashed ${c.border} rounded-xl ${c.gray} hover:border-[#6366f1] hover:text-[#6366f1] transition-colors`}
+                className={`flex items-center justify-center gap-2 p-4 border-2 border-dashed ${c.border} rounded-xl ${c.gray} hover:border-[#faff69] hover:text-[#faff69] transition-colors`}
               >
                 <Plus size={18} />
                 Add Note
@@ -512,8 +512,8 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                   isBulkDeleteMode 
                     ? 'cursor-default' 
                     : 'hover:shadow-md cursor-pointer touch-manipulation active:scale-[0.98]'
-                } ${selectedNotes.has(note.id) ? 'ring-2 ring-[#6366f1] border-[#6366f1]' : ''} ${
-                  note.bookmark_url ? 'border-l-4 border-l-emerald-500 hover:border-emerald-500' : 'hover:border-[#6366f1]'
+                } ${selectedNotes.has(note.id) ? 'ring-2 ring-[#faff69] border-[#faff69]' : ''} ${
+                  note.bookmark_url ? 'border-l-4 border-l-emerald-500 hover:border-emerald-500' : 'hover:border-[#faff69]'
                 }`}
               >
                 {/* Checkbox for bulk delete */}
@@ -528,12 +528,12 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
                       className="p-1 rounded transition-colors"
                     >
                       {selectedNotes.has(note.id) ? (
-                        <CheckSquare size={18} className="text-[#6366f1] sm:hidden" />
+                        <CheckSquare size={18} className="text-[#faff69] sm:hidden" />
                       ) : (
                         <Square size={18} className={`${c.gray} sm:hidden`} />
                       )}
                       {selectedNotes.has(note.id) ? (
-                        <CheckSquare size={20} className="text-[#6366f1] hidden sm:block" />
+                        <CheckSquare size={20} className="text-[#faff69] hidden sm:block" />
                       ) : (
                         <Square size={20} className={`${c.gray} hidden sm:block`} />
                       )}
@@ -612,11 +612,11 @@ export function FolderPage({ folderId, folders: propFolders, onSelectNote, onCre
               <button
                 data-area-id="folderpage-add-note-card"
                 onClick={() => setIsNoteModalOpen(true)}
-                className={`folderpage-add-note-card group relative flex flex-col items-center justify-center p-4 sm:p-5 border-2 border-dashed ${c.border} rounded-xl hover:border-[#6366f1] hover:bg-[#6366f1]/5 transition-all cursor-pointer touch-manipulation active:scale-[0.98] min-h-[140px] sm:min-h-[180px]`}
+                className={`folderpage-add-note-card group relative flex flex-col items-center justify-center p-4 sm:p-5 border-2 border-dashed ${c.border} rounded-xl hover:border-[#faff69] hover:bg-[#faff69]/5 transition-all cursor-pointer touch-manipulation active:scale-[0.98] min-h-[140px] sm:min-h-[180px]`}
               >
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#6366f1]/10 flex items-center justify-center mb-2 sm:mb-3 group-hover:bg-[#6366f1]/20 transition-colors`}>
-                  <Plus size={20} className="text-[#6366f1] sm:hidden" />
-                  <Plus size={24} className="text-[#6366f1] hidden sm:block" />
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#faff69]/10 flex items-center justify-center mb-2 sm:mb-3 group-hover:bg-[#faff69]/20 transition-colors`}>
+                  <Plus size={20} className="text-[#faff69] sm:hidden" />
+                  <Plus size={24} className="text-[#faff69] hidden sm:block" />
                 </div>
                 <span className={`text-sm font-medium ${c.text}`}>Add New Note</span>
                 <span className={`text-xs ${c.gray} mt-1 hidden sm:inline`}>Click to create</span>

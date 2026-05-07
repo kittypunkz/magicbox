@@ -12,21 +12,9 @@ export default {
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
-        mb: {
-          base: '#0f0f10',
-          surface: '#161618',
-          hover: '#1e1e21',
-          active: '#252530',
-          border: '#1e1e20',
-          primary: '#e8e8e8',
-          muted: '#666672',
-          accent: '#6366f1',
-          'accent-hover': '#4f46e5',
-          danger: '#ef4444',
-        },
         ch: {
-          primary: '#6366f1',
-          'primary-active': '#4f46e5',
+          primary: '#faff69',
+          'primary-active': '#e6eb52',
           'primary-disabled': '#3a3a1f',
           'on-primary': '#0a0a0a',
           canvas: '#0a0a0a',

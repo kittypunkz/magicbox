@@ -147,8 +147,8 @@ export function TaskDetailModal({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                       onClick={() => toggleSubtask(sub)}
                       className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                         sub.done
-                          ? 'bg-[#6366f1] border-[#6366f1]'
-                          : `border-[#5a5a5a] hover:border-[#6366f1]`
+                          ? 'bg-[#faff69] border-[#faff69]'
+                          : `border-[#5a5a5a] hover:border-[#faff69]`
                       }`}
                     >
                       {sub.done ? <Check size={10} className="text-[#0a0a0a]" strokeWidth={3} /> : null}
@@ -183,7 +183,7 @@ export function TaskDetailModal({ taskId, onClose, onTaskUpdated }: TaskDetailMo
                 {addingSubtask
                   ? <Loader2 size={14} className={`animate-spin ${c.gray}`} />
                   : newSubtask.trim() && (
-                    <button onClick={addSubtask} className="text-xs text-[#6366f1] hover:text-[#6366f1] transition-colors">
+                    <button onClick={addSubtask} className="text-xs text-[#faff69] hover:text-[#faff69] transition-colors">
                       Add
                     </button>
                   )

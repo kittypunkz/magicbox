@@ -1,6 +1,6 @@
 {
   "name": "magicbox-api",
-  "version": "2.12.4",
+  "version": "2.11.0",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",

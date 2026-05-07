@@ -197,7 +197,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
           onKeyDown={handleKeyDown}
           placeholder="What's on your mind? Use #folder to organize"
           rows={3}
-          className={`central-input-field w-full px-4 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-transparent transition-all ${c.text} resize-none`}
+          className={`central-input-field w-full px-4 py-4 text-lg ${c.input} border ${c.border} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text} resize-none`}
         />
         
         {/* Clear button */}
@@ -216,7 +216,7 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
           data-area-id="central-input-submit"
           onClick={handleSubmit}
           disabled={!input.trim()}
-          className="central-input-submit-btn absolute bottom-3 right-3 p-2 text-[#0a0a0a] bg-[#6366f1] rounded-lg hover:bg-[#4f46e5] disabled:bg-[#3a3a3a] disabled:cursor-not-allowed transition-colors"
+          className="central-input-submit-btn absolute bottom-3 right-3 p-2 text-[#0a0a0a] bg-[#faff69] rounded-lg hover:bg-[#e6eb52] disabled:bg-[#3a3a3a] disabled:cursor-not-allowed transition-colors"
         >
           <CornerDownLeft size={18} />
         </button>
@@ -237,18 +237,18 @@ export function CentralInput({ folders, onCreateNote }: CentralInputProps) {
                 onClick={() => handleFolderSelect(folder)}
                 onMouseEnter={() => setHighlightedIndex(index)}
                 className={`central-input-suggestion-item w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left ${
-                  index === highlightedIndex ? 'bg-[#6366f1]/5' : c.hover
+                  index === highlightedIndex ? 'bg-[#faff69]/5' : c.hover
                 }`}
               >
-                <Hash size={16} className="text-[#6366f1]" />
+                <Hash size={16} className="text-[#faff69]" />
                 <span className={`text-sm font-medium ${c.text}`}>{folder.name}</span>
                 {folder.id === 1 && (
                   <span className={`ml-auto text-xs ${c.gray}`}>default</span>
                 )}
                 {index === highlightedIndex && (
                   <div className="ml-auto flex gap-2">
-                    <span className="text-xs text-[#6366f1] font-medium">Tab</span>
-                    <span className="text-xs text-[#6366f1] font-medium">Enter</span>
+                    <span className="text-xs text-[#faff69] font-medium">Tab</span>
+                    <span className="text-xs text-[#faff69] font-medium">Enter</span>
                   </div>
                 )}
               </button>

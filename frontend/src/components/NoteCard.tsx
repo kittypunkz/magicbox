@@ -51,7 +51,7 @@ export function NoteCard({ note, onClick }: NoteCardProps) {
       >
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex items-center gap-1.5 min-w-0">
-            {!!note.is_pinned && <Pin size={12} className="text-[#6366f1] flex-shrink-0" />}
+            {!!note.is_pinned && <Pin size={12} className="text-[#faff69] flex-shrink-0" />}
             {folderName && (
               <span className="text-xs text-[#888888] flex-shrink-0">#{folderName}</span>
             )}

@@ -14,7 +14,7 @@ const c = {
 
 const SECTIONS = [
   { key: 'done_today'as const, label: 'Done Today',   icon: CheckCircle2, color: 'text-green-400', emptyMsg: 'Nothing completed today yet'  },
-  { key: 'doing'     as const, label: 'Doing',        icon: Clock,        color: 'text-[#6366f1]',  emptyMsg: 'Nothing in progress today'   },
+  { key: 'doing'     as const, label: 'Doing',        icon: Clock,        color: 'text-[#faff69]',  emptyMsg: 'Nothing in progress today'   },
   { key: 'backlog'   as const, label: 'Backlog',       icon: Inbox,        color: 'text-[#888888]', emptyMsg: 'Backlog is clear'             },
 ] as const;
 
