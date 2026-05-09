@@ -22,8 +22,8 @@ export function useTasks() {
 
   useEffect(() => { load(); }, [load]);
 
-  const createTask = useCallback(async (title: string, status: Task['status'] = 'backlog', note_id?: number) => {
-    const task = await tasksAPI.create(title, note_id, status);
+  const createTask = useCallback(async (title: string, status: Task['status'] = 'backlog', note_id?: number, description?: string) => {
+    const task = await tasksAPI.create(title, note_id, status, description);
     setTasks(prev => [task, ...prev]);
     return task;
   }, []);

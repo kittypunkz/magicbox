@@ -117,9 +117,9 @@ export const tasksAPI = {
     const qs = query.toString() ? `?${query}` : '';
     return fetchAPI<{ tasks: Task[] }>(`/tasks${qs}`).then(r => r.tasks);
   },
-  create: (title: string, note_id?: number, status?: Task['status']) => fetchAPI<{ task: Task }>('/tasks', {
+  create: (title: string, note_id?: number, status?: Task['status'], description?: string) => fetchAPI<{ task: Task }>('/tasks', {
     method: 'POST',
-    body: JSON.stringify({ title, note_id, status }),
+    body: JSON.stringify({ title, note_id, status, description }),
   }).then(r => r.task),
   getById: (id: number) =>
     fetchAPI<{ task: Task & { subtasks: Subtask[] } }>(`/tasks/${id}`).then(r => r.task),

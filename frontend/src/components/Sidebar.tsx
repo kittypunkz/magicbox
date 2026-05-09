@@ -16,10 +16,12 @@ interface SidebarProps {
   onFolderUpdate: (id: number, name: string) => void;
   onCancelEdit: () => void;
   loading: boolean;
-  currentView: 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
+  currentView: 'today' | 'notes' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
   selectedFolderId: number | null;
   onCloseMobile?: () => void;
   isMobile?: boolean;
+  onTodayClick?: () => void;
+  onNotesClick?: () => void;
   onSettingsClick?: () => void;
   onTasksClick?: () => void;
   onAskClick?: () => void;
@@ -52,6 +54,8 @@ export function Sidebar({
   selectedFolderId,
   onCloseMobile,
   isMobile,
+  onTodayClick,
+  onNotesClick,
   onSettingsClick,
   onTasksClick,
   onAskClick,
@@ -127,7 +131,8 @@ export function Sidebar({
           editingName={editingName}
           folderDropdownOpen={folderDropdownOpen}
           onCreateNote={() => { onCreateNote(); onCloseMobile?.(); }}
-          onHomeClick={() => { window.location.href = '/'; onCloseMobile?.(); }}
+          onTodayClick={() => { onTodayClick?.(); onCloseMobile?.(); }}
+          onNotesClick={() => { onNotesClick?.(); onCloseMobile?.(); }}
           onTasksClick={() => { onTasksClick?.(); onCloseMobile?.(); }}
           onAskClick={() => { onAskClick?.(); onCloseMobile?.(); }}
           onBriefClick={() => { onBriefClick?.(); onCloseMobile?.(); }}
@@ -160,31 +165,31 @@ export function Sidebar({
     <div className={`h-full ${bg} border-r ${border} flex flex-col transition-all duration-200 ${expanded ? 'w-[220px]' : 'w-[48px]'}`}>
       {/* Top nav icons */}
       <div className="flex-1 overflow-y-auto py-2">
-        {/* New Note */}
+        {/* Capture */}
         <NavItem
           icon={<Plus size={18} />}
-          label="New Note"
+          label="+ Capture"
           expanded={expanded}
           onClick={onCreateNote}
           isActive={false}
         />
 
-        {/* Brief */}
-        <NavItem
-          icon={<Newspaper size={18} />}
-          label="Daily Brief"
-          expanded={expanded}
-          onClick={() => onBriefClick?.()}
-          isActive={currentView === 'brief'}
-        />
-
-        {/* All Notes */}
+        {/* Today */}
         <NavItem
           icon={<Home size={18} />}
+          label="Today"
+          expanded={expanded}
+          onClick={() => onTodayClick?.()}
+          isActive={currentView === 'today'}
+        />
+
+        {/* Notes */}
+        <NavItem
+          icon={<FileText size={18} />}
           label="Notes"
           expanded={expanded}
-          onClick={() => { window.location.href = '/'; }}
-          isActive={currentView === 'home' && !selectedFolderId}
+          onClick={() => onNotesClick?.()}
+          isActive={currentView === 'notes'}
         />
 
         {/* Bookmarks */}
@@ -212,6 +217,15 @@ export function Sidebar({
           expanded={expanded}
           onClick={() => onAskClick?.()}
           isActive={currentView === 'ask'}
+        />
+
+        {/* Brief */}
+        <NavItem
+          icon={<Newspaper size={18} />}
+          label="Daily Brief"
+          expanded={expanded}
+          onClick={() => onBriefClick?.()}
+          isActive={currentView === 'brief'}
         />
 
         {/* Expanded: folder tree */}
@@ -399,7 +413,7 @@ function FolderDropdown({
 function MobileContent({
   folders, recentNotes, currentView, selectedFolderId, loading,
   isCreatingFolder, newFolderName, editingFolder, editingName, folderDropdownOpen,
-  onCreateNote, onHomeClick, onTasksClick, onAskClick, onBriefClick, onBookmarksClick, onSettingsClick,
+  onCreateNote, onTodayClick, onNotesClick, onTasksClick, onAskClick, onBriefClick, onBookmarksClick, onSettingsClick,
   onFolderClick, onNoteClick, onStartCreateFolder, onNewFolderNameChange,
   onKeyDown, onEditingNameChange, onFolderUpdateBlur, onFolderEdit, onFolderDelete,
   setFolderDropdownOpen,
@@ -415,7 +429,8 @@ function MobileContent({
   editingName: string;
   folderDropdownOpen: number | null;
   onCreateNote: () => void;
-  onHomeClick: () => void;
+  onTodayClick: () => void;
+  onNotesClick: () => void;
   onTasksClick: () => void;
   onAskClick: () => void;
   onBriefClick: () => void;
@@ -438,15 +453,15 @@ function MobileContent({
         onClick={onCreateNote}
         className="w-full flex items-center gap-3 px-3 py-2.5 mb-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] rounded-lg text-sm font-medium transition-colors"
       >
-        <Plus size={18} /><span>New Note</span>
+        <Plus size={18} /><span>+ Capture</span>
       </button>
 
-      <button onClick={onBriefClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'brief' ? active : `${text} ${hover}`}`}>
-        <Newspaper size={18} /><span className="flex-1 text-left">Daily Brief</span>
+      <button onClick={onTodayClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'today' ? active : `${text} ${hover}`}`}>
+        <Home size={18} /><span className="flex-1 text-left">Today</span>
       </button>
 
-      <button onClick={onHomeClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'home' && !selectedFolderId ? active : `${text} ${hover}`}`}>
-        <Home size={18} /><span className="flex-1 text-left">Notes</span>
+      <button onClick={onNotesClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'notes' ? active : `${text} ${hover}`}`}>
+        <FileText size={18} /><span className="flex-1 text-left">Notes</span>
       </button>
 
       <button onClick={onBookmarksClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'bookmarks' ? active : `${text} ${hover}`}`}>
@@ -459,6 +474,10 @@ function MobileContent({
 
       <button onClick={onAskClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'ask' ? active : `${text} ${hover}`}`}>
         <MessageSquare size={18} /><span className="flex-1 text-left">Ask</span>
+      </button>
+
+      <button onClick={onBriefClick} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${currentView === 'brief' ? active : `${text} ${hover}`}`}>
+        <Newspaper size={18} /><span className="flex-1 text-left">Daily Brief</span>
       </button>
 
       <div className="pt-2">

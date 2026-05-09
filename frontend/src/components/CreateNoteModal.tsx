@@ -1,10 +1,9 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { X, FileText, Hash, Link as LinkIcon, Globe } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Bookmark, CheckSquare, FileText, Globe, Sparkles, X } from 'lucide-react';
 import type { Folder } from '../types';
-import { isURL } from '../utils/isURL';
 import { bookmarksAPI } from '../api/client';
+import { isURL } from '../utils/isURL';
 
-// Dark mode colors
 const c = {
   overlay: 'bg-black/60',
   modal: 'bg-[#1a1a1a]',
@@ -17,305 +16,196 @@ const c = {
   secondary: 'bg-[#242424] hover:bg-[#3a3a3a]',
 };
 
+type CaptureType = 'note' | 'task' | 'bookmark';
+
 interface CreateNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   folders: Folder[];
-  onCreateNote: (title: string, content: string, folderName: string | null, bookmarkUrl?: string, bookmarkTitle?: string) => void;
+  onCreateNote: (title: string, content: string, folderName: string | null, bookmarkUrl?: string, bookmarkTitle?: string) => void | Promise<void>;
+  onCreateTask?: (title: string, description?: string) => void | Promise<void>;
   defaultFolderName?: string;
 }
 
-export function CreateNoteModal({ 
-  isOpen, 
-  onClose, 
+function detectCaptureType(title: string, content: string): CaptureType {
+  const trimmedTitle = title.trim();
+  const trimmedContent = content.trim();
+  const combined = `${trimmedTitle}\n${trimmedContent}`.trim();
+
+  if (trimmedTitle && isURL(trimmedTitle)) return 'bookmark';
+  if (!combined) return 'note';
+  if (combined.includes('\n') || combined.length > 120 || trimmedContent.length > 40) return 'note';
+  return 'task';
+}
+
+function firstLine(text: string): string {
+  return text.split('\n').find(line => line.trim())?.trim() ?? '';
+}
+
+function localMeetingStamp(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+export function CreateNoteModal({
+  isOpen,
+  onClose,
   folders,
   onCreateNote,
-  defaultFolderName 
+  onCreateTask,
+  defaultFolderName,
 }: CreateNoteModalProps) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [activeInput, setActiveInput] = useState<'title' | 'content'>('title');
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
-  const [justSelected, setJustSelected] = useState(false);
+  const [folderName, setFolderName] = useState(defaultFolderName ?? '');
+  const [manualType, setManualType] = useState<CaptureType | null>(null);
   const [bookmarkTitle, setBookmarkTitle] = useState<string | null>(null);
   const [isFetchingTitle, setIsFetchingTitle] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
-  const contentInputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Reset form when modal opens
   useEffect(() => {
-    if (isOpen) {
-      setTitle('');
-      setContent('');
-      setHighlightedIndex(0);
-      setJustSelected(false);
-      setActiveInput('title');
-      // Focus title input after modal opens
-      setTimeout(() => titleInputRef.current?.focus(), 100);
-    }
-  }, [isOpen]);
+    if (!isOpen) return;
+    setTitle('');
+    setContent('');
+    setFolderName(defaultFolderName ?? '');
+    setManualType(null);
+    setBookmarkTitle(null);
+    setIsFetchingTitle(false);
+    setIsSubmitting(false);
+    setTimeout(() => titleInputRef.current?.focus(), 50);
+  }, [isOpen, defaultFolderName]);
 
-  // Handle escape key
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
+    if (!isOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
     };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onClose]);
 
-  // Check if title is a URL → bookmark mode
-  const isBookmark = isURL(title);
+  const detectedType = useMemo(() => detectCaptureType(title, content), [title, content]);
+  const captureType = manualType ?? detectedType;
+  const taskEnabled = Boolean(onCreateTask);
+  const availableTypes: CaptureType[] = taskEnabled ? ['note', 'task', 'bookmark'] : ['note', 'bookmark'];
 
-  // Fetch website title when URL is detected
   useEffect(() => {
-    if (!isBookmark) {
+    if (captureType !== 'bookmark' || !isURL(title.trim())) {
       setBookmarkTitle(null);
       setIsFetchingTitle(false);
       return;
     }
 
-    const url = title.trim();
+    let active = true;
     setIsFetchingTitle(true);
     setBookmarkTitle(null);
 
     const timer = setTimeout(() => {
-      bookmarksAPI.getMetadata(url)
+      bookmarksAPI.getMetadata(title.trim())
         .then(data => {
-          setBookmarkTitle(data.title);
+          if (active) setBookmarkTitle(data.title);
         })
         .catch(() => {
-          setBookmarkTitle(null);
+          if (active) setBookmarkTitle(null);
         })
         .finally(() => {
-          setIsFetchingTitle(false);
+          if (active) setIsFetchingTitle(false);
         });
-    }, 2000); // Debounce 2s — wait for user to finish typing
+    }, 400);
 
-    return () => clearTimeout(timer);
-  }, [title, isBookmark]);
-
-  // Get hashtag at cursor position
-  const getHashtagAtCursor = (text: string, pos: number): { match: RegExpMatchArray | null; searchTerm: string } => {
-    const textBeforeCursor = text.slice(0, pos);
-    const match = textBeforeCursor.match(/#([\w.-]*)$/);
-    return { 
-      match, 
-      searchTerm: match ? match[1].toLowerCase() : '' 
+    return () => {
+      active = false;
+      clearTimeout(timer);
     };
+  }, [captureType, title]);
+
+  const resolvedFolderName = folderName || defaultFolderName || folders[0]?.name || null;
+  const canSubmit = title.trim().length > 0 || content.trim().length > 0;
+
+  const typeCopy: Record<CaptureType, { label: string; description: string }> = {
+    note: {
+      label: 'Note',
+      description: 'Longer context, meetings, and working notes.',
+    },
+    task: {
+      label: 'Task',
+      description: 'Short action-oriented capture for something to do.',
+    },
+    bookmark: {
+      label: 'Bookmark',
+      description: 'Save a URL with optional context for later.',
+    },
   };
 
-  // Get current active text and cursor position
-  const getActiveTextInfo = () => {
-    if (activeInput === 'title') {
-      return { text: title, cursor: titleInputRef.current?.selectionStart || 0 };
-    }
-    return { text: content, cursor: contentInputRef.current?.selectionStart || 0 };
+  const applyMeetingPreset = () => {
+    setManualType('note');
+    setTitle(`Meeting — ${localMeetingStamp()}`);
+    setContent('## Notes\n\n## Decisions\n\n## Action Items\n');
   };
 
-  const { text: activeText, cursor: activeCursor } = getActiveTextInfo();
-  const { match: hashtagMatch, searchTerm } = getHashtagAtCursor(activeText, activeCursor);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!canSubmit || isSubmitting) return;
 
-  // Filter folders based on search term
-  const filteredFolders = useMemo(() => {
-    if (!hashtagMatch) return [];
-    return folders.filter(f => 
-      f.name.toLowerCase().includes(searchTerm)
-    );
-  }, [hashtagMatch, searchTerm, folders]);
+    setIsSubmitting(true);
 
-  // Check if we should show suggestions
-  const showSuggestions = hashtagMatch !== null && !justSelected;
-
-  // Handle folder selection
-  const handleFolderSelect = (folder: Folder) => {
-    const inputRef = activeInput === 'title' ? titleInputRef : contentInputRef;
-    const currentText = activeInput === 'title' ? title : content;
-    const pos = inputRef.current?.selectionStart || 0;
-    
-    // Find the hashtag position
-    const textBeforeCursor = currentText.slice(0, pos);
-    const match = textBeforeCursor.match(/#([\w.-]*)$/);
-    
-    if (match) {
-      const before = currentText.slice(0, match.index);
-      const after = currentText.slice(pos);
-      // Add space after folder name so user can continue typing
-      const newText = `${before}#${folder.name} ${after}`;
-      
-      if (activeInput === 'title') {
-        setTitle(newText);
-      } else {
-        setContent(newText);
+    try {
+      if (captureType === 'task' && onCreateTask) {
+        const taskTitle = title.trim() || firstLine(content) || 'Untitled task';
+        const description = content.trim() || undefined;
+        await onCreateTask(taskTitle, description);
+        onClose();
+        return;
       }
-      
-      // Focus back and set cursor position (after the space)
-      setTimeout(() => {
-        inputRef.current?.focus();
-        const newPos = (match.index || 0) + folder.name.length + 2; // +2 for # and space
-        inputRef.current?.setSelectionRange(newPos, newPos);
-      }, 0);
-    }
-    
-    // Reset to hide dropdown immediately
-    setHighlightedIndex(0);
-    setJustSelected(true);
-    
-    // Re-enable suggestions after a short delay
-    setTimeout(() => setJustSelected(false), 100);
-  };
 
-  // Handle keyboard navigation for suggestions
-  const handleKeyDown = (e: React.KeyboardEvent, inputType: 'title' | 'content') => {
-    setActiveInput(inputType);
-    
-    if (!showSuggestions || filteredFolders.length === 0) return;
+      const noteTitle = title.trim() || firstLine(content) || 'Untitled';
 
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setHighlightedIndex(prev => 
-          prev < filteredFolders.length - 1 ? prev + 1 : prev
-        );
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setHighlightedIndex(prev => prev > 0 ? prev - 1 : 0);
-        break;
-      case 'Tab':
-        e.preventDefault();
-        // Tab always selects the first matching folder or creates new if exact match
-        if (filteredFolders.length > 0) {
-          // If there's an exact match with search term, use that
-          const exactMatch = filteredFolders.find(f => 
-            f.name.toLowerCase() === searchTerm.toLowerCase()
-          );
-          handleFolderSelect(exactMatch || filteredFolders[0]);
-        }
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (filteredFolders[highlightedIndex]) {
-          handleFolderSelect(filteredFolders[highlightedIndex]);
-        }
-        break;
-      case 'Escape':
-        // Just clear the highlight, don't close modal
-        setHighlightedIndex(0);
-        break;
-    }
-  };
+      if (captureType === 'bookmark') {
+        const bookmarkUrl = title.trim();
+        await onCreateNote(bookmarkTitle || noteTitle, content.trim(), resolvedFolderName, bookmarkUrl, bookmarkTitle || undefined);
+        onClose();
+        return;
+      }
 
-  // Extract hashtag from text
-  const extractFolderName = (text: string): { folderName: string | null; cleanText: string } => {
-    const hashMatch = text.match(/#([\w.-]+)/);
-    if (hashMatch) {
-      const folderName = hashMatch[1];
-      const cleanText = text.replace(/#[\w.-]+/, '').trim();
-      return { folderName, cleanText };
-    }
-    return { folderName: null, cleanText: text };
-  };
-
-  // Replace !today with current date (YYYY-MM-DD format) using LOCAL timezone
-  const replaceToday = (text: string): { text: string; replaced: boolean } => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const today = `${year}-${month}-${day}`;
-    
-    const replaced = text.includes('!today');
-    return { text: text.replace(/!today/g, today), replaced };
-  };
-
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { text: newValue, replaced } = replaceToday(e.target.value);
-    const cursorPos = e.target.selectionStart || 0;
-    
-    setTitle(newValue);
-    
-    if (replaced) {
-      // Place cursor after the replaced date
-      setTimeout(() => {
-        const newPos = cursorPos + 4; // 10 - 6 = 4 characters added
-        titleInputRef.current?.setSelectionRange(newPos, newPos);
-      }, 0);
-    }
-  };
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const { text: newValue, replaced } = replaceToday(e.target.value);
-    const cursorPos = e.target.selectionStart || 0;
-    
-    setContent(newValue);
-    
-    if (replaced) {
-      // Place cursor after the replaced date
-      setTimeout(() => {
-        const newPos = cursorPos + 4; // 10 - 6 = 4 characters added
-        contentInputRef.current?.setSelectionRange(newPos, newPos);
-      }, 0);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() && !content.trim()) return;
-    
-    // Try to extract folder from title first, then content
-    const titleResult = extractFolderName(title);
-    const contentResult = extractFolderName(content);
-    
-    // Use folder from title if found, otherwise from content, otherwise default
-    const folderName = titleResult.folderName || contentResult.folderName || defaultFolderName || null;
-    
-    // Use cleaned text
-    const cleanTitle = titleResult.cleanText || 'Untitled';
-    const cleanContent = titleResult.folderName ? content : contentResult.cleanText;
-    
-    // If bookmark, pass the URL and use fetched title
-    const bookmarkUrl = isBookmark ? title.trim() : undefined;
-    const finalTitle = bookmarkTitle || cleanTitle;
-    
-    onCreateNote(finalTitle, bookmarkUrl ? '' : cleanContent, folderName, bookmarkUrl, bookmarkTitle || undefined);
-    onClose();
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
+      await onCreateNote(noteTitle, content.trim(), resolvedFolderName);
       onClose();
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleBackdropClick = (event: React.MouseEvent) => {
+    if (event.target === event.currentTarget) onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       data-area-id="create-note-modal"
-      className={`create-note-modal fixed inset-0 z-50 flex items-center justify-center ${c.overlay} backdrop-blur-sm`}
+      className={`fixed inset-0 z-50 flex items-center justify-center ${c.overlay} backdrop-blur-sm`}
       onClick={handleBackdropClick}
     >
-      <div 
-        data-area-id="create-note-modal-content"
-        className={`create-note-modal-content w-full max-w-lg ${c.modal} rounded-xl shadow-2xl border ${c.border} overflow-hidden`}
-      >
-        {/* Header */}
-        <div 
-          data-area-id="create-note-modal-header"
-          className={`create-note-modal-header flex items-center justify-between px-6 py-4 border-b ${c.border}`}
-        >
+      <div className={`w-full max-w-2xl ${c.modal} rounded-2xl shadow-2xl border ${c.border} overflow-hidden`}>
+        <div className={`flex items-center justify-between px-6 py-4 border-b ${c.border}`}>
           <div className="flex items-center gap-3">
-            {isBookmark ? (
-              <LinkIcon size={20} className="text-emerald-500" />
-            ) : (
-              <FileText size={20} className="text-[#faff69]" />
-            )}
-            <h2 className={`text-lg font-semibold ${c.text}`}>
-              {isBookmark ? 'Save Bookmark' : 'Create New Note'}
-            </h2>
+            <div className="w-10 h-10 rounded-xl bg-[#242424] flex items-center justify-center">
+              {captureType === 'note' && <FileText size={18} className="text-[#faff69]" />}
+              {captureType === 'task' && <CheckSquare size={18} className="text-[#faff69]" />}
+              {captureType === 'bookmark' && <Bookmark size={18} className="text-emerald-400" />}
+            </div>
+            <div>
+              <h2 className={`text-lg font-semibold ${c.text}`}>Quick Capture</h2>
+              <p className={`text-xs ${c.gray}`}>Capture a note, task, or bookmark from one place.</p>
+            </div>
           </div>
           <button
             data-area-id="create-note-modal-close"
@@ -326,128 +216,130 @@ export function CreateNoteModal({
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Title Input */}
-          <div className="relative">
-            <label className={`block text-sm font-medium ${c.gray} mb-2`}>
-              Title
-            </label>
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={title}
-              onChange={handleTitleChange}
-              onKeyDown={(e) => handleKeyDown(e, 'title')}
-              onFocus={() => setActiveInput('title')}
-
-              placeholder="Note title... #work !today"
-              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text}`}
-            />
-          </div>
-
-          {/* Bookmark Indicator */}
-          {isBookmark && (
-            <div className="flex flex-col gap-1.5 px-3 py-2.5 bg-emerald-900/20 border border-emerald-800/30 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Globe size={14} className="text-emerald-500" />
-                <span className="text-xs text-emerald-400">URL detected — will be saved as a bookmark</span>
-              </div>
-              {isFetchingTitle && (
-                <div className="flex items-center gap-2 pl-5">
-                  <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs text-emerald-500/70">Fetching website title...</span>
-                </div>
-              )}
-              {!isFetchingTitle && bookmarkTitle && (
-                <div className="pl-5 flex items-center gap-2">
-                  <span className="text-xs text-emerald-300 font-medium truncate">
-                    📌 {bookmarkTitle}
-                  </span>
-                </div>
-              )}
-              {!isFetchingTitle && !bookmarkTitle && (
-                <div className="pl-5">
-                  <span className="text-xs text-emerald-500/50">Could not fetch title — URL will be used</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Content Input */}
-          {!isBookmark && (
-          <div className="relative">
-            <label className={`block text-sm font-medium ${c.gray} mb-2`}>
-              Content
-            </label>
-            <textarea
-              ref={contentInputRef}
-              value={content}
-              onChange={handleContentChange}
-              onKeyDown={(e) => handleKeyDown(e, 'content')}
-              onFocus={() => setActiveInput('content')}
-
-              placeholder="What's on your mind? #ideas !today"
-              rows={4}
-              className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text} resize-none`}
-            />
-          </div>
-          )}
-
-          {/* Folder Suggestions Dropdown */}
-          {showSuggestions && filteredFolders.length > 0 && (
-            <div 
-              data-area-id="create-note-folder-suggestions"
-              className={`${c.input} border ${c.border} rounded-lg overflow-hidden`}
-            >
-              <div className={`px-3 py-2 text-xs font-medium ${c.gray} bg-[#1a1a1a] border-b ${c.border}`}>
-                {searchTerm ? `Folders matching "${searchTerm}"` : 'Select folder (Enter or Tab to select, ↑↓ to navigate)'}
-              </div>
-              <div className="max-h-40 overflow-y-auto">
-                {filteredFolders.map((folder, index) => (
-                  <button
-                    key={folder.id}
-                    type="button"
-                    onClick={() => handleFolderSelect(folder)}
-                    onMouseEnter={() => setHighlightedIndex(index)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                      index === highlightedIndex ? 'bg-[#faff69]/5' : c.hover
-                    }`}
-                  >
-                    <Hash size={16} className="text-[#faff69]" />
-                    <span className={`text-sm ${c.text}`}>{folder.name}</span>
-                    {folder.id === 1 && (
-                      <span className={`ml-auto text-xs ${c.gray}`}>default</span>
-                    )}
-                    {index === highlightedIndex && (
-                      <span className="ml-auto text-xs text-[#faff69]">Enter</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Create New Folder Option */}
-          {showSuggestions && searchTerm && !filteredFolders.find(f => f.name.toLowerCase() === searchTerm.toLowerCase()) && (
-            <div className={`flex items-center gap-2 text-xs ${c.gray} px-3 py-2 bg-[#faff69]/5 rounded-lg`}>
-              <Hash size={12} className="text-[#faff69]" />
-              <span>
-                Will create new folder: <span className="text-[#faff69] font-medium">#{searchTerm}</span>
-              </span>
-            </div>
-          )}
-
-          {/* Folder Hint */}
-          <div className={`flex items-center gap-2 text-xs ${c.gray} bg-[#242424] px-3 py-2 rounded-lg`}>
-            <Hash size={12} className="text-[#faff69]" />
-            <span>
-              Type <code className="text-[#faff69]">#foldername</code> to organize. 
-              If folder doesn't exist, it will be created automatically.
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="flex flex-wrap items-center gap-2">
+            {availableTypes.map(type => {
+              const active = captureType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setManualType(type)}
+                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                    active
+                      ? 'bg-[#faff69] text-[#0a0a0a] border-[#faff69]'
+                      : `border-[#2a2a2a] ${c.gray} hover:text-[#e6e6e6] hover:border-[#444]`
+                  }`}
+                >
+                  {typeCopy[type].label}
+                </button>
+              );
+            })}
+            <span className={`text-xs ${c.gray} ml-auto`}>
+              {manualType ? `Manual: ${typeCopy[captureType].label}` : `Auto-detected: ${typeCopy[captureType].label}`}
             </span>
           </div>
 
-          {/* Actions */}
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="space-y-4">
+              <div>
+                <label className={`block text-sm font-medium ${c.gray} mb-2`}>
+                  {captureType === 'bookmark' ? 'URL' : captureType === 'task' ? 'Task title' : 'Title'}
+                </label>
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={title}
+                  onChange={event => setTitle(event.target.value)}
+                  placeholder={
+                    captureType === 'bookmark'
+                      ? 'https://example.com'
+                      : captureType === 'task'
+                        ? 'Follow up with design team'
+                        : 'Meeting title or note heading'
+                  }
+                  className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text}`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium ${c.gray} mb-2`}>
+                  {captureType === 'task' ? 'Details' : captureType === 'bookmark' ? 'Context' : 'Content'}
+                </label>
+                <textarea
+                  value={content}
+                  onChange={event => setContent(event.target.value)}
+                  placeholder={
+                    captureType === 'task'
+                      ? 'Optional description'
+                      : captureType === 'bookmark'
+                        ? 'Why this link matters'
+                        : 'Write your note here'
+                  }
+                  rows={captureType === 'note' ? 8 : 5}
+                  className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text} resize-none`}
+                />
+              </div>
+
+              {captureType === 'bookmark' && (
+                <div className="flex flex-col gap-1.5 px-3 py-2.5 bg-emerald-900/20 border border-emerald-800/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Globe size={14} className="text-emerald-500" />
+                    <span className="text-xs text-emerald-400">URL capture mode</span>
+                  </div>
+                  {isFetchingTitle ? (
+                    <span className="text-xs text-emerald-500/70">Fetching website title...</span>
+                  ) : bookmarkTitle ? (
+                    <span className="text-xs text-emerald-300 truncate">{bookmarkTitle}</span>
+                  ) : (
+                    <span className="text-xs text-emerald-500/60">Paste a valid URL to save a bookmark.</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className={`rounded-xl border ${c.border} bg-[#151515] p-4`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className={`text-sm font-medium ${c.text}`}>Preset</p>
+                    <p className={`text-xs mt-1 ${c.gray}`}>Start faster for meetings and quick working notes.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={applyMeetingPreset}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] px-3 py-1.5 text-xs text-[#faff69] hover:border-[#4a4a2a] hover:bg-[#202015] transition-colors"
+                  >
+                    <Sparkles size={12} />
+                    Meeting Note
+                  </button>
+                </div>
+              </div>
+
+              {captureType !== 'task' && (
+                <div>
+                  <label className={`block text-sm font-medium ${c.gray} mb-2`}>Folder</label>
+                  <select
+                    value={folderName}
+                    onChange={event => setFolderName(event.target.value)}
+                    className={`w-full px-4 py-2.5 ${c.input} border ${c.border} rounded-lg outline-none focus:ring-2 focus:ring-[#faff69] focus:border-transparent transition-all ${c.text}`}
+                  >
+                    {folders.map(folder => (
+                      <option key={folder.id} value={folder.name}>
+                        {folder.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className={`rounded-xl border ${c.border} bg-[#151515] p-4`}>
+                <p className={`text-sm font-medium ${c.text}`}>{typeCopy[captureType].label}</p>
+                <p className={`text-xs mt-1 ${c.gray}`}>{typeCopy[captureType].description}</p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#2a2a2a]">
             <button
               type="button"
@@ -458,10 +350,16 @@ export function CreateNoteModal({
             </button>
             <button
               type="submit"
-              disabled={!title.trim() && !content.trim()}
-              className={`px-4 py-2 text-sm font-medium text-white ${isBookmark ? 'bg-emerald-600 hover:bg-emerald-700' : c.primary} rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+              disabled={!canSubmit || isSubmitting || (captureType === 'bookmark' && !isURL(title.trim()))}
+              className={`px-4 py-2 text-sm font-medium text-[#0a0a0a] ${captureType === 'bookmark' ? 'bg-emerald-400 hover:bg-emerald-300' : c.primary} rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              {isBookmark ? 'Save Bookmark' : 'Create Note'}
+              {isSubmitting
+                ? 'Saving...'
+                : captureType === 'task'
+                  ? 'Create Task'
+                  : captureType === 'bookmark'
+                    ? 'Save Bookmark'
+                    : 'Create Note'}
             </button>
           </div>
         </form>

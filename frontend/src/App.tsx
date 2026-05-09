@@ -13,6 +13,8 @@ import { TasksPage } from './pages/TasksPage';
 import { AskPage } from './pages/AskPage';
 import { BriefPage } from './pages/BriefPage';
 import { BookmarksPage } from './pages/BookmarksPage';
+import { TodayPage } from './pages/TodayPage';
+import { tasksAPI } from './api/client';
 import { useNotes } from './hooks/useNotes';
 import { useFolders } from './hooks/useFolders';
 import { useAuth, AuthProvider } from './contexts/AuthContext';
@@ -24,7 +26,7 @@ import './App.css';
 import { Agentation } from 'agentation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-type ViewType = 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
+type ViewType = 'today' | 'notes' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -91,7 +93,7 @@ function AppContent() {
   const location = useLocation();
   const { folderId, noteId } = useParams<{ folderId?: string; noteId?: string }>();
   // View state
-  const [view, setView] = useState<ViewType>('home');
+  const [view, setView] = useState<ViewType>('today');
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | undefined>(undefined);
@@ -138,9 +140,9 @@ function AppContent() {
         setSelectedFolderId(id);
       }
     } else if (location.pathname === '/tasks') {
-      setView('tasks');
-      setSelectedFolderId(null);
-      setSelectedNoteId(null);
+        setView('tasks');
+        setSelectedFolderId(null);
+        setSelectedNoteId(null);
     } else if (location.pathname === '/ask') {
       setView('ask');
       setSelectedFolderId(null);
@@ -157,8 +159,12 @@ function AppContent() {
       setView('settings');
       setSelectedFolderId(null);
       setSelectedNoteId(null);
+    } else if (location.pathname === '/notes') {
+      setView('notes');
+      setSelectedFolderId(null);
+      setSelectedNoteId(null);
     } else if (location.pathname === '/') {
-      setView('home');
+      setView('today');
       setSelectedFolderId(null);
       setSelectedNoteId(null);
     }
@@ -175,8 +181,12 @@ function AppContent() {
   }, [selectedNoteId, notes]);
 
   // Navigation handlers — only call navigate(); URL-sync effect drives view state
-  const showAllNotes = useCallback(() => {
+  const showToday = useCallback(() => {
     navigate('/');
+  }, [navigate]);
+
+  const showAllNotes = useCallback(() => {
+    navigate('/notes');
   }, [navigate]);
 
   const showSettings = useCallback(() => {
@@ -257,12 +267,30 @@ function AppContent() {
     setIsCreateModalOpen(false);
   }, []);
 
+  const handleCreateTaskSubmit = useCallback(async (title: string, description?: string) => {
+    await tasksAPI.create(title, undefined, 'backlog', description);
+    setIsCreateModalOpen(false);
+    showTasks();
+  }, [showTasks]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'n') {
+        event.preventDefault();
+        setIsCreateModalOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   const handleBack = useCallback(() => {
     navigate(-1);
   }, [navigate]);
 
   const getFolderName = useCallback((folderId: number | null) => {
-    if (!folderId) return 'All Notes';
+    if (!folderId) return 'Notes';
     const folder = folders.find(f => f.id === folderId);
     return folder?.name ?? 'Unknown Folder';
   }, [folders]);
@@ -301,6 +329,8 @@ function AppContent() {
           selectedFolderId={selectedFolderId}
           onCloseMobile={() => setSidebarOpen(false)}
           isMobile={isMobile}
+          onTodayClick={showToday}
+          onNotesClick={showAllNotes}
           onSettingsClick={showSettings}
           onTasksClick={showTasks}
           onAskClick={showAsk}
@@ -338,7 +368,8 @@ function AppContent() {
           )}
 
           <h1 className="text-lg font-semibold text-[#e6e6e6] truncate">
-            {view === 'home' && 'All Notes'}
+            {view === 'today' && 'Today'}
+            {view === 'notes' && 'Notes'}
             {view === 'folder' && getFolderName(selectedFolderId)}
             {view === 'note' && (selectedNote?.title || 'Untitled')}
             {view === 'settings' && 'Settings'}
@@ -379,7 +410,14 @@ function AppContent() {
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-          {view === 'home' && (
+          {view === 'today' && (
+            <TodayPage
+              onCreateNote={handleCreateNote}
+              onSelectNote={handleNoteClick}
+            />
+          )}
+
+          {view === 'notes' && (
             <NotesPage
               folders={folders}
               onSelectNote={handleNoteClick}
@@ -430,6 +468,7 @@ function AppContent() {
 
         {/* Mobile Navigation */}
         <MobileNav
+          onShowToday={showToday}
           onShowAllNotes={showAllNotes}
           onCreateNote={handleCreateNote}
           onTasksClick={showTasks}
@@ -465,6 +504,7 @@ function AppContent() {
           }
         }}
         defaultFolderName={selectedFolderId ? folders.find(f => f.id === selectedFolderId)?.name : undefined}
+        onCreateTask={handleCreateTaskSubmit}
       />
 
     </div>
@@ -478,6 +518,7 @@ function AppRoutes() {
       <Route path="/setup" element={<SetupRoute><SetupPage /></SetupRoute>} />
       <Route element={<ProtectedRoute><AppContent /></ProtectedRoute>}>
         <Route path="/" />
+        <Route path="/notes" />
         <Route path="/folder/:folderId" />
         <Route path="/note/:noteId" />
         <Route path="/tasks" />
