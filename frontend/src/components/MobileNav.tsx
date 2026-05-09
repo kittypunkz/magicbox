@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Menu, X, Home, Plus, CheckSquare, Sparkles, BookOpen, Bookmark, Settings } from 'lucide-react';
 
 interface MobileNavProps {
+  onShowToday: () => void;
   onShowAllNotes: () => void;
   onCreateNote: () => void;
   onTasksClick: () => void;
@@ -9,7 +10,7 @@ interface MobileNavProps {
   onBriefClick: () => void;
   onBookmarksClick: () => void;
   onSettingsClick: () => void;
-  currentView: 'home' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
+  currentView: 'today' | 'notes' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
 }
 
 const c = {
@@ -22,6 +23,7 @@ const c = {
 };
 
 export function MobileNav({
+  onShowToday,
   onShowAllNotes,
   onCreateNote,
   onTasksClick,
@@ -43,11 +45,11 @@ export function MobileNav({
       <div className={`lg:hidden fixed bottom-0 left-0 right-0 ${c.bg} border-t ${c.border} z-50`}>
         <div className="flex items-center justify-around px-2 py-2">
           <button
-            onClick={nav(onShowAllNotes)}
-            className={`flex flex-col items-center gap-0.5 p-2 ${isActive('home') || isActive('folder') ? c.primary : c.gray}`}
+            onClick={nav(onShowToday)}
+            className={`flex flex-col items-center gap-0.5 p-2 ${isActive('today') ? c.primary : c.gray}`}
           >
             <Home size={20} />
-            <span className="text-xs">Notes</span>
+            <span className="text-xs">Today</span>
           </button>
 
           <button
@@ -111,6 +113,13 @@ export function MobileNav({
               </button>
             </div>
             <div className="space-y-1">
+              <button
+                onClick={nav(onShowAllNotes)}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg ${isActive('notes') || isActive('folder') ? `${c.activeBg} text-[#faff69]` : c.gray}`}
+              >
+                <Home size={20} />
+                <span>Notes</span>
+              </button>
               <button
                 onClick={nav(onBookmarksClick)}
                 className={`w-full flex items-center gap-3 p-3 rounded-lg ${isActive('bookmarks') ? `${c.activeBg} text-[#faff69]` : c.gray}`}
