@@ -290,7 +290,7 @@ function AddTaskInput({
   onAdd,
 }: {
   status: Task['status'];
-  onAdd: (title: string, status: Task['status']) => Promise<void>;
+  onAdd: (title: string, status: Task['status']) => Promise<unknown>;
 }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
