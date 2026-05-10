@@ -118,6 +118,7 @@ export function AskPage({ onNoteClick }: AskPageProps) {
   const [scope, setScope] = useState<ScopeType>('all');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
+  const [feedbackIds, setFeedbackIds] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -129,6 +130,29 @@ export function AskPage({ onNoteClick }: AskPageProps) {
     : { scope };
 
   const customScopeIncomplete = scope === 'custom' && (!customFrom || !customTo);
+
+  const sendWrongSourceFeedback = useCallback(async (source: Source) => {
+    const key = `${source.type}-${source.id}`;
+    if (feedbackIds.includes(key)) return;
+    setFeedbackIds(prev => [...prev, key]);
+
+    try {
+      await fetch(`${API_BASE}/chat/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          source_type: source.type,
+          source_id: source.id,
+          note_id: source.note_id,
+          scope: activeScope.scope,
+          message: 'Wrong source',
+        }),
+      });
+    } catch {
+      // Feedback must never break chat flow.
+    }
+  }, [activeScope.scope, feedbackIds]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,20 +289,32 @@ export function AskPage({ onNoteClick }: AskPageProps) {
                   </div>
 
                   {msg.sources && msg.sources.length > 0 && (
-                    <div className={`mt-3 pt-3 border-t ${c.border} flex flex-wrap gap-1.5`}>
-                      {msg.sources.map(s => (
-                        <button
-                          key={`${s.type}-${s.id}`}
-                          onClick={() => {
-                            if (s.note_id) onNoteClick?.(s.note_id);
-                          }}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs border ${c.border} ${c.gray} hover:text-[#faff69] hover:border-[#faff69]/40 transition-colors`}
-                        >
-                          {s.type === 'task' ? <CheckSquare size={10} /> : s.type === 'bookmark' ? <Bookmark size={10} /> : <FileText size={10} />}
-                          <span className="uppercase text-[10px] tracking-wide opacity-70">{s.type}</span>
-                          {s.title}
-                        </button>
-                      ))}
+                    <div className={`mt-3 pt-3 border-t ${c.border} flex flex-wrap gap-2`}>
+                      {msg.sources.map(s => {
+                        const key = `${s.type}-${s.id}`;
+                        const submitted = feedbackIds.includes(key);
+                        return (
+                          <div key={key} className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                if (s.note_id) onNoteClick?.(s.note_id);
+                              }}
+                              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs border ${c.border} ${c.gray} hover:text-[#faff69] hover:border-[#faff69]/40 transition-colors`}
+                            >
+                              {s.type === 'task' ? <CheckSquare size={10} /> : s.type === 'bookmark' ? <Bookmark size={10} /> : <FileText size={10} />}
+                              <span className="uppercase text-[10px] tracking-wide opacity-70">{s.type}</span>
+                              {s.title}
+                            </button>
+                            <button
+                              onClick={() => { void sendWrongSourceFeedback(s); }}
+                              disabled={submitted}
+                              className="rounded-lg border border-red-500/20 px-2 py-1 text-[11px] text-red-300 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+                            >
+                              {submitted ? 'Reported' : 'Wrong source'}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 

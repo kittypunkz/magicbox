@@ -102,10 +102,10 @@
 
 ## Phase 11: AI Source Feedback
 
-- [ ] Add `POST /chat/feedback`.
-- [ ] Add `ai_source_feedback` migration.
-- [ ] Add `Wrong source` actions to rendered sources.
-- [ ] Store feedback without breaking chat flow on failure.
+- [x] Add `POST /chat/feedback`.
+- [x] Add `ai_source_feedback` migration.
+- [x] Add `Wrong source` actions to rendered sources.
+- [x] Store feedback without breaking chat flow on failure.
 
 ## Phase 12: Daily Brief Integration
 

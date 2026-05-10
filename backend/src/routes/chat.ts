@@ -238,6 +238,34 @@ async function retrieveTasks(
   return result.results ?? [];
 }
 
+app.post('/feedback', async (c) => {
+  const body = await c.req.json<{
+    source_type?: RetrievalSource['type'];
+    source_id?: number;
+    note_id?: number | null;
+    scope?: string;
+    message?: string;
+  }>();
+
+  if (!body.source_type || typeof body.source_id !== 'number') {
+    return c.json({ error: 'source_type and source_id are required' }, 400);
+  }
+
+  const db = c.env.DB as D1Database;
+  await db.prepare(`
+    INSERT INTO ai_source_feedback (source_type, source_id, note_id, scope, message)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(
+    body.source_type,
+    body.source_id,
+    body.note_id ?? null,
+    body.scope ?? null,
+    body.message ?? null,
+  ).run();
+
+  return c.json({ success: true });
+});
+
 app.post('/', async (c) => {
   const body = await c.req.json<{ message: string; history?: HistoryMessage[]; scope?: ChatScope }>();
   if (!body.message?.trim()) {

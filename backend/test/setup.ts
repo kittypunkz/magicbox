@@ -18,7 +18,7 @@ beforeAll(async () => {
 // single failure doesn't silently skip the rest of the cleanup.
 afterEach(async () => {
   const db = env.DB as D1Database;
-  const tables = ['sessions', 'credentials', 'tasks', 'notes', 'daily_briefs', 'settings'];
+  const tables = ['sessions', 'credentials', 'tasks', 'notes', 'daily_briefs', 'settings', 'ai_source_feedback'];
   for (const t of tables) {
     await db.prepare(`DELETE FROM ${t}`).run();
   }
