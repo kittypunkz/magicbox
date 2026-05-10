@@ -11,7 +11,6 @@ import { SetupPage } from './pages/SetupPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TasksPage } from './pages/TasksPage';
 import { AskPage } from './pages/AskPage';
-import { BriefPage } from './pages/BriefPage';
 import { BookmarksPage } from './pages/BookmarksPage';
 import { TodayPage } from './pages/TodayPage';
 import { tasksAPI } from './api/client';
@@ -26,7 +25,7 @@ import './App.css';
 import { Agentation } from 'agentation';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-type ViewType = 'today' | 'notes' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
+type ViewType = 'today' | 'notes' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'bookmarks';
 
 // Protected Route wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -147,10 +146,6 @@ function AppContent() {
       setView('ask');
       setSelectedFolderId(null);
       setSelectedNoteId(null);
-    } else if (location.pathname === '/brief') {
-      setView('brief');
-      setSelectedFolderId(null);
-      setSelectedNoteId(null);
     } else if (location.pathname === '/bookmarks') {
       setView('bookmarks');
       setSelectedFolderId(null);
@@ -199,10 +194,6 @@ function AppContent() {
 
   const showAsk = useCallback(() => {
     navigate('/ask');
-  }, [navigate]);
-
-  const showBrief = useCallback(() => {
-    navigate('/brief');
   }, [navigate]);
 
   const showBookmarks = useCallback(() => {
@@ -334,7 +325,6 @@ function AppContent() {
           onSettingsClick={showSettings}
           onTasksClick={showTasks}
           onAskClick={showAsk}
-          onBriefClick={showBrief}
           onBookmarksClick={showBookmarks}
         />
       </div>
@@ -375,7 +365,6 @@ function AppContent() {
             {view === 'settings' && 'Settings'}
             {view === 'tasks' && 'Tasks'}
             {view === 'ask' && 'Ask'}
-            {view === 'brief' && 'Daily Brief'}
             {view === 'bookmarks' && 'Bookmarks'}
           </h1>
 
@@ -457,10 +446,6 @@ function AppContent() {
             <AskPage onNoteClick={showNote} />
           )}
 
-          {view === 'brief' && (
-            <BriefPage />
-          )}
-
           {view === 'bookmarks' && (
             <BookmarksPage onSelectNote={handleNoteClick} onCreateNote={handleCreateNote} />
           )}
@@ -473,7 +458,6 @@ function AppContent() {
           onCreateNote={handleCreateNote}
           onTasksClick={showTasks}
           onAskClick={showAsk}
-          onBriefClick={showBrief}
           onBookmarksClick={showBookmarks}
           onSettingsClick={showSettings}
           currentView={view}
@@ -523,7 +507,6 @@ function AppRoutes() {
         <Route path="/note/:noteId" />
         <Route path="/tasks" />
         <Route path="/ask" />
-        <Route path="/brief" />
         <Route path="/bookmarks" />
         <Route path="/settings" />
       </Route>

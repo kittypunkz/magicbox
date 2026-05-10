@@ -88,11 +88,6 @@ export const bookmarksAPI = {
   ).then(r => r.data),
 };
 
-export const briefAPI = {
-  getToday: () => fetchAPI<{ brief: { id: number; date: string; content: string; created_at: string } }>('/brief'),
-  getAll: () => fetchAPI<{ briefs: { id: number; date: string; created_at: string; preview: string }[] }>('/brief/all'),
-};
-
 export const processAPI = {
   note: (id: number) => fetchAPI<{ tasks: { title: string; subtasks?: string[] }[]; note_id: number }>(`/process/notes/${id}`, {
     method: 'POST',

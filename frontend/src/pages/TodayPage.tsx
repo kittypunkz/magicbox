@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ArrowUpRight, Bookmark, FileText, Loader2, Sparkles } from 'lucide-react';
-import { briefAPI } from '../api/client';
 import { useNotes } from '../hooks/useNotes';
 import { useSummary } from '../hooks/useSummary';
 import { formatDate, formatDateTime, formatRelativeTime } from '../lib/dates';
@@ -14,13 +12,6 @@ const c = {
   gray: 'text-[#888888]',
   border: 'border-[#2a2a2a]',
 };
-
-interface Brief {
-  id: number;
-  date: string;
-  content: string;
-  created_at: string;
-}
 
 interface TodayPageProps {
   onCreateNote: () => void;
@@ -83,29 +74,6 @@ function TaskList({
 export function TodayPage({ onCreateNote, onSelectNote }: TodayPageProps) {
   const { notes, loading: notesLoading } = useNotes();
   const { summary, loading: summaryLoading } = useSummary();
-  const [brief, setBrief] = useState<Brief | null>(null);
-  const [briefLoading, setBriefLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadBrief = async () => {
-      setBriefLoading(true);
-      try {
-        const data = await briefAPI.getToday();
-        if (active) setBrief(data.brief);
-      } catch {
-        if (active) setBrief(null);
-      } finally {
-        if (active) setBriefLoading(false);
-      }
-    };
-
-    loadBrief();
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const recentNotes = notes.filter(note => !note.bookmark_url).slice(0, 5);
   const recentBookmarks = notes.filter(note => note.bookmark_url).slice(0, 5);
@@ -147,28 +115,6 @@ export function TodayPage({ onCreateNote, onSelectNote }: TodayPageProps) {
               subtitle="Tasks completed today in Bangkok time."
             >
               {summaryLoading ? <Loader2 size={20} className={`animate-spin ${c.gray}`} /> : <TaskList tasks={summary?.done_today ?? []} emptyLabel="No completed tasks yet today." />}
-            </SectionCard>
-
-            <SectionCard
-              title="Daily Brief"
-              subtitle="A generated summary to review what matters from today."
-            >
-              {briefLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 size={18} className={`animate-spin ${c.gray}`} />
-                  <span className={`text-sm ${c.gray}`}>Loading today&apos;s brief...</span>
-                </div>
-              ) : brief ? (
-                <div className="space-y-3">
-                  <p className={`text-xs ${c.gray}`}>Generated {formatRelativeTime(brief.created_at)}</p>
-                  <div className={`text-sm whitespace-pre-wrap leading-6 ${c.text}`}>
-                    {brief.content.slice(0, 500)}
-                    {brief.content.length > 500 ? '...' : ''}
-                  </div>
-                </div>
-              ) : (
-                <p className={`text-sm ${c.gray}`}>No brief is available yet.</p>
-              )}
             </SectionCard>
           </div>
 

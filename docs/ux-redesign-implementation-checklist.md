@@ -17,7 +17,6 @@
 - [x] Show `Done Today` tasks on Today.
 - [x] Show recent notes on Today.
 - [x] Show recent bookmarks on Today.
-- [x] Show Daily Brief as a Today section.
 - [x] Highlight Today in navigation when on `/`.
 
 ## Phase 2: Quick Capture
@@ -109,11 +108,9 @@
 
 ## Phase 12: Daily Brief Integration
 
-- [ ] Reposition Daily Brief into Today as a first-class card.
-- [ ] Add refresh action from Today.
-- [ ] Add export action from Today.
-- [ ] Add link to brief history from Today.
-- [ ] Reduce Brief prominence in primary navigation.
+- [x] Removed Daily Brief from the product surface.
+- [x] Removed Daily Brief navigation, Today card, and dedicated route.
+- [x] Disabled backend brief endpoint and scheduled generation.
 
 ## Verification
 

@@ -26,13 +26,7 @@ export function SettingsPage() {
   const [loadingModels, setLoadingModels] = useState(false);
 
   // AI Behavior
-  const [briefTemperature, setBriefTemperature] = useState(0.7);
   const [taskTemperature, setTaskTemperature] = useState(0.2);
-
-  // Daily Brief Scope
-  const [briefTimeWindow, setBriefTimeWindow] = useState(24);
-  const [briefMaxNotes, setBriefMaxNotes] = useState(20);
-  const [briefMaxTasks, setBriefMaxTasks] = useState(20);
 
   // App Preferences
   const [timezone, setTimezone] = useState('Asia/Bangkok');
@@ -40,7 +34,6 @@ export function SettingsPage() {
 
   // System Prompts
   const [promptChat, setPromptChat] = useState('');
-  const [promptBrief, setPromptBrief] = useState('');
   const [promptTaskExtract, setPromptTaskExtract] = useState('');
   const [showPrompts, setShowPrompts] = useState(false);
 
@@ -53,15 +46,10 @@ export function SettingsPage() {
     settingsAPI.getAll().then(s => {
       if (s.openrouter_api_key) setApiKey(s.openrouter_api_key);
       if (s.preferred_model) setPreferredModel(s.preferred_model);
-      if (s.brief_temperature) setBriefTemperature(parseFloat(s.brief_temperature));
       if (s.task_temperature) setTaskTemperature(parseFloat(s.task_temperature));
-      if (s.brief_time_window_hours) setBriefTimeWindow(parseInt(s.brief_time_window_hours, 10));
-      if (s.brief_max_notes) setBriefMaxNotes(parseInt(s.brief_max_notes, 10));
-      if (s.brief_max_tasks) setBriefMaxTasks(parseInt(s.brief_max_tasks, 10));
       if (s.timezone) setTimezone(s.timezone);
       if (s.autosave_delay_ms) setAutosaveDelay(s.autosave_delay_ms);
       if (s.prompt_chat) setPromptChat(s.prompt_chat);
-      if (s.prompt_brief) setPromptBrief(s.prompt_brief);
       if (s.prompt_task_extract) setPromptTaskExtract(s.prompt_task_extract);
     }).catch(() => {});
   }, []);
@@ -88,15 +76,10 @@ export function SettingsPage() {
       await settingsAPI.update({
         openrouter_api_key: apiKey,
         preferred_model: preferredModel,
-        brief_temperature: String(briefTemperature),
         task_temperature: String(taskTemperature),
-        brief_time_window_hours: String(briefTimeWindow),
-        brief_max_notes: String(briefMaxNotes),
-        brief_max_tasks: String(briefMaxTasks),
         timezone,
         autosave_delay_ms: autosaveDelay,
         prompt_chat: promptChat,
-        prompt_brief: promptBrief,
         prompt_task_extract: promptTaskExtract,
       });
       setSaved(true);
@@ -221,22 +204,6 @@ export function SettingsPage() {
 
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className={`text-xs font-medium ${c.gray}`}>Brief Tone</label>
-              <span className={`text-xs font-mono ${c.text}`}>{briefTemperature.toFixed(1)}</span>
-            </div>
-            <input
-              type="range" min="0" max="1" step="0.1"
-              value={briefTemperature}
-              onChange={e => setBriefTemperature(parseFloat(e.target.value))}
-              className="w-full accent-[#faff69]"
-            />
-            <div className={`flex justify-between text-xs ${c.gray} mt-0.5`}>
-              <span>Precise</span><span>Creative</span>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
               <label className={`text-xs font-medium ${c.gray}`}>Task Extraction</label>
               <span className={`text-xs font-mono ${c.text}`}>{taskTemperature.toFixed(1)}</span>
             </div>
@@ -248,48 +215,6 @@ export function SettingsPage() {
             />
             <div className={`flex justify-between text-xs ${c.gray} mt-0.5`}>
               <span>Strict</span><span>Flexible</span>
-            </div>
-          </div>
-
-          <button type="submit" disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-colors">
-            {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : saved ? <><CheckCircle size={14} /> Saved</> : 'Save'}
-          </button>
-        </form>
-
-        {/* Daily Brief Scope */}
-        <form onSubmit={handleSave} className={`${c.input} border ${c.border} rounded-xl p-4 sm:p-5 space-y-4`}>
-          <h2 className={`text-sm font-semibold ${c.text} flex items-center gap-2`}>
-            <Calendar size={16} />
-            Daily Brief Scope
-          </h2>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Time Window (hrs)</label>
-              <input
-                type="number" min="1" max="168"
-                value={briefTimeWindow}
-                onChange={e => setBriefTimeWindow(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
-              />
-            </div>
-            <div>
-              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Max Notes</label>
-              <input
-                type="number" min="5" max="50"
-                value={briefMaxNotes}
-                onChange={e => setBriefMaxNotes(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
-              />
-            </div>
-            <div>
-              <label className={`block text-xs font-medium ${c.gray} mb-1.5`}>Max Tasks</label>
-              <input
-                type="number" min="5" max="50"
-                value={briefMaxTasks}
-                onChange={e => setBriefMaxTasks(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2.5 ${c.input} bg-[#1a1a1a] border ${c.border} rounded-lg ${c.text} text-sm focus:outline-none focus:border-[#faff69] transition-colors`}
-              />
             </div>
           </div>
 
@@ -367,7 +292,6 @@ export function SettingsPage() {
 
               {[
                 { label: 'Chat Assistant', value: promptChat, set: setPromptChat, placeholder: 'You are a personal knowledge assistant...' },
-                { label: 'Daily Brief', value: promptBrief, set: setPromptBrief, placeholder: 'Generate a brief daily summary for {{date}}...\n\nRecent notes:\n{{notes}}\n\nPending tasks:\n{{tasks}}' },
                 { label: 'Task Extraction', value: promptTaskExtract, set: setPromptTaskExtract, placeholder: 'Extract tasks from:\nTitle: {{title}}\nContent: {{content}}{{exclusions}}' },
               ].map(({ label, value, set, placeholder }) => (
                 <div key={label}>

@@ -10,7 +10,6 @@ import settings from './routes/settings';
 import tasks from './routes/tasks';
 import process from './routes/process';
 import chat from './routes/chat';
-import brief, { generateBrief } from './routes/brief';
 import uploads from './routes/uploads';
 import type { Env } from './types';
 
@@ -39,7 +38,7 @@ app.get('/', (c) => {
   return c.json({
     success: true,
     name: 'MagicBox API',
-    version: '2.11.8',
+    version: '2.11.9',
     status: 'running',
   });
 });
@@ -54,32 +53,6 @@ app.route('/settings', settings);
 app.route('/tasks', tasks);
 app.route('/process', process);
 app.route('/chat', chat);
-app.route('/brief', brief);
 app.route('/uploads', uploads);
 
-// Cloudflare Cron trigger — nightly brief generation at midnight UTC
-export default {
-  fetch: app.fetch,
-  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
-    const db = env.DB as D1Database;
-    const today = new Date().toISOString().slice(0, 10);
-
-    // Skip if already generated today
-    const existing = await db.prepare('SELECT id FROM daily_briefs WHERE date = ?').bind(today).first();
-    if (existing) return;
-
-    const { getAIConfig } = await import('./lib/settings');
-    const aiCfg = await getAIConfig(env);
-    if (!aiCfg) return;
-    const { model } = aiCfg;
-
-    try {
-      const content = await generateBrief(db, aiCfg.apiKey, model, today);
-      await db.prepare(
-        'INSERT OR IGNORE INTO daily_briefs (date, content) VALUES (?, ?)'
-      ).bind(today, content).run();
-    } catch (err) {
-      console.error('Cron brief generation failed:', err);
-    }
-  },
-};
+export default app;

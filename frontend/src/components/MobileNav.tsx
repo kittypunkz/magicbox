@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Home, Plus, CheckSquare, Sparkles, BookOpen, Bookmark, Settings } from 'lucide-react';
+import { Menu, X, Home, Plus, CheckSquare, Sparkles, FileText, Bookmark, Settings } from 'lucide-react';
 
 interface MobileNavProps {
   onShowToday: () => void;
@@ -7,10 +7,9 @@ interface MobileNavProps {
   onCreateNote: () => void;
   onTasksClick: () => void;
   onAskClick: () => void;
-  onBriefClick: () => void;
   onBookmarksClick: () => void;
   onSettingsClick: () => void;
-  currentView: 'today' | 'notes' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'brief' | 'bookmarks';
+  currentView: 'today' | 'notes' | 'folder' | 'note' | 'settings' | 'tasks' | 'ask' | 'bookmarks';
 }
 
 const c = {
@@ -28,7 +27,6 @@ export function MobileNav({
   onCreateNote,
   onTasksClick,
   onAskClick,
-  onBriefClick,
   onBookmarksClick,
   onSettingsClick,
   currentView,
@@ -70,11 +68,11 @@ export function MobileNav({
           </button>
 
           <button
-            onClick={nav(onBriefClick)}
-            className={`flex flex-col items-center gap-0.5 p-2 ${isActive('brief') ? c.primary : c.gray}`}
+            onClick={nav(onShowAllNotes)}
+            className={`flex flex-col items-center gap-0.5 p-2 ${isActive('notes') || isActive('folder') || isActive('note') ? c.primary : c.gray}`}
           >
-            <BookOpen size={20} />
-            <span className="text-xs">Brief</span>
+            <FileText size={20} />
+            <span className="text-xs">Notes</span>
           </button>
 
           <button
@@ -115,9 +113,9 @@ export function MobileNav({
             <div className="space-y-1">
               <button
                 onClick={nav(onShowAllNotes)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg ${isActive('notes') || isActive('folder') ? `${c.activeBg} text-[#faff69]` : c.gray}`}
+                className={`w-full flex items-center gap-3 p-3 rounded-lg ${isActive('notes') || isActive('folder') || isActive('note') ? `${c.activeBg} text-[#faff69]` : c.gray}`}
               >
-                <Home size={20} />
+                <FileText size={20} />
                 <span>Notes</span>
               </button>
               <button
