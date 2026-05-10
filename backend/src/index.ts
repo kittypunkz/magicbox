@@ -39,7 +39,7 @@ app.get('/', (c) => {
   return c.json({
     success: true,
     name: 'MagicBox API',
-    version: '2.11.0',
+    version: '2.11.1',
     status: 'running',
   });
 });

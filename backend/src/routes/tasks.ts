@@ -113,23 +113,55 @@ app.get('/summary', async (c) => {
       to: effectiveTo,
       backlog: [],
       doing: [],
+      added_today: [],
+      carry_over: [],
       done_today: await attachSubtasks(db, doneRes.results ?? []),
     });
   }
 
-  const [backlogRes, doingRes, doneRes] = await Promise.all([
+  const [backlogRes, doingRes, doneRes, addedTodayRes, carryOverRes] = await Promise.all([
     db.prepare(`${LIST_SQL} WHERE t.status = 'backlog' GROUP BY t.id ORDER BY t.created_at DESC`).all<Task>(),
     db.prepare(`${LIST_SQL} WHERE t.status = 'doing' GROUP BY t.id ORDER BY t.created_at DESC`).all<Task>(),
     db.prepare(DONE_SQL).bind(todayBKK, todayBKK).all<Task>(),
+    db.prepare(
+      `${LIST_SQL}
+       WHERE date(t.created_at, '+7 hours') = ?
+       GROUP BY t.id
+       ORDER BY t.created_at DESC`
+    ).bind(todayBKK).all<Task>(),
+    db.prepare(
+      `${LIST_SQL}
+       WHERE t.status IN ('backlog', 'doing')
+         AND date(t.created_at, '+7 hours') < ?
+       GROUP BY t.id
+       ORDER BY
+         CASE t.status
+           WHEN 'doing' THEN 0
+           WHEN 'backlog' THEN 1
+           ELSE 2
+         END,
+         t.created_at ASC`
+    ).bind(todayBKK).all<Task>(),
   ]);
 
-  const [backlog, doing, done_today] = await Promise.all([
+  const [backlog, doing, done_today, added_today, carry_over] = await Promise.all([
     attachSubtasks(db, backlogRes.results ?? []),
     attachSubtasks(db, doingRes.results ?? []),
     attachSubtasks(db, doneRes.results ?? []),
+    attachSubtasks(db, addedTodayRes.results ?? []),
+    attachSubtasks(db, carryOverRes.results ?? []),
   ]);
 
-  return c.json({ date: todayBKK, from: todayBKK, to: todayBKK, backlog, doing, done_today });
+  return c.json({
+    date: todayBKK,
+    from: todayBKK,
+    to: todayBKK,
+    backlog,
+    doing,
+    added_today,
+    carry_over,
+    done_today,
+  });
 });
 
 // GET /tasks/:id — single task with subtasks

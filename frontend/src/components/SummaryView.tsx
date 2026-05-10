@@ -37,7 +37,7 @@ function buildMarkdown(summary: TaskSummary, mode: 'today' | 'custom', dateLabel
       ? summary.from
       : dateLabel;
 
-  lines.push(`Bank Check-in | ${dateHeading}`, '');
+  lines.push(`Work Log | ${dateHeading}`, '');
 
   const doingTasks = mode === 'custom' ? summary.doing : summary.doing;
 
@@ -145,8 +145,8 @@ export function SummaryView({ onRefresh: _onRefresh }: SummaryViewProps) {
     if (!summary) return;
     const md = buildMarkdown(summary, mode, dateLabel, doneTasks);
     const filename = mode === 'custom' && summary.from !== summary.to
-      ? `summary-${summary.from}-to-${summary.to}.md`
-      : `summary-${summary.date}.md`;
+      ? `work-log-${summary.from}-to-${summary.to}.md`
+      : `work-log-${summary.date}.md`;
     downloadMd(md, filename);
   }
 
@@ -172,7 +172,7 @@ export function SummaryView({ onRefresh: _onRefresh }: SummaryViewProps) {
         <div className="space-y-3">
           <div className="flex justify-center gap-2">
             {modeBtn('today', 'Today')}
-            {modeBtn('custom', 'Custom')}
+            {modeBtn('custom', 'Custom range')}
           </div>
 
           {mode === 'custom' && (
@@ -213,14 +213,17 @@ export function SummaryView({ onRefresh: _onRefresh }: SummaryViewProps) {
             {/* Date header */}
             <div className="text-center pb-2">
               <p className={`text-xs uppercase tracking-widest ${c.gray} mb-1`}>
-                {mode === 'custom' ? 'Period Summary' : 'Daily Summary'}
+                {mode === 'custom' ? 'Custom Range' : 'Today'}
               </p>
-              <h2 className={`text-xl font-semibold ${c.text}`}>
+              <p className={`text-sm ${c.gray} mt-1`}>
                 {mode === 'custom' && summary.from !== summary.to
                   ? `${summary.from} — ${summary.to}`
-                  : dateLabel}
-              </h2>
-              <p className={`text-sm ${c.gray} mt-1`}>
+                  : mode === 'custom'
+                    ? summary.from
+                    : dateLabel}
+              </p>
+              <h2 className={`mt-2 text-xl font-semibold ${c.text}`}>Work Log</h2>
+              <p className={`text-sm ${c.gray}`}>
                 {mode === 'custom'
                   ? `${doneTasks.length} tasks completed`
                   : `${summary.done_today.length} done today · ${summary.doing.length} doing · ${summary.backlog.length} in backlog`}

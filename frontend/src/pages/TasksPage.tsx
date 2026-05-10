@@ -1,13 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Square, Trash2, Plus, Loader2, AlertCircle, RotateCcw, LayoutDashboard, List, FileText, Link, AlignLeft, Check } from 'lucide-react';
+import {
+  Square,
+  Trash2,
+  Plus,
+  Loader2,
+  AlertCircle,
+  RotateCcw,
+  LayoutDashboard,
+  FileText,
+  Link,
+  AlignLeft,
+  Check,
+  Clock3,
+  CheckCircle2,
+  Sparkles,
+  History,
+} from 'lucide-react';
 import { useTasks } from '../hooks/useTasks';
+import { useSummary } from '../hooks/useSummary';
 import { subtasksAPI } from '../api/client';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { SummaryView } from '../components/SummaryView';
 import { NotePickerModal } from '../components/NotePickerModal';
 import { TaskDetailModal } from '../components/TaskDetailModal';
 import { formatDate, formatDateTime } from '../lib/dates';
-import type { Task, Subtask } from '../types';
+import type { Task, Subtask, TaskSummary } from '../types';
 
 const c = {
   bg: 'bg-[#0a0a0a]',
@@ -19,10 +36,59 @@ const c = {
 
 const COLUMNS: { status: Task['status']; label: string; color: string }[] = [
   { status: 'backlog', label: 'Backlog', color: 'text-[#888888]' },
-  { status: 'doing',   label: 'Doing',   color: 'text-[#faff69]'  },
-  { status: 'done',    label: 'Done',    color: 'text-green-400' },
+  { status: 'doing', label: 'Doing', color: 'text-[#faff69]' },
+  { status: 'done', label: 'Done', color: 'text-green-400' },
 ];
 
+type TasksTab = 'today' | 'board' | 'worklog';
+
+const TABS: { key: TasksTab; label: string; icon: typeof Clock3 }[] = [
+  { key: 'today', label: 'Today', icon: Clock3 },
+  { key: 'board', label: 'Board', icon: LayoutDashboard },
+  { key: 'worklog', label: 'Work Log', icon: History },
+];
+
+const TODAY_SECTIONS: Array<{
+  key: keyof Pick<TaskSummary, 'doing' | 'done_today' | 'added_today' | 'carry_over'>;
+  label: string;
+  subtitle: string;
+  emptyLabel: string;
+  icon: typeof Clock3;
+  color: string;
+}> = [
+  {
+    key: 'doing',
+    label: 'Doing',
+    subtitle: 'Tasks currently in progress.',
+    emptyLabel: 'Nothing is in progress right now.',
+    icon: Clock3,
+    color: 'text-[#faff69]',
+  },
+  {
+    key: 'done_today',
+    label: 'Done Today',
+    subtitle: 'Tasks completed today in Bangkok time.',
+    emptyLabel: 'No tasks completed yet today.',
+    icon: CheckCircle2,
+    color: 'text-green-400',
+  },
+  {
+    key: 'added_today',
+    label: 'Added Today',
+    subtitle: 'Tasks created today, regardless of current status.',
+    emptyLabel: 'No tasks were added today.',
+    icon: Sparkles,
+    color: 'text-sky-400',
+  },
+  {
+    key: 'carry_over',
+    label: 'Carry Over',
+    subtitle: 'Older unfinished tasks that rolled into today.',
+    emptyLabel: 'No carry-over tasks right now.',
+    icon: History,
+    color: 'text-orange-400',
+  },
+];
 
 function TaskCard({
   task,
@@ -79,7 +145,6 @@ function TaskCard({
       <div
         draggable={draggable}
         onDragStart={draggable ? e => {
-          // Store task id in dataTransfer — survives across all React render cycles
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', String(task.id));
           setDragging(true);
@@ -123,7 +188,6 @@ function TaskCard({
             : `Created ${formatDate(task.created_at)}`}
         </p>
 
-        {/* Subtasks inline */}
         {subtasks.length > 0 && (
           <div className="space-y-1">
             {subtasks.map(sub => (
@@ -146,7 +210,6 @@ function TaskCard({
           </div>
         )}
 
-        {/* Add subtask button */}
         {onOpenDetail && !isDone && (
           <button
             onClick={onOpenDetail}
@@ -279,67 +342,229 @@ function AddTaskInput({
   );
 }
 
+function TasksTodaySection({
+  title,
+  subtitle,
+  emptyLabel,
+  icon: Icon,
+  color,
+  tasks,
+  onMoveTask,
+  onDeleteTask,
+  onRenameTask,
+  onNoteClick,
+  onLinkNote,
+  onOpenDetail,
+  onToggleSubtask,
+}: {
+  title: string;
+  subtitle: string;
+  emptyLabel: string;
+  icon: typeof Clock3;
+  color: string;
+  tasks: Task[];
+  onMoveTask: (id: number, status: Task['status']) => Promise<unknown>;
+  onDeleteTask: (id: number) => Promise<void>;
+  onRenameTask: (id: number, title: string) => Promise<unknown>;
+  onNoteClick?: (noteId: number) => void;
+  onLinkNote: (taskId: number) => void;
+  onOpenDetail: (taskId: number) => void;
+  onToggleSubtask: (taskId: number, subtaskId: number, done: boolean) => Promise<void>;
+}) {
+  return (
+    <section className="rounded-2xl border border-[#2a2a2a] bg-[#111111] overflow-hidden">
+      <div className="flex items-start gap-3 px-4 py-4 border-b border-[#2a2a2a]">
+        <div className="w-9 h-9 rounded-xl bg-[#1c1c1c] flex items-center justify-center flex-shrink-0">
+          <Icon size={16} className={color} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className={`text-sm font-semibold ${color}`}>{title}</h2>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full bg-[#242424] ${c.gray}`}>
+              {tasks.length}
+            </span>
+          </div>
+          <p className={`mt-1 text-xs ${c.gray}`}>{subtitle}</p>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {tasks.length === 0 ? (
+          <div className={`rounded-xl border border-dashed border-[#2a2a2a] px-4 py-8 text-center text-sm ${c.gray} opacity-70`}>
+            {emptyLabel}
+          </div>
+        ) : (
+          tasks.map(task => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onMove={status => { void onMoveTask(task.id, status); }}
+              onDelete={() => { void onDeleteTask(task.id); }}
+              onRename={title => { void onRenameTask(task.id, title); }}
+              onNoteClick={onNoteClick}
+              onLinkNote={!task.note_id ? () => onLinkNote(task.id) : undefined}
+              onOpenDetail={() => onOpenDetail(task.id)}
+              onToggleSubtask={(subtaskId, done) => onToggleSubtask(task.id, subtaskId, done)}
+            />
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
 interface TasksPageProps {
   onNoteClick?: (noteId: number) => void;
 }
 
 export function TasksPage({ onNoteClick }: TasksPageProps) {
   const { tasks, loading, error, createTask, moveTask, renameTask, deleteTask, linkNote, patchTask } = useTasks();
+  const { summary, loading: summaryLoading, error: summaryError, refetch: refetchSummary } = useSummary();
   const [overColumn, setOverColumn] = useState<Task['status'] | null>(null);
-  const [viewMode, setViewMode] = useState<'board' | 'summary'>('board');
+  const [activeTab, setActiveTab] = useState<TasksTab>('today');
   const [linkingTaskId, setLinkingTaskId] = useState<number | null>(null);
   const [detailTaskId, setDetailTaskId] = useState<number | null>(null);
 
+  async function runWithSummaryRefresh<T>(action: () => Promise<T>) {
+    const result = await action();
+    await refetchSummary();
+    return result;
+  }
+
+  const handleCreateTask = (title: string, status: Task['status']) =>
+    runWithSummaryRefresh(() => createTask(title, status));
+
+  const handleMoveTask = (id: number, status: Task['status']) =>
+    runWithSummaryRefresh(() => moveTask(id, status));
+
+  const handleRenameTask = (id: number, title: string) =>
+    runWithSummaryRefresh(() => renameTask(id, title));
+
+  const handleDeleteTask = (id: number) =>
+    runWithSummaryRefresh(async () => {
+      await deleteTask(id);
+    });
+
+  const handleLinkNote = (id: number, noteId: number | null) =>
+    runWithSummaryRefresh(() => linkNote(id, noteId));
+
+  const handleToggleSubtask = (taskId: number, subtaskId: number, done: boolean) =>
+    runWithSummaryRefresh(async () => {
+      await subtasksAPI.update(taskId, subtaskId, { done });
+    });
+
+  const taskCounts = {
+    backlog: tasks.filter(t => t.status === 'backlog').length,
+    doing: tasks.filter(t => t.status === 'doing').length,
+    done: tasks.filter(t => t.status === 'done').length,
+  };
+
   return (
     <div className={`h-full flex flex-col ${c.bg}`}>
-      {/* Header */}
       <div className={`flex-shrink-0 bg-[#1a1a1a] border-b ${c.border} px-4 sm:px-8 py-4 sm:py-5`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#242424] rounded-xl flex items-center justify-center flex-shrink-0">
-            <Square size={20} className={c.gray} />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#242424] rounded-xl flex items-center justify-center flex-shrink-0">
+              <Square size={20} className={c.gray} />
+            </div>
+            <div className="flex-1">
+              <h1 className={`text-lg sm:text-xl font-bold ${c.text}`}>Tasks</h1>
+              <p className={`text-xs ${c.gray}`}>
+                {taskCounts.backlog} backlog · {taskCounts.doing} doing · {taskCounts.done} done
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <h1 className={`text-lg sm:text-xl font-bold ${c.text}`}>Tasks</h1>
-            <p className={`text-xs ${c.gray}`}>
-              {tasks.filter(t => t.status === 'backlog').length} backlog ·{' '}
-              {tasks.filter(t => t.status === 'doing').length} doing ·{' '}
-              {tasks.filter(t => t.status === 'done').length} done
-            </p>
-          </div>
-          {/* View toggle */}
-          <div className="flex items-center gap-1 bg-[#242424] rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('board')}
-              title="Board"
-              className={`p-1.5 rounded-md transition-colors ${viewMode === 'board' ? 'bg-[#3a3a3a] text-[#e6e6e6]' : c.gray + ' hover:text-[#e6e6e6]'}`}
-            >
-              <LayoutDashboard size={15} />
-            </button>
-            <button
-              onClick={() => setViewMode('summary')}
-              title="Summary"
-              className={`p-1.5 rounded-md transition-colors ${viewMode === 'summary' ? 'bg-[#3a3a3a] text-[#e6e6e6]' : c.gray + ' hover:text-[#e6e6e6]'}`}
-            >
-              <List size={15} />
-            </button>
+
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {TABS.map(({ key, label, icon: Icon }) => {
+              const active = activeTab === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-colors ${
+                    active
+                      ? 'border-[#444] bg-[#2a2a2a] text-[#e6e6e6]'
+                      : `border-[#2a2a2a] ${c.gray} hover:border-[#444] hover:text-[#e6e6e6]`
+                  }`}
+                >
+                  <Icon size={14} />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      {viewMode === 'summary' && <SummaryView />}
+      {activeTab === 'today' && (
+        <div className="flex-1 overflow-y-auto">
+          {summaryError && (
+            <div className="mx-4 mt-4 flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 sm:mx-8">
+              <AlertCircle size={16} className="mt-0.5 flex-shrink-0 text-red-400" />
+              <p className="text-sm text-red-400">{summaryError}</p>
+            </div>
+          )}
 
-      {viewMode === 'board' && error && (
+          {summaryLoading ? (
+            <div className="flex h-full items-center justify-center">
+              <Loader2 size={24} className={`animate-spin ${c.gray}`} />
+            </div>
+          ) : summary ? (
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-8">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {TODAY_SECTIONS.map(({ key, label, icon: Icon, color }) => (
+                  <div key={key} className="rounded-2xl border border-[#2a2a2a] bg-[#111111] px-4 py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-xl bg-[#1c1c1c] flex items-center justify-center">
+                        <Icon size={16} className={color} />
+                      </div>
+                      <span className={`text-xs ${c.gray}`}>{label}</span>
+                    </div>
+                    <p className={`mt-3 text-2xl font-semibold ${c.text}`}>{summary[key].length}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                {TODAY_SECTIONS.map(section => (
+                  <TasksTodaySection
+                    key={section.key}
+                    title={section.label}
+                    subtitle={section.subtitle}
+                    emptyLabel={section.emptyLabel}
+                    icon={section.icon}
+                    color={section.color}
+                    tasks={summary[section.key]}
+                    onMoveTask={handleMoveTask}
+                    onDeleteTask={handleDeleteTask}
+                    onRenameTask={handleRenameTask}
+                    onNoteClick={onNoteClick}
+                    onLinkNote={taskId => setLinkingTaskId(taskId)}
+                    onOpenDetail={taskId => setDetailTaskId(taskId)}
+                    onToggleSubtask={handleToggleSubtask}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {activeTab === 'worklog' && <SummaryView />}
+
+      {activeTab === 'board' && error && (
         <div className="flex-shrink-0 mx-4 sm:mx-8 mt-4 flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
           <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
 
-      {viewMode === 'board' && loading ? (
+      {activeTab === 'board' && loading ? (
         <div className="flex-1 flex items-center justify-center">
           <Loader2 size={24} className={`animate-spin ${c.gray}`} />
         </div>
-      ) : viewMode === 'board' ? (
+      ) : activeTab === 'board' ? (
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
           <div className="flex gap-4 p-4 sm:p-6 h-full min-w-[600px]">
             {COLUMNS.map(col => {
@@ -356,7 +581,6 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                     setOverColumn(col.status);
                   }}
                   onDragLeave={e => {
-                    // Only clear when leaving the column entirely, not when entering a child
                     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                       setOverColumn(null);
                     }
@@ -365,7 +589,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                     e.preventDefault();
                     const id = parseInt(e.dataTransfer.getData('text/plain'));
                     if (!isNaN(id)) {
-                      moveTask(id, col.status);
+                      void handleMoveTask(id, col.status);
                     }
                     setOverColumn(null);
                   }}
@@ -387,15 +611,13 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                       <TaskCard
                         key={task.id}
                         task={task}
-                        onMove={status => moveTask(task.id, status)}
-                        onDelete={() => deleteTask(task.id)}
-                        onRename={title => renameTask(task.id, title)}
+                        onMove={status => { void handleMoveTask(task.id, status); }}
+                        onDelete={() => { void handleDeleteTask(task.id); }}
+                        onRename={title => { void handleRenameTask(task.id, title); }}
                         onNoteClick={onNoteClick}
                         onLinkNote={!task.note_id ? () => setLinkingTaskId(task.id) : undefined}
                         onOpenDetail={() => setDetailTaskId(task.id)}
-                        onToggleSubtask={async (subtaskId, done) => {
-                          await subtasksAPI.update(task.id, subtaskId, { done });
-                        }}
+                        onToggleSubtask={(subtaskId, done) => handleToggleSubtask(task.id, subtaskId, done)}
                       />
                     ))}
 
@@ -409,7 +631,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                   <div className="mt-3">
                     <AddTaskInput
                       status={col.status}
-                      onAdd={async (title, status) => { await createTask(title, status); }}
+                      onAdd={handleCreateTask}
                     />
                   </div>
                 </div>
@@ -424,7 +646,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
         onClose={() => setLinkingTaskId(null)}
         onConfirm={async note => {
           if (linkingTaskId !== null) {
-            await linkNote(linkingTaskId, note.id);
+            await handleLinkNote(linkingTaskId, note.id);
             setLinkingTaskId(null);
           }
         }}
@@ -433,7 +655,10 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
       <TaskDetailModal
         taskId={detailTaskId}
         onClose={() => setDetailTaskId(null)}
-        onTaskUpdated={patchTask}
+        onTaskUpdated={task => {
+          patchTask(task);
+          void refetchSummary();
+        }}
       />
     </div>
   );

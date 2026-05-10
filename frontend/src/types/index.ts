@@ -103,6 +103,8 @@ export interface TaskSummary {
   to: string;
   backlog: Task[];
   doing: Task[];
+  added_today: Task[];
+  carry_over: Task[];
   done_today: Task[];
 }
 
