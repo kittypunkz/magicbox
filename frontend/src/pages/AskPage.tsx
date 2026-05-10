@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Send, Loader2, MessageSquare, FileText } from 'lucide-react';
+import { Send, Loader2, MessageSquare, FileText, CheckSquare, Bookmark } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
@@ -18,13 +18,18 @@ type ScopeType = 'today' | 'this_week' | 'notes' | 'tasks' | 'bookmarks' | 'all'
 
 interface Source {
   id: number;
+  type: 'note' | 'task' | 'bookmark';
   title: string;
+  subtitle?: string;
+  note_id?: number | null;
+  url?: string | null;
 }
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   sources?: Source[];
+  weak?: boolean;
 }
 
 interface AskScope {
@@ -37,7 +42,7 @@ interface AskPageProps {
   onNoteClick?: (noteId: number) => void;
 }
 
-const NOTE_REF_RE = /\[Note (\d+)\]/g;
+const SOURCE_REF_RE = /\[(Note|Task|Bookmark) (\d+)\]/g;
 
 const SCOPE_OPTIONS: Array<{ key: ScopeType; label: string }> = [
   { key: 'today', label: 'Today' },
@@ -57,18 +62,22 @@ function renderWithNoteButtons(
   const parts: React.ReactNode[] = [];
   let last = 0;
   let m: RegExpExecArray | null;
-  NOTE_REF_RE.lastIndex = 0;
-  while ((m = NOTE_REF_RE.exec(text)) !== null) {
+  SOURCE_REF_RE.lastIndex = 0;
+  while ((m = SOURCE_REF_RE.exec(text)) !== null) {
     if (m.index > last) parts.push(text.slice(last, m.index));
-    const id = Number(m[1]);
-    const title = sources.find(s => s.id === id)?.title ?? `Note ${id}`;
+    const sourceType = m[1].toLowerCase() as Source['type'];
+    const refId = Number(m[2]);
+    const source = sources.find(s => s.id === refId && s.type === sourceType);
+    const title = source?.title ?? `${m[1]} ${refId}`;
     parts.push(
       <button
-        key={`${id}-${m.index}`}
-        onClick={() => onNoteClick?.(id)}
+        key={`${refId}-${m.index}`}
+        onClick={() => {
+          if (source?.note_id) onNoteClick?.(source.note_id);
+        }}
         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs border border-[#2a2a2a] text-[#888888] hover:text-[#faff69] hover:border-[#faff69]/40 transition-colors align-middle mx-0.5"
       >
-        <FileText size={10} />
+        {source?.type === 'task' ? <CheckSquare size={10} /> : source?.type === 'bookmark' ? <Bookmark size={10} /> : <FileText size={10} />}
         {title}
       </button>
     );
@@ -81,7 +90,7 @@ function renderWithNoteButtons(
 function makeComponents(sources: Source[], onNoteClick?: (id: number) => void): Components {
   const patchText = (node: React.ReactNode): React.ReactNode => {
     if (typeof node === 'string') {
-      if (!NOTE_REF_RE.test(node)) return node;
+      if (!SOURCE_REF_RE.test(node)) return node;
       const parts = renderWithNoteButtons(node, sources, onNoteClick);
       return parts.length === 1 ? parts[0] : <>{parts}</>;
     }
@@ -143,7 +152,12 @@ export function AskPage({ onNoteClick }: AskPageProps) {
         body: JSON.stringify({ message: msg, history, scope: activeScope }),
       });
 
-      const data = await res.json() as { content?: string; sources?: Source[]; error?: string };
+      const data = await res.json() as {
+        content?: string;
+        sources?: Source[];
+        error?: string;
+        retrieval?: { weak?: boolean };
+      };
 
       if (!res.ok) {
         throw new Error(data.error || `HTTP ${res.status}`);
@@ -153,6 +167,7 @@ export function AskPage({ onNoteClick }: AskPageProps) {
         role: 'assistant',
         content: data.content ?? '',
         sources: data.sources ?? [],
+        weak: data.retrieval?.weak ?? false,
       }]);
       scrollToBottom();
     } catch (err) {
@@ -253,14 +268,23 @@ export function AskPage({ onNoteClick }: AskPageProps) {
                     <div className={`mt-3 pt-3 border-t ${c.border} flex flex-wrap gap-1.5`}>
                       {msg.sources.map(s => (
                         <button
-                          key={s.id}
-                          onClick={() => onNoteClick?.(s.id)}
+                          key={`${s.type}-${s.id}`}
+                          onClick={() => {
+                            if (s.note_id) onNoteClick?.(s.note_id);
+                          }}
                           className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs border ${c.border} ${c.gray} hover:text-[#faff69] hover:border-[#faff69]/40 transition-colors`}
                         >
-                          <FileText size={10} />
+                          {s.type === 'task' ? <CheckSquare size={10} /> : s.type === 'bookmark' ? <Bookmark size={10} /> : <FileText size={10} />}
+                          <span className="uppercase text-[10px] tracking-wide opacity-70">{s.type}</span>
                           {s.title}
                         </button>
                       ))}
+                    </div>
+                  )}
+
+                  {msg.weak && (
+                    <div className="mt-3 rounded-lg border border-orange-500/20 bg-orange-500/10 px-3 py-2 text-xs text-orange-300">
+                      Retrieval was weak for this answer. Try broadening the scope or asking with more specific terms.
                     </div>
                   )}
                 </div>

@@ -93,12 +93,12 @@
 
 ## Phase 10: Source-Grounded AI Retrieval
 
-- [ ] Make backend retrieval scope-aware.
-- [ ] Retrieve from notes, tasks, and bookmarks by selected scope.
-- [ ] Stop appending unrelated recent notes by default.
-- [ ] Return typed sources and retrieval metadata.
-- [ ] Render source types clearly in the Ask UI.
-- [ ] Return a clear insufficient-context response when retrieval is weak.
+- [x] Make backend retrieval scope-aware.
+- [x] Retrieve from notes, tasks, and bookmarks by selected scope.
+- [x] Stop appending unrelated recent notes by default.
+- [x] Return typed sources and retrieval metadata.
+- [x] Render source types clearly in the Ask UI.
+- [x] Return a clear insufficient-context response when retrieval is weak.
 
 ## Phase 11: AI Source Feedback
 
