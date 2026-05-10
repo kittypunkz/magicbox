@@ -16,6 +16,12 @@ interface HistoryMessage {
   content: string;
 }
 
+interface ChatScope {
+  scope: 'today' | 'this_week' | 'notes' | 'tasks' | 'bookmarks' | 'all' | 'custom';
+  from?: string;
+  to?: string;
+}
+
 const app = new Hono<{ Bindings: Env }>();
 
 app.use('*', sessionAuthMiddleware);
@@ -58,7 +64,7 @@ function relativeTime(dateStr: string): string {
 
 // POST /chat
 app.post('/', async (c) => {
-  const body = await c.req.json<{ message: string; history?: HistoryMessage[] }>();
+  const body = await c.req.json<{ message: string; history?: HistoryMessage[]; scope?: ChatScope }>();
   if (!body.message?.trim()) {
     return c.json({ error: 'Message required' }, 400);
   }
@@ -69,6 +75,7 @@ app.post('/', async (c) => {
   const [aiCfg, prefs] = await Promise.all([getAIConfig(c.env), getUserPrefs(c.env)]);
   if (!aiCfg) return c.json({ error: 'OpenRouter API key not configured' }, 400);
   const { apiKey, model } = aiCfg;
+  const scope = body.scope ?? { scope: 'all' as const };
 
   // Step 1: Query expansion — get semantically related keywords
   const expandedTerms = await expandQuery(body.message, apiKey, model);
@@ -134,6 +141,7 @@ Guidelines:
 - If the notes don't contain enough information, say so clearly — do not invent details.
 - Be concise and direct. Use the note metadata (folder, date) to give context-aware answers.
 - If the user asks a follow-up question, use the conversation history to understand context.
+- The user selected this retrieval scope: ${scope.scope}${scope.from || scope.to ? ` (${scope.from ?? '?'} to ${scope.to ?? '?'})` : ''}. Respect that scope when interpreting the question.
 
 User's notes:
 ${context}`;

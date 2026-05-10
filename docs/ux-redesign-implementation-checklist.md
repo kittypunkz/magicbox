@@ -75,21 +75,21 @@
 
 ## Phase 8: Bookmark Library
 
-- [ ] Add bookmark search by title, URL, and content.
-- [ ] Add sort by newest and oldest.
-- [ ] Add filter by domain.
-- [ ] Add visible open-link action.
-- [ ] Add copy URL action.
-- [ ] Add quick save bookmark action from Bookmarks page.
-- [ ] Show bookmark count and clearer bookmark metadata.
+- [x] Add bookmark search by title, URL, and content.
+- [x] Add sort by newest and oldest.
+- [x] Add filter by domain.
+- [x] Add visible open-link action.
+- [x] Add copy URL action.
+- [x] Add quick save bookmark action from Bookmarks page.
+- [x] Show bookmark count and clearer bookmark metadata.
 
 ## Phase 9: Ask Scope Selector
 
-- [ ] Add visible scope selector to Ask page.
-- [ ] Support scopes for `Today / This Week / Notes / Tasks / Bookmarks / All / Custom`.
-- [ ] Send scope metadata to backend chat requests.
-- [ ] Support custom date range selection.
-- [ ] Preserve chat history behavior.
+- [x] Add visible scope selector to Ask page.
+- [x] Support scopes for `Today / This Week / Notes / Tasks / Bookmarks / All / Custom`.
+- [x] Send scope metadata to backend chat requests.
+- [x] Support custom date range selection.
+- [x] Preserve chat history behavior.
 
 ## Phase 10: Source-Grounded AI Retrieval
 

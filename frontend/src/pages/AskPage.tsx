@@ -14,6 +14,8 @@ const c = {
   border: 'border-[#2a2a2a]',
 };
 
+type ScopeType = 'today' | 'this_week' | 'notes' | 'tasks' | 'bookmarks' | 'all' | 'custom';
+
 interface Source {
   id: number;
   title: string;
@@ -25,11 +27,27 @@ interface Message {
   sources?: Source[];
 }
 
+interface AskScope {
+  scope: ScopeType;
+  from?: string;
+  to?: string;
+}
+
 interface AskPageProps {
   onNoteClick?: (noteId: number) => void;
 }
 
 const NOTE_REF_RE = /\[Note (\d+)\]/g;
+
+const SCOPE_OPTIONS: Array<{ key: ScopeType; label: string }> = [
+  { key: 'today', label: 'Today' },
+  { key: 'this_week', label: 'This Week' },
+  { key: 'notes', label: 'Notes' },
+  { key: 'tasks', label: 'Tasks' },
+  { key: 'bookmarks', label: 'Bookmarks' },
+  { key: 'all', label: 'All' },
+  { key: 'custom', label: 'Custom' },
+];
 
 function renderWithNoteButtons(
   text: string,
@@ -88,21 +106,29 @@ export function AskPage({ onNoteClick }: AskPageProps) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scope, setScope] = useState<ScopeType>('all');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   }, []);
 
+  const activeScope: AskScope = scope === 'custom'
+    ? { scope, from: customFrom || undefined, to: customTo || undefined }
+    : { scope };
+
+  const customScopeIncomplete = scope === 'custom' && (!customFrom || !customTo);
+
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const msg = input.trim();
-    if (!msg || loading) return;
+    if (!msg || loading || customScopeIncomplete) return;
 
     setInput('');
     setError(null);
 
-    // Build history from current messages (exclude sources metadata)
     const history = messages.map(m => ({ role: m.role, content: m.content }));
 
     setMessages(prev => [...prev, { role: 'user', content: msg }]);
@@ -114,7 +140,7 @@ export function AskPage({ onNoteClick }: AskPageProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ message: msg, history }),
+        body: JSON.stringify({ message: msg, history, scope: activeScope }),
       });
 
       const data = await res.json() as { content?: string; sources?: Source[]; error?: string };
@@ -134,11 +160,10 @@ export function AskPage({ onNoteClick }: AskPageProps) {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, scrollToBottom]);
+  }, [activeScope, customScopeIncomplete, input, loading, messages, scrollToBottom]);
 
   return (
     <div className={`h-full flex flex-col ${c.bg}`}>
-      {/* Header */}
       <div className={`flex-shrink-0 bg-[#1a1a1a] border-b ${c.border} px-4 sm:px-8 py-4 sm:py-6`}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#242424] rounded-xl flex items-center justify-center flex-shrink-0">
@@ -146,7 +171,7 @@ export function AskPage({ onNoteClick }: AskPageProps) {
           </div>
           <div className="flex-1">
             <h1 className={`text-lg sm:text-2xl font-bold ${c.text}`}>Ask</h1>
-            <p className={`text-xs sm:text-sm ${c.gray}`}>Chat with your notes</p>
+            <p className={`text-xs sm:text-sm ${c.gray}`}>Chat with your notes, tasks, and bookmarks</p>
           </div>
           {messages.length > 0 && (
             <button
@@ -157,14 +182,52 @@ export function AskPage({ onNoteClick }: AskPageProps) {
             </button>
           )}
         </div>
+
+        <div className="mt-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {SCOPE_OPTIONS.map(option => (
+              <button
+                key={option.key}
+                onClick={() => setScope(option.key)}
+                className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                  scope === option.key
+                    ? 'bg-[#faff69] text-[#0a0a0a] border-[#faff69]'
+                    : `border-[#2a2a2a] ${c.gray} hover:text-[#e6e6e6] hover:border-[#444]`
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {scope === 'custom' && (
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="date"
+                value={customFrom}
+                onChange={event => setCustomFrom(event.target.value)}
+                className={`bg-[#242424] border ${c.border} rounded-lg px-3 py-2 text-sm ${c.text} focus:outline-none focus:border-[#444] [color-scheme:dark]`}
+              />
+              <span className={`text-xs ${c.gray}`}>to</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={event => setCustomTo(event.target.value)}
+                className={`bg-[#242424] border ${c.border} rounded-lg px-3 py-2 text-sm ${c.text} focus:outline-none focus:border-[#444] [color-scheme:dark]`}
+              />
+              {customScopeIncomplete && (
+                <span className="text-xs text-orange-400">Select both dates to use a custom scope.</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 space-y-4">
         {messages.length === 0 && (
           <div className={`text-center py-16 ${c.gray}`}>
             <MessageSquare size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Ask a question about your notes</p>
+            <p className="text-sm">Ask a question with the scope above to narrow what the assistant should use.</p>
           </div>
         )}
 
@@ -224,20 +287,19 @@ export function AskPage({ onNoteClick }: AskPageProps) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div className={`flex-shrink-0 border-t ${c.border} bg-[#1a1a1a]/50 px-4 sm:px-8 py-3`}>
         <form onSubmit={handleSubmit} className="flex gap-2 max-w-3xl mx-auto">
           <input
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
-            placeholder="Ask about your notes..."
+            placeholder="Ask about your workspace..."
             disabled={loading}
             className={`flex-1 px-4 py-2.5 bg-[#242424] border ${c.border} rounded-xl ${c.text} placeholder-[#5a5a5a] text-sm focus:outline-none focus:border-[#faff69] transition-colors disabled:opacity-50`}
           />
           <button
             type="submit"
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || customScopeIncomplete}
             className="flex items-center justify-center w-10 h-10 bg-[#faff69] hover:bg-[#e6eb52] text-[#0a0a0a] disabled:opacity-50 rounded-xl transition-colors flex-shrink-0"
           >
             {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}

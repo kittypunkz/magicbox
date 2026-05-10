@@ -462,7 +462,7 @@ function AppContent() {
           )}
 
           {view === 'bookmarks' && (
-            <BookmarksPage onSelectNote={handleNoteClick} />
+            <BookmarksPage onSelectNote={handleNoteClick} onCreateNote={handleCreateNote} />
           )}
         </main>
 
