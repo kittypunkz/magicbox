@@ -7,6 +7,17 @@ export interface DateRange {
   to: string;
 }
 
+function normalizeSummary(summary: TaskSummary): TaskSummary {
+  return {
+    ...summary,
+    backlog: summary.backlog ?? [],
+    doing: summary.doing ?? [],
+    done_today: summary.done_today ?? [],
+    added_today: summary.added_today ?? [],
+    carry_over: summary.carry_over ?? [],
+  };
+}
+
 export function useSummary(range?: DateRange) {
   const [summary, setSummary] = useState<TaskSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,7 +28,7 @@ export function useSummary(range?: DateRange) {
     setError(null);
     try {
       const data = await tasksAPI.getSummary(range);
-      setSummary(data);
+      setSummary(normalizeSummary(data));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load summary');
     } finally {

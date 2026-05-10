@@ -90,6 +90,13 @@ const TODAY_SECTIONS: Array<{
   },
 ];
 
+function getTodayTasks(
+  summary: TaskSummary,
+  key: keyof Pick<TaskSummary, 'doing' | 'done_today' | 'added_today' | 'carry_over'>
+): Task[] {
+  return summary[key] ?? [];
+}
+
 function TaskCard({
   task,
   onMove,
@@ -521,7 +528,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                       </div>
                       <span className={`text-xs ${c.gray}`}>{label}</span>
                     </div>
-                    <p className={`mt-3 text-2xl font-semibold ${c.text}`}>{summary[key].length}</p>
+                    <p className={`mt-3 text-2xl font-semibold ${c.text}`}>{getTodayTasks(summary, key).length}</p>
                   </div>
                 ))}
               </div>
@@ -535,7 +542,7 @@ export function TasksPage({ onNoteClick }: TasksPageProps) {
                     emptyLabel={section.emptyLabel}
                     icon={section.icon}
                     color={section.color}
-                    tasks={summary[section.key]}
+                    tasks={getTodayTasks(summary, section.key)}
                     onMoveTask={handleMoveTask}
                     onDeleteTask={handleDeleteTask}
                     onRenameTask={handleRenameTask}
