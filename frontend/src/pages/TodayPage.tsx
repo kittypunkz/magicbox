@@ -101,6 +101,25 @@ export function TodayPage({ onCreateNote, onSelectNote }: TodayPageProps) {
           </div>
         </section>
 
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className={`rounded-2xl border ${c.border} bg-[#131313] px-4 py-4`}>
+            <p className="text-xs uppercase tracking-wide text-[#666]">Doing</p>
+            <p className={`mt-2 text-2xl font-semibold ${c.text}`}>{summary?.doing.length ?? 0}</p>
+          </div>
+          <div className={`rounded-2xl border ${c.border} bg-[#131313] px-4 py-4`}>
+            <p className="text-xs uppercase tracking-wide text-[#666]">Done Today</p>
+            <p className="mt-2 text-2xl font-semibold text-green-400">{summary?.done_today.length ?? 0}</p>
+          </div>
+          <div className={`rounded-2xl border ${c.border} bg-[#131313] px-4 py-4`}>
+            <p className="text-xs uppercase tracking-wide text-[#666]">Recent Notes</p>
+            <p className={`mt-2 text-2xl font-semibold ${c.text}`}>{recentNotes.length}</p>
+          </div>
+          <div className={`rounded-2xl border ${c.border} bg-[#131313] px-4 py-4`}>
+            <p className="text-xs uppercase tracking-wide text-[#666]">Bookmarks</p>
+            <p className="mt-2 text-2xl font-semibold text-emerald-400">{recentBookmarks.length}</p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-6">
             <SectionCard
@@ -181,25 +200,6 @@ export function TodayPage({ onCreateNote, onSelectNote }: TodayPageProps) {
                 </div>
               )}
             </SectionCard>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className={`rounded-2xl border ${c.border} bg-[#131313] px-4 py-4`}>
-            <p className="text-xs uppercase tracking-wide text-[#666]">Doing</p>
-            <p className={`mt-2 text-2xl font-semibold ${c.text}`}>{summary?.doing.length ?? 0}</p>
-          </div>
-          <div className={`rounded-2xl border ${c.border} bg-[#131313] px-4 py-4`}>
-            <p className="text-xs uppercase tracking-wide text-[#666]">Done Today</p>
-            <p className="mt-2 text-2xl font-semibold text-green-400">{summary?.done_today.length ?? 0}</p>
-          </div>
-          <div className={`rounded-2xl border ${c.border} bg-[#131313] px-4 py-4`}>
-            <p className="text-xs uppercase tracking-wide text-[#666]">Recent Notes</p>
-            <p className={`mt-2 text-2xl font-semibold ${c.text}`}>{recentNotes.length}</p>
-          </div>
-          <div className={`rounded-2xl border ${c.border} bg-[#131313] px-4 py-4`}>
-            <p className="text-xs uppercase tracking-wide text-[#666]">Bookmarks</p>
-            <p className="mt-2 text-2xl font-semibold text-emerald-400">{recentBookmarks.length}</p>
           </div>
         </div>
       </div>
