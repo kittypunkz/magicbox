@@ -68,10 +68,10 @@
 
 ## Phase 7: Notes Timeline
 
-- [ ] Add Notes filters for `Today / Yesterday / This Week / All`.
-- [ ] Keep folder filtering available.
-- [ ] Group or sort notes by recent time.
-- [ ] Improve empty states for filtered views.
+- [x] Add Notes filters for `Today / Yesterday / This Week / All`.
+- [x] Keep folder filtering available.
+- [x] Group or sort notes by recent time.
+- [x] Improve empty states for filtered views.
 
 ## Phase 8: Bookmark Library
 
