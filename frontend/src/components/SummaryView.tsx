@@ -12,15 +12,26 @@ const c = {
   border: 'border-[#2a2a2a]',
 };
 
-const SECTIONS = [
-  { key: 'done_today'as const, label: 'Done Today',   icon: CheckCircle2, color: 'text-green-400', emptyMsg: 'Nothing completed today yet'  },
-  { key: 'doing'     as const, label: 'Doing',        icon: Clock,        color: 'text-[#faff69]',  emptyMsg: 'Nothing in progress today'   },
-  { key: 'backlog'   as const, label: 'Backlog',       icon: Inbox,        color: 'text-[#888888]', emptyMsg: 'Backlog is clear'             },
+const TODAY_SECTIONS = [
+  { key: 'done_today' as const, label: 'Done Today', icon: CheckCircle2, color: 'text-green-400', emptyMsg: 'Nothing completed today yet' },
+  { key: 'doing' as const, label: 'Doing', icon: Clock, color: 'text-[#faff69]', emptyMsg: 'Nothing in progress today' },
+  { key: 'carry_over' as const, label: 'Carry Over', icon: Inbox, color: 'text-orange-400', emptyMsg: 'No unfinished carry-over tasks today' },
+  { key: 'added_today' as const, label: 'Added Today', icon: Inbox, color: 'text-sky-400', emptyMsg: 'No tasks were added today' },
 ] as const;
 
+function sortCompletedTasks(tasks: Task[]): Task[] {
+  return [...tasks].sort((a, b) =>
+    new Date(b.completed_at ?? 0).getTime() - new Date(a.completed_at ?? 0).getTime()
+  );
+}
 
 function taskToMd(task: Task): string {
   const lines = [`- ${task.title}`];
+  if (task.completed_at) {
+    lines[0] += ` (${formatDateTime(task.completed_at)})`;
+  } else {
+    lines[0] += ` (${task.status})`;
+  }
   if (task.description?.trim()) {
     lines.push(`  ${task.description.trim()}`);
   }
@@ -28,7 +39,12 @@ function taskToMd(task: Task): string {
   return lines.join('\n');
 }
 
-function buildMarkdown(summary: TaskSummary, mode: 'today' | 'custom', dateLabel: string, doneTasks: Task[]): string {
+function buildMarkdown(
+  summary: TaskSummary,
+  mode: 'today' | 'custom',
+  dateLabel: string,
+  doneTasks: Task[]
+): string {
   const lines: string[] = [];
 
   const dateHeading = mode === 'custom' && summary.from !== summary.to
@@ -38,21 +54,30 @@ function buildMarkdown(summary: TaskSummary, mode: 'today' | 'custom', dateLabel
       : dateLabel;
 
   lines.push(`Work Log | ${dateHeading}`, '');
-
-  const doingTasks = mode === 'custom' ? summary.doing : summary.doing;
-
-  lines.push('Done Task');
-  if (doneTasks.length === 0) {
-    lines.push('- (none)');
+  if (mode === 'custom') {
+    lines.push('Completed');
+    if (doneTasks.length === 0) {
+      lines.push('- (none)');
+    } else {
+      doneTasks.forEach(t => lines.push(taskToMd(t)));
+    }
   } else {
-    doneTasks.forEach(t => lines.push(taskToMd(t)));
-  }
+    const sections: Array<{ label: string; tasks: Task[] }> = [
+      { label: 'Done Today', tasks: doneTasks },
+      { label: 'Doing', tasks: summary.doing },
+      { label: 'Carry Over', tasks: summary.carry_over },
+      { label: 'Added Today', tasks: summary.added_today },
+    ];
 
-  lines.push('', 'Doing Task');
-  if (doingTasks.length === 0) {
-    lines.push('- (none)');
-  } else {
-    doingTasks.forEach(t => lines.push(taskToMd(t)));
+    sections.forEach((section, index) => {
+      if (index > 0) lines.push('');
+      lines.push(section.label);
+      if (section.tasks.length === 0) {
+        lines.push('- (none)');
+      } else {
+        section.tasks.forEach(t => lines.push(taskToMd(t)));
+      }
+    });
   }
 
   return lines.join('\n');
@@ -136,9 +161,7 @@ export function SummaryView({ onRefresh: _onRefresh }: SummaryViewProps) {
     : '';
 
   const doneTasks = summary
-    ? [...summary.done_today].sort((a, b) =>
-        new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime()
-      )
+    ? sortCompletedTasks(summary.done_today)
     : [];
 
   function handleExport() {
@@ -197,7 +220,7 @@ export function SummaryView({ onRefresh: _onRefresh }: SummaryViewProps) {
         {/* Content */}
         {customIncomplete ? (
           <p className={`text-center text-sm ${c.gray} py-6`}>
-            Select a start and end date to view completed tasks.
+            Select a start and end date to view the Work Log for a custom range.
           </p>
         ) : loading ? (
           <div className="flex items-center justify-center py-10">
@@ -226,7 +249,7 @@ export function SummaryView({ onRefresh: _onRefresh }: SummaryViewProps) {
               <p className={`text-sm ${c.gray}`}>
                 {mode === 'custom'
                   ? `${doneTasks.length} tasks completed`
-                  : `${summary.done_today.length} done today · ${summary.doing.length} doing · ${summary.backlog.length} in backlog`}
+                  : `${summary.done_today.length} done today · ${summary.doing.length} doing · ${summary.carry_over.length} carry over`}
               </p>
             </div>
 
@@ -251,10 +274,10 @@ export function SummaryView({ onRefresh: _onRefresh }: SummaryViewProps) {
                 )}
               </div>
             ) : (
-              SECTIONS.map(({ key, label, icon: Icon, color, emptyMsg }) => {
+              TODAY_SECTIONS.map(({ key, label, icon: Icon, color, emptyMsg }) => {
                 const raw: Task[] = summary[key];
                 const tasks = key === 'done_today'
-                  ? [...raw].sort((a, b) => new Date(a.completed_at!).getTime() - new Date(b.completed_at!).getTime())
+                  ? sortCompletedTasks(raw)
                   : raw;
                 return (
                   <div key={key} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">

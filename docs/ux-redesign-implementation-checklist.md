@@ -40,31 +40,31 @@
 
 ## Phase 4: Tasks Today View
 
-- [ ] Change Tasks page to default to a Today-first tab.
-- [ ] Add `Today / Board / Work Log` tabs.
-- [ ] Show `Doing` in Today tab.
-- [ ] Show `Done Today` in Today tab.
-- [ ] Show `Added Today` in Today tab.
-- [ ] Show `Carry Over` in Today tab.
-- [ ] Keep board interactions and task detail behavior intact.
+- [x] Change Tasks page to default to a Today-first tab.
+- [x] Add `Today / Board / Work Log` tabs.
+- [x] Show `Doing` in Today tab.
+- [x] Show `Done Today` in Today tab.
+- [x] Show `Added Today` in Today tab.
+- [x] Show `Carry Over` in Today tab.
+- [x] Keep board interactions and task detail behavior intact.
 
 ## Phase 5: Work Log
 
-- [ ] Rename Summary UI to Work Log.
-- [ ] Support `Today` and `Custom date range`.
-- [ ] Show grouped task states for today.
-- [ ] Show completed tasks for custom ranges.
-- [ ] Export Work Log as readable Markdown.
-- [ ] Order completed tasks by completion time.
+- [x] Rename Summary UI to Work Log.
+- [x] Support `Today` and `Custom date range`.
+- [x] Show grouped task states for today.
+- [x] Show completed tasks for custom ranges.
+- [x] Export Work Log as readable Markdown.
+- [x] Order completed tasks by completion time.
 
 ## Phase 6: Task Summary API
 
-- [ ] Extend `/tasks/summary` with `added_today`.
-- [ ] Extend `/tasks/summary` with `carry_over`.
-- [ ] Keep `backlog`, `doing`, and `done_today` compatible.
-- [ ] Use Bangkok timezone consistently.
-- [ ] Preserve current board behavior and current summary consumers.
-- [ ] Add backend tests for the new summary shape.
+- [x] Extend `/tasks/summary` with `added_today`.
+- [x] Extend `/tasks/summary` with `carry_over`.
+- [x] Keep `backlog`, `doing`, and `done_today` compatible.
+- [x] Use Bangkok timezone consistently.
+- [x] Preserve current board behavior and current summary consumers.
+- [x] Add backend tests for the new summary shape.
 
 ## Phase 7: Notes Timeline
 
